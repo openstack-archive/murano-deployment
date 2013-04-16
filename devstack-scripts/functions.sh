@@ -31,9 +31,11 @@ function restart_service {
 
 
 function move_mysql_data_to_ramdrive {
+    echo "Moving MySQL database to tmpfs ..."
+
     # Moving MySQL database to tmpfs
     #-------------------------------
-    if [[ $(trueorfalse True $MYSQL_DB_TMPFS) = "True" ]] ; then
+    if [[ $( trueorfalse True $MYSQL_DB_TMPFS ) == "True" ]] ; then
         die_if_not_set MYSQL_DB_TMPFS_SIZE
         mount_dir=/var/lib/mysql
         sudo -s << EOF
@@ -74,7 +76,7 @@ EOF
 function move_nova_cache_to_ramdrive {
     # Moving nova images cache to tmpfs
     #----------------------------------
-    if [[ $(trueorfalse True $NOVA_CACHE_TMPFS) = "True" ]] ; then
+    if [[ $(trueorfalse True $NOVA_CACHE_TMPFS) == "True" ]] ; then
         die_if_not_set NOVA_CACHE_TMPFS_SIZE
         mount_dir=/opt/stack/data/nova/instances
         sudo -s << EOF
@@ -123,7 +125,7 @@ function validate_install_mode {
 
 
 function update_devstack_localrc {
-    local $__install_mode=$1
+    local __install_mode=$1
     
     [[ -z "$__install_mode" ]] \
         && die "Install mode for update_devstack_localrc not provided!"
@@ -131,11 +133,15 @@ function update_devstack_localrc {
     # Replacing devstack's localrc config
     #------------------------------------
     devstack_localrc="$SCRIPTS_DIR/$__install_mode/devstack.localrc"
-    if [[ -f $devstack_localrc ]] ; then
+
+    if [[ -f /etc/devstack-scripts/$__install_mode/devstack.localrc ]] ; then
+        rm -f "$DEVSTACK_DIR/localrc"
+        cp /etc/devstack-scripts/$__install_mode/devstack.localrc "$DEVSTACK_DIR/localrc"
+    elif [[ -f $devstack_localrc ]] ; then
         rm -f "$DEVSTACK_DIR/localrc"
         cp $devstack_localrc "$DEVSTACK_DIR/localrc"
     else
-        _echo "File '$devstack_localrc' not found!"
+        _echo "File 'devstack.localrc' not found!"
     fi
     #------------------------------------
 }

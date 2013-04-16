@@ -4,10 +4,14 @@ SCRIPTS_DIR=$( cd $( dirname "$0" ) && pwd )
 
 source $SCRIPTS_DIR/localrc
 
-INSTALL_MODE="$1"
+if [[ -f /etc/devstack-scripts/install_mode ]] ; then
+    INSTALL_MODE=$( cat /etc/devstack-scripts/install_mode )
+fi
+INSTALL_MODE=${INSTALL_MODE:-$1}
 
 validate_install_mode
 
+echo "$INSTALL_MODE" > /etc/devstack-scripts/install_mode
 
 
 # Update devstack-scripts if multihost

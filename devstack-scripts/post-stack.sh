@@ -19,7 +19,7 @@ function glance_image_create {
     
     echo "Importing image '$__image_name' into Glance ..."
     glance image-delete "$__image_name"
-    if [[ ^http =~ $__image_path]] ; then
+    if [[ ^http =~ $__image_path ]] ; then
         glance image-create \
           --name "$__image_name" \
           --disk-format qcow2 \
@@ -103,7 +103,7 @@ fi
 
 #===============================================================================
 
-for $image in $GLANCE_IMAGE_LIST ; do
+for image in $GLANCE_IMAGE_LIST ; do
     glance_image_create "$image"
 done
 
