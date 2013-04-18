@@ -14,6 +14,23 @@ validate_install_mode
 echo "$INSTALL_MODE" > /etc/devstack-scripts/install_mode
 
 
+# Prepare environment
+#===============================================================================
+if [[ ! -d /opt/stack ]] ; then
+    sudo mkdir /opt/stack
+    sudo chown stack:stack /opt/stack
+fi
+
+if [[ ! -d $DEVSTACK_DIR ]] ; then
+    sudo mkdir $DEVSTACK_DIR
+    sudo chown stack:stack $DEVSTACK_DIR
+    git clone git://github.com/openstack-dev/devstack.git $DEVSTACK_DIR
+    source $SCRIPTS_DIR/localrc
+fi
+#===============================================================================
+
+
+
 # Update devstack-scripts if multihost
 #===============================================================================
 if [[ "$INSTALL_MODE" == 'multihost' ]] ; then

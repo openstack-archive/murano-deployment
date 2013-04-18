@@ -16,15 +16,12 @@ die_if_not_set MYSQL_DB_TMPFS_SIZE
 die_if_not_set NOVA_CACHE_TMPFS_SIZE
 #-----------------
 
-echo $INSTALL_MODE
 
 if [[ ",standalone,multihost,controller," =~ ,$INSTALL_MODE, ]] ; then
-    echo "20"
     restart_service dbus rabbitmq-server
 fi
 
 if [[ ",standalone,multihost,controller," =~ ,$INSTALL_MODE, ]] ; then
-    echo "25"
     move_mysql_data_to_ramdrive
 fi
 
