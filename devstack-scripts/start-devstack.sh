@@ -4,9 +4,30 @@ SCRIPTS_DIR=$( cd $( dirname "$0" ) && pwd )
 
 source $SCRIPTS_DIR/localrc
 
-INSTALL_MODE="$1"
+if [[ -f /etc/devstack-scripts/install_mode ]] ; then
+    INSTALL_MODE=$( cat /etc/devstack-scripts/install_mode )
+fi
+INSTALL_MODE=${INSTALL_MODE:-$1}
 
 validate_install_mode
+
+echo "$INSTALL_MODE" > /etc/devstack-scripts/install_mode
+
+
+# Prepare environment
+#===============================================================================
+if [[ ! -d /opt/stack ]] ; then
+    sudo mkdir /opt/stack
+    sudo chown stack:stack /opt/stack
+fi
+
+if [[ ! -d $DEVSTACK_DIR ]] ; then
+    sudo mkdir $DEVSTACK_DIR
+    sudo chown stack:stack $DEVSTACK_DIR
+    git clone git://github.com/openstack-dev/devstack.git $DEVSTACK_DIR
+    source $SCRIPTS_DIR/localrc
+fi
+#===============================================================================
 
 
 
@@ -44,6 +65,7 @@ $DEVSTACK_DIR/stack.sh
 # Executing post-stack actions
 #===============================================================================
 _echo "* Executing post-stack actions ..."
+source $DEVSTACK_DIR/openrc admin admin
 source $SCRIPTS_DIR/post-stack.sh no-localrc
 #source $SCRIPTS_DIR/start-keero.sh no-localrc
 #===============================================================================

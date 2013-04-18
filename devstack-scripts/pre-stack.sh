@@ -17,12 +17,11 @@ die_if_not_set NOVA_CACHE_TMPFS_SIZE
 #-----------------
 
 
-if [[ ,$INSTALL_MODE, =~ ',standalone,multihost,controller,' ]] ; then
+if [[ ",standalone,multihost,controller," =~ ,$INSTALL_MODE, ]] ; then
     restart_service dbus rabbitmq-server
 fi
 
-
-if [[ ,$INSTALL_MODE, =~ ',standalone,multihost,controller,' ]] ; then
+if [[ ",standalone,multihost,controller," =~ ,$INSTALL_MODE, ]] ; then
     move_mysql_data_to_ramdrive
 fi
 
