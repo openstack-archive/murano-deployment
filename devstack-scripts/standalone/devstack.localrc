@@ -1,12 +1,13 @@
 # Devstack's config file for STANDALONE installation
 
-lab_id=101
+lab_id=102
 lab_password=swordfish
 
 HOST_IP=172.18.124.${lab_id}
 
 FIXED_RANGE=10.0.${lab_id}.0/24
 
+PUBLIC_INTERFACE=eth1
 FLAT_INTERFACE=eth1
 
 ADMIN_PASSWORD=$lab_password
@@ -15,8 +16,12 @@ RABBIT_PASSWORD=$lab_password
 SERVICE_PASSWORD=$lab_password
 SERVICE_TOKEN=tokentoken
 
+# Enable HEAT
 ENABLED_SERVICES+=,heat,h-api,h-api-cfn,h-api-cw,h-eng
-ENABLED_SERVICES+=,conductor,portas
+# Enable QUANTUM
+ENABLED_SERVICES+=,q-svc,q-agt,q-dhcp,q-l3,q-meta,quantum
+# Disable NOVA-NETWORK
+DISABLED_SERVICES=n-net
 
 SCREEN_LOGDIR=/opt/stack/log/
 LOGFILE=$SCREEN_LOGDIR/stack.sh.log
@@ -24,4 +29,8 @@ LOGFILE=$SCREEN_LOGDIR/stack.sh.log
 API_RATE_LIMIT=False
 
 EXTRA_OPTS=(force_config_drive=true libvirt_images_type=qcow2 force_raw_images=false)
+
+
+#NOVA_VIF_DRIVER=
+
 
