@@ -15,18 +15,21 @@ As *root* do the steps below:
 * Create group *stack* and user *stack*
 
 ::
+
     groupadd stack
     useradd -g stack -s /bin/bash -m stack
 
 * Alter sudoers config
 
 ::
+
     echo 'stack ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/stack
     chmod 0440 /etc/sudoers.d/stack
 
 * Clone this repo to *stack* home dir
 
 ::
+
     su stack
     cd
     git clone https://github.com/Mirantis/glazier-deployment.git
@@ -35,6 +38,7 @@ As *root* do the steps below:
 * Check configuration files and start devstack
 
 ::
+
     ./start-devstack.sh standalone
 
 
