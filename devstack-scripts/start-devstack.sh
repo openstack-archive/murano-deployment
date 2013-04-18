@@ -65,6 +65,7 @@ $DEVSTACK_DIR/stack.sh
 # Executing post-stack actions
 #===============================================================================
 _echo "* Executing post-stack actions ..."
+source $DEVSTACK_DIR/openrc admin admin
 source $SCRIPTS_DIR/post-stack.sh no-localrc
 #source $SCRIPTS_DIR/start-keero.sh no-localrc
 #===============================================================================
