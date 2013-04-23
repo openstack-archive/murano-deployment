@@ -120,7 +120,7 @@ quantum subnet-create \
 	--dns-nameserver $LAB_DNS_SERVER_1 \
 	--dns-nameserver $LAB_DNS_SERVER_2 \
 	Public \
-	$LAB_PUBLIC_RANGE
+	$LAB_FLAT_RANGE
 
 #===============================================================================
 
