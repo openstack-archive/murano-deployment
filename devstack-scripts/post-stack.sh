@@ -122,6 +122,12 @@ quantum subnet-create \
 	Public \
 	$LAB_FLAT_RANGE
 
+quantum port-create \
+	--tenant-id admin \
+	--device-id network:dhcp \
+	--fixed-ip subnet=Public,ip_address=$LAB_ALLOCATION_START \
+	Public
+
 #===============================================================================
 
 for image in $GLANCE_IMAGE_LIST ; do
