@@ -39,15 +39,21 @@ function glance_image_create {
 # Executing post-stack actions
 #===============================================================================
 
-if [[ ,$INSTALL_MODE, =~ ',standalone,compute,' ]] ; then
-    echo "Adding iptables rule to allow Internet access from instances..."
-    __iptables_rule="POSTROUTING -t nat -s '$FIXED_RANGE' ! -d '$FIXED_RANGE' -j MASQUERADE"
-    sudo iptables -C $__iptables_rule
-    if [[ $? == 0 ]] ; then
-        echo "Iptables rule already exists."
-    else
-        sudo iptables -A $__iptables_rule
-    fi
+#if [[ ',standalone,compute,' =~ ,$INSTALL_MODE, ]] ; then
+#    echo "Adding iptables rule to allow Internet access from instances..."
+#    __iptables_rule="POSTROUTING -t nat -s '$FIXED_RANGE' ! -d '$FIXED_RANGE' -j MASQUERADE"
+#    sudo iptables -C $__iptables_rule
+#    if [[ $? == 0 ]] ; then
+#        echo "Iptables rule already exists."
+#    else
+#        sudo iptables -A $__iptables_rule
+#    fi
+#fi
+
+
+if [[ ',standalone,compute,' =~ ,$INSTALL_MODE, ]] ; then
+	_echo "Mouting nova cache as a ramdrive"
+	move_nova_cache_to_ramdrive
 fi
 
 
@@ -101,9 +107,25 @@ else
     echo "Keypair 'keero_key' already exists"
 fi
 
+
+quantum net-create Public \
+	--tenant-id admin \
+	--shared \
+	--provider:network_type flat \
+	--provider:physical_network Public
+
+quantum subnet-create \
+	--tenant-id admin \
+	--allocation-pool start=$LAB_ALLOCATION_START,end=$LAB_ALLOCATION_END \
+	--dns-nameserver $LAB_DNS_SERVER_1 \
+	--dns-nameserver $LAB_DNS_SERVER_2 \
+	Public \
+	$LAB_PUBLIC_RANGE
+
 #===============================================================================
 
 for image in $GLANCE_IMAGE_LIST ; do
     glance_image_create "$image"
 done
+
 
