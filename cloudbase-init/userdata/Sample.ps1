@@ -1,6 +1,6 @@
 Import-Module CoreFunctions
 
-$ModuleBase = "C:\Keero\Modules"
+$ModuleBase = "C:\Murano\Modules"
 
 
 $NewModule_Name = "ModuleName"
@@ -9,7 +9,7 @@ $NewModule_Base64 = @'
 '@
 
 
-$AgentConfig_Path = "C:\Keero\Agent\WindowsAgent.exe.config"
+$AgentConfig_Path = "C:\Murano\Agent\WindowsAgent.exe.config"
 $AgentConfig_Base64 = @'
 %AGENT_CONFIG_BASE64%
 '@

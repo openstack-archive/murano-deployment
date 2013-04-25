@@ -6,6 +6,6 @@ They are stored under this folder.
 
 SEE ALSO
 ========
-* `Glazier <http://glazier.mirantis.com>`__
+* `Murano <http://murano.mirantis.com>`__
 * `CloudBase-Init <http://www.cloudbase.it/cloud-init-for-windows-instances/>`__
 

@@ -13,7 +13,7 @@ if [[ ! -d "$INSTALL_DIR/portas" ]] ; then
     mkdir -p "$INSTALL_DIR/portas"
 fi
 
-cp "$INSTALL_DIR/keero/portas/etc" "$INSTALL_DIR/portas/etc"
+cp "$INSTALL_DIR/murano/portas/etc" "$INSTALL_DIR/portas/etc"
 
 screen_it portas "cd $INSTALL_DIR/portas && portas-api --config-file=$INSTALL_DIR/portas/etc/portas-api.conf"
 #================
@@ -22,5 +22,5 @@ screen_it portas "cd $INSTALL_DIR/portas && portas-api --config-file=$INSTALL_DI
 
 # Starting Conductor
 #===================
-screen_it conductor "cd $INSTALL_DIR/keero/conductor && bash ./tools/with_venv.sh ./bin/app.py"
+screen_it conductor "cd $INSTALL_DIR/murano/conductor && bash ./tools/with_venv.sh ./bin/app.py"
 #===================

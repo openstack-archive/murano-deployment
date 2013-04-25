@@ -67,7 +67,7 @@ $DEVSTACK_DIR/stack.sh
 _echo "* Executing post-stack actions ..."
 source $DEVSTACK_DIR/openrc admin admin
 source $SCRIPTS_DIR/post-stack.sh no-localrc
-#source $SCRIPTS_DIR/start-keero.sh no-localrc
+#source $SCRIPTS_DIR/start-murano.sh no-localrc
 #===============================================================================
 
 

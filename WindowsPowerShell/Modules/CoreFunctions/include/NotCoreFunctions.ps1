@@ -545,15 +545,15 @@ Function Get-ConfigDriveObject {
 
 Function Update-AgentConfig {
     param (
-        [String] $RootPath = "C:\Keero\Agent"
+        [String] $RootPath = "C:\Murano\Agent"
     )
     
     try {
         $MetaData = Get-ConfigDriveObject -MetaData -ErrorAction Stop
         if ($MetaData.meta -ne $null) {
-            Stop-Service "Keero Agent" -Force
+            Stop-Service "Murano Agent" -Force
             Expand-Template -TemplateFile "$RootPath\WindowsAgent.exe.config.template" -OutputFile "$RootPath\WindowsAgent.exe.config" -ReplacementList $MetaData.meta
-            Start-Service "Keero Agent"
+            Start-Service "Murano Agent"
         }
     }
     catch {
