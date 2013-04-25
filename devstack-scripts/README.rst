@@ -32,8 +32,8 @@ As *root* do the steps below:
 
     su stack
     cd
-    git clone https://github.com/Mirantis/glazier-deployment.git
-    cd glazier-deployment/devstack-scripts
+    git clone https://github.com/Mirantis/murano-deployment.git
+    cd murano-deployment/devstack-scripts
 
 * Check configuration files and start devstack
 
@@ -44,6 +44,6 @@ As *root* do the steps below:
 
 SEE ALSO
 ========
-* `Glazier <http://glazier.mirantis.com>`__
+* `Murano <http://murano.mirantis.com>`__
 * `DevStack <http://devstack.org>`__
 

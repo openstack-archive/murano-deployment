@@ -5,7 +5,7 @@ if [[ -z "$1" ]] ; then
     source $SCRIPTS_DIR/localrc
 fi
 
-# Stopping Keero components
+# Stopping Murano components
 #==========================
 for serv in conductor portas ; do
     screen -S $SCREEN_NAME -p $serv -X kill

@@ -62,11 +62,11 @@ if [[ $INSTALL_MODE == 'compute' ]] ; then
 fi
 
 
-if [[ -z "$(sudo rabbitmqctl list_users | grep keero)" ]] ; then
-    echo "Adding RabbitMQ 'keero' user"
-    sudo rabbitmqctl add_user keero keero
+if [[ -z "$(sudo rabbitmqctl list_users | grep murano)" ]] ; then
+    echo "Adding RabbitMQ 'murano' user"
+    sudo rabbitmqctl add_user murano murano
 else
-    echo "User 'Keero' already exists."
+    echo "User 'Murano' already exists."
 fi
 
 
@@ -100,11 +100,11 @@ nova secgroup-add-rule default udp 1 65535 0.0.0.0/0
 nova secgroup-add-rule default icmp 0 8 0.0.0.0/0
 
 
-if [[ -z "$(nova keypair-list | grep keero_key)" ]] ; then
-    echo "Creating keypair 'keero_key' ..."
-    nova keypair-add keero_key
+if [[ -z "$(nova keypair-list | grep murano_key)" ]] ; then
+    echo "Creating keypair 'murano_key' ..."
+    nova keypair-add murano_key
 else
-    echo "Keypair 'keero_key' already exists"
+    echo "Keypair 'murano_key' already exists"
 fi
 
 

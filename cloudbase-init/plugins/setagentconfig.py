@@ -5,7 +5,7 @@ from cloudbaseinit.plugins.base import *
 from cloudbaseinit.openstack.common import log as logging
 
 opts = [
-    cfg.StrOpt('agent_config_file', default='C:\\Keero\\Agent\\WindowsAgent.exe.config', help='')
+    cfg.StrOpt('agent_config_file', default='C:\\Murano\\Agent\\WindowsAgent.exe.config', help='')
 ]
 
 CONF = cfg.CONF

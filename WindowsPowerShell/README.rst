@@ -7,5 +7,5 @@ Windows PowerShell module is a convenient way to redictribute a set of PowerShel
 
 SEE ALSO
 ========
-* `Glazier <http://glazier.mirantis.com>`__
+* `Murano <http://murano.mirantis.com>`__
 

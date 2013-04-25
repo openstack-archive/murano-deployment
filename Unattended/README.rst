@@ -7,5 +7,5 @@ These files should be passed to Sysprep.exe.
 
 SEE ALSO
 ========
-* `Glazier <http://glazier.mirantis.com>`__
+* `Murano <http://murano.mirantis.com>`__
 

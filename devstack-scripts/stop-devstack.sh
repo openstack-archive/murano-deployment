@@ -31,7 +31,7 @@ $DEVSTACK_DIR/unstack.sh
 #===============================================================================
 _echo "* Executing post-unstack actions ..."
 source $SCRIPTS_DIR/post-unstack.sh no-localrc
-#source $SCRIPTS_DIR/stop-keero.sh no-localrc
+#source $SCRIPTS_DIR/stop-murano.sh no-localrc
 #===============================================================================
 
 

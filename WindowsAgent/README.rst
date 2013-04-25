@@ -1,7 +1,7 @@
-Glazier Windows Agent README
+Murano Windows Agent README
 ============================
 
-Glazier Windows Agent is a component that does all the work on a target node.
+Murano Windows Agent is a component that does all the work on a target node.
 Currently only Windows nodes are supported.
 
 Agent embeddes PowerShell engine which is the only execution engine.
@@ -25,4 +25,4 @@ All necessary configuration is performed during instance creation process. No ma
 
 SEE ALSO
 --------
-* `Glazier <http://glazier.mirantis.com>`__
+* `Murano <http://murano.mirantis.com>`__
