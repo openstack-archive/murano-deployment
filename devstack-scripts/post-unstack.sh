@@ -32,5 +32,5 @@ sleep 2
 
 
 echo "* Unmounting ramdrive ..."
-umount /opt/stack/data/nova/instances
+sudo umount /opt/stack/data/nova/instances
 
