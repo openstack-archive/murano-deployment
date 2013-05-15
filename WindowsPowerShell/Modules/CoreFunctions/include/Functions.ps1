@@ -208,12 +208,15 @@ public static extern IntPtr SendMessageTimeout(
 
 Function Start-Program {
 	param (
-		[String] $FilePath,
-		[String[]] $ArgumentList = @(' '),
-		[Int] $Timeout = 0,
-		[Switch] $NoWait,
-		[Switch] $PassThru,
-        [String] $WorkingDir = (Get-Location).ProviderPath
+        [String] $FilePath,
+        [String[]] $ArgumentList = @(' '),
+        [Int] $Timeout = 0,
+        [Switch] $NoWait,
+        [Switch] $RedirectStreams,
+        [Switch] $PassThru,
+        [String] $WorkingDir = (Get-Location).ProviderPath,
+        [Hashtable] $Environment = @{},
+        [Switch] $LoadUserProfile
 	)
 
 	trap {
@@ -223,55 +226,90 @@ Function Start-Program {
 
 	Write-Log "Starting program: $FilePath $ArgumentList"
 		
-	$ProcessStartInfo = New-Object System.Diagnostics.ProcessStartInfo
-	$ProcessStartInfo.FileName = $FilePath
-	$ProcessStartInfo.Arguments = $ArgumentList
-	$ProcessStartInfo.CreateNoWindow = $true
-	$ProcessStartInfo.RedirectStandardOutput = $true
-	$ProcessStartInfo.RedirectStandardError = $true
-	$ProcessStartInfo.UseShellExecute = $false
+    # Configure ProcessStartInfo
+    #---------------------------
+    $ProcessStartInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $ProcessStartInfo.FileName = $FilePath
+    $ProcessStartInfo.Arguments = $ArgumentList
+    $ProcessStartInfo.CreateNoWindow = $true
+    $ProcessStartInfo.UseShellExecute = $false
     $ProcessStartInfo.WorkingDirectory = $WorkingDir
-		
-	$Process = [System.Diagnostics.Process]::Start($ProcessStartInfo)
-		
-	if ($NoWait) {
-		if ($PassThru) {
-			return $Process
-		}
-		else {
-			return $null
-		}
-	}
-	else {
-		if ($Timeout -eq 0) {
-			$Process.WaitForExit()
-		}
-		else {
-			$Process.WaitForExit($Timeout)
-		}
-	}
-	
-    $ProcessResult = New-Object PSObject |
-        Add-Member -Name "ExitCode" -MemberType NoteProperty -Value $Process.ExitCode -PassThru |
-        Add-Member -Name "StdOut" -MemberType NoteProperty -Value $Process.StandardOutput.ReadToEnd() -PassThru |
-        Add-Member -Name "StdErr" -MemberType NoteProperty -Value $Process.StandardError.ReadToEnd() -PassThru
     
-	$Process = $null
+    if ($RedirectStreams) {
+        $ProcessStartInfo.RedirectStandardOutput = $true
+        $ProcessStartInfo.RedirectStandardError = $true
+    }
     
-    Write-Log ( "STDOUT:`n{0}" -f $ProcessResult.StdOut )
-    Write-Log ":STDOUT"
-		
-	Write-Log ( "STDERR:`n{0}" -f $ProcessResult.StdErr )
-    Write-Log ":STDERR"
-		
-	Write-Log "Program has finished with exit code ($($ProcessResult.ExitCode))"
+    if ($LoadUserProfile) {
+        $ProcessStartInfo.LoadUserProfile = $true
+    }
 
-	if ($PassThru) {
-		return $ProcessResult
-	}
-	else {
-		return $null
-	}
+    foreach ($key in $Environment.Keys) {
+        Write-Log "Adding envvar '$key' --> '$($Environment[$key])'"
+        $ProcessStartInfo.EnvironmentVariables.Add($key, $Environment[$key])
+    }
+    #---------------------------
+    
+    $Process = [System.Diagnostics.Process]::Start($ProcessStartInfo)
+        
+    $Result = New-Object PSObject |
+        Add-Member -Name "ExitCode" -MemberType NoteProperty -Value -1 -PassThru |
+        Add-Member -Name "StdOut" -MemberType NoteProperty -Value @() -PassThru |
+        Add-Member -Name "StdErr" -MemberType NoteProperty -Value @() -PassThru
+
+    if ($NoWait) {
+        if ($PassThru) {
+            return $Process
+        }
+        else {
+            return $null
+        }
+    }
+    else {
+        $TimeSpent = 0
+        $ProcessHasExited = $false
+        $TimeoutExpired = $false
+        while ((-not $TimeoutExpired) -and (-not $ProcessHasExited)) {
+            if ($Process.HasExited -eq $true) {
+                $ProcessHasExited = $true
+            }
+            
+            if ($RedirectStreams) {
+                $Result.StdOut += @($Process.StandardOutput.ReadToEnd())
+                $Result.StdErr += @($Process.StandardError.ReadToEnd())
+            }
+            
+            Start-Sleep -Seconds 1
+            
+            if ($Timeout -ne 0) {
+                $TimeSpent++
+                if ($TimeSpent -ge $Timeout) {
+                    $TimeoutExpired = $true
+                    return $Result
+                }
+            }
+        }
+    }
+    
+    $Result.ExitCode = $Process.ExitCode
+    $Process = $null
+    
+    if ($RedirectStreams) {
+        Write-Log ( "STDOUT:`n{0}" -f $Result.StdOut )
+        Write-Log ":STDOUT"
+        
+        Write-Log ( "STDERR:`n{0}" -f $Result.StdErr )
+        Write-Log ":STDERR"
+    }
+    
+    Write-Log "Program has finished with exit code ($($Result.ExitCode))"
+
+    if ($PassThru) {
+        return $Result
+    }
+    else {
+        return $null
+    }
 }
 New-Alias -Name Exec -Value Start-Program
 
