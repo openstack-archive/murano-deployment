@@ -39,16 +39,18 @@ function glance_image_create {
 # Executing post-stack actions
 #===============================================================================
 
-#if [[ ',standalone,compute,' =~ ,$INSTALL_MODE, ]] ; then
-#    echo "Adding iptables rule to allow Internet access from instances..."
-#    __iptables_rule="POSTROUTING -t nat -s '$FIXED_RANGE' ! -d '$FIXED_RANGE' -j MASQUERADE"
-#    sudo iptables -C $__iptables_rule
-#    if [[ $? == 0 ]] ; then
-#        echo "Iptables rule already exists."
-#    else
-#        sudo iptables -A $__iptables_rule
-#    fi
-#fi
+if [[ $NETWORK_MODE == "nova" ]] ; then
+	if [[ ',standalone,compute,' =~ ,$INSTALL_MODE, ]] ; then
+	    echo "Adding iptables rule to allow Internet access from instances..."
+	    __iptables_rule="POSTROUTING -t nat -s '$FIXED_RANGE' ! -d '$FIXED_RANGE' -j MASQUERADE"
+	    sudo iptables -C $__iptables_rule
+	    if [[ $? == 0 ]] ; then
+	        echo "Iptables rule already exists."
+	    else
+	        sudo iptables -A $__iptables_rule
+	    fi
+	fi
+fi
 
 
 if [[ ',standalone,compute,' =~ ,$INSTALL_MODE, ]] ; then
@@ -108,25 +110,27 @@ else
 fi
 
 
-quantum net-create Public \
-	--tenant-id admin \
-	--shared \
-	--provider:network_type flat \
-	--provider:physical_network Public
+if [[ $NETWORK_MODE == "quantum" ]] ; then
+	quantum net-create Public \
+		--tenant-id admin \
+		--shared \
+		--provider:network_type flat \
+		--provider:physical_network Public
 
-quantum subnet-create \
-	--tenant-id admin \
-	--allocation-pool start=$LAB_ALLOCATION_START,end=$LAB_ALLOCATION_END \
-	--dns-nameserver $LAB_DNS_SERVER_1 \
-	--dns-nameserver $LAB_DNS_SERVER_2 \
-	Public \
-	$LAB_FLAT_RANGE
+	quantum subnet-create \
+		--tenant-id admin \
+		--allocation-pool start=$LAB_ALLOCATION_START,end=$LAB_ALLOCATION_END \
+		--dns-nameserver $LAB_DNS_SERVER_1 \
+		--dns-nameserver $LAB_DNS_SERVER_2 \
+		Public \
+		$LAB_FLAT_RANGE
 
-quantum port-create \
-	--tenant-id admin \
-	--device-id network:dhcp \
-	--fixed-ip subnet=Public,ip_address=$LAB_ALLOCATION_START \
-	Public
+	quantum port-create \
+		--tenant-id admin \
+		--device-id network:dhcp \
+		--fixed-ip subnet=Public,ip_address=$LAB_ALLOCATION_START \
+		Public
+fi
 
 #===============================================================================
 

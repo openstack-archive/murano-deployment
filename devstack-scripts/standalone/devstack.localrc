@@ -18,10 +18,13 @@ SERVICE_TOKEN=tokentoken
 
 # Enable HEAT
 ENABLED_SERVICES+=,heat,h-api,h-api-cfn,h-api-cw,h-eng
-# Enable QUANTUM
-ENABLED_SERVICES+=,q-svc,q-agt,q-dhcp,q-l3,q-meta,quantum
-# Disable NOVA-NETWORK
-DISABLED_SERVICES=n-net
+
+if [[ $NETWORK_MODE == "quantum" ]] ; then
+	# Enable QUANTUM
+	ENABLED_SERVICES+=,q-svc,q-agt,q-dhcp,q-l3,q-meta,quantum
+	# Disable NOVA-NETWORK
+	DISABLED_SERVICES=n-net
+fi
 
 SCREEN_LOGDIR=/opt/stack/log/
 LOGFILE=$SCREEN_LOGDIR/stack.sh.log
