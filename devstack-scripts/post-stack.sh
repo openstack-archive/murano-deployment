@@ -42,7 +42,7 @@ function glance_image_create {
 if [[ $NETWORK_MODE == "nova" ]] ; then
 	if [[ ',standalone,compute,' =~ ,$INSTALL_MODE, ]] ; then
 	    echo "Adding iptables rule to allow Internet access from instances..."
-	    __iptables_rule="POSTROUTING -t nat -s '$FIXED_RANGE' ! -d '$FIXED_RANGE' -j MASQUERADE"
+	    __iptables_rule="POSTROUTING -t nat -s $FIXED_RANGE ! -d $FIXED_RANGE -j MASQUERADE"
 	    sudo iptables -C $__iptables_rule
 	    if [[ $? == 0 ]] ; then
 	        echo "Iptables rule already exists."
