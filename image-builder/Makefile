@@ -103,10 +103,10 @@ ${ps_modules_dir}/CoreFunctions.zip :
 
 ifndef image_name
 
-${image_list} :
+${image_list} : | build-root
 	@echo ''
 	@echo "Image name: '$@'"
-	@echo '>>>Starting make recurcievely ...'
+	@echo '>>> Starting make recurcievely ...'
 	${MAKE} -e image_name=$@ $@
 	@echo '<<< done.'
 
@@ -115,7 +115,7 @@ else
 ${image_name} : ${shared_images_dir}/${image_name}.qcow2
 
 
-${shared_images_dir}/${image_name}.qcow2 : test-build-files ${libvirt_images_dir}/${image_name}.flp
+${shared_images_dir}/${image_name}.qcow2 : ${libvirt_images_dir}/${image_name}.flp | test-build-files
 	@echo ''
 	@echo '>>> Starting install-vm ...'
 	env BUILD_ROOT=${build_root} VM_NAME=${image_name} FLOPPY_IMG=${image_name}.flp ${build_root}/install-vm.sh
@@ -135,7 +135,8 @@ ${libvirt_images_dir}/${image_name}.flp : ${shared_files_dir}/${image_name}/auto
 	@echo '<<< done.'
 
 
-${shared_files_dir}/${image_name}/autounattend.xml : ;
+${shared_files_dir}/${image_name}/% : ${CURDIR}/share/files/${image_name}/%
+	cp $< $@
 
 endif
 
