@@ -10,7 +10,7 @@ shared_images_dir := ${build_root}/share/images
 libvirt_images_dir := ${build_root}/libvirt/images
 ps_modules_dir := ${CURDIR}/../WindowsPowerShell
 
-image_list := ws-2008r2-core ws-2012-core
+image_list := ws-2008r2-core ws-2012-core ws-2012-std
 
 dirs := ${build_root}
 dirs += ${libvirt_images_dir}
@@ -104,9 +104,11 @@ ${ps_modules_dir}/CoreFunctions.zip :
 ifndef image_name
 
 ${image_list} :
+	@echo ''
 	@echo "Image name: '$@'"
-	@echo "Starting make recurcievely ..."
+	@echo '>>>Starting make recurcievely ...'
 	${MAKE} -e image_name=$@ $@
+	@echo '<<< done.'
 
 else
 
@@ -114,16 +116,23 @@ ${image_name} : ${shared_images_dir}/${image_name}.qcow2
 
 
 ${shared_images_dir}/${image_name}.qcow2 : test-build-files ${libvirt_images_dir}/${image_name}.flp
+	@echo ''
+	@echo '>>> Starting install-vm ...'
 	env BUILD_ROOT=${build_root} VM_NAME=${image_name} FLOPPY_IMG=${image_name}.flp ${build_root}/install-vm.sh
+	@echo '<<< done.'
 
 
 ${libvirt_images_dir}/${image_name}.flp : ${shared_files_dir}/${image_name}/autounattend.xml
+	@echo ''
+	@echo '>>> Generating floppy image ...'
 	dd bs=512 count=2880 if=/dev/zero of=${libvirt_images_dir}/${image_name}.flp
 	mkfs.msdos ${libvirt_images_dir}/${image_name}.flp
 	-mkdir -p /media/floppy/
+	-umount /media/floppy
 	mount -o loop ${libvirt_images_dir}/${image_name}.flp /media/floppy/
 	cp ${shared_files_dir}/${image_name}/autounattend.xml /media/floppy/autounattend.xml
 	umount /media/floppy
+	@echo '<<< done.'
 
 
 ${shared_files_dir}/${image_name}/autounattend.xml : ;
