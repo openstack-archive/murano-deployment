@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # automation job script
  
 
@@ -6,7 +6,8 @@
 #   env BUILD_ROOT=/opt install-vm.sh
 # PLEASE BE CAREFUL RENAMING THEM!
 BUILD_ROOT=${BUILD_ROOT:='/opt/build-system'}
-VM_NAME=${VM_NAME:='WinServ2k12-custom'}-REF
+IMAGE_NAME=${IMAGE_NAME:='ws-2012-std'}
+VM_NAME=${VM_NAME:=$IMAGE_NAME-REF}
 VM_IMG_SIZE='40G'
 BOOT_ISO=${BOOT_ISO:='ws-2012-eval.iso'}
 VIRTIO_ISO=${VIRTIO_ISO:='virtio-win-0.1-52.iso'}
@@ -16,9 +17,11 @@ FLOPPY_IMG=${FLOPPY_IMG:='floppy.img'}
 LIBVIRT_IMAGES_DIR=$BUILD_ROOT/libvirt/images
 HDD_IMG_NAME="$VM_NAME.img"
 VM_IMG_PATH="$LIBVIRT_IMAGES_DIR/$HDD_IMG_NAME"
-VM_REF_IMG_PATH="$BUILD_ROOT/share/images/ws-2012-core.qcow2"
+VM_REF_IMG_PATH="$BUILD_ROOT/share/images/$IMAGE_NAME.qcow2"
 
 
+# Tuncating VM name to 50 chars
+VM_NAME=${VM_NAME:0:50}
 
 # Functions
 #------------------------------------------------------------------------------

@@ -138,7 +138,7 @@
                 <SynchronousCommand wcm:action="add">
                     <Order>7</Order>
                     <Description>Windows post install process with sysprep</Description>
-                    <CommandLine>%WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe -Command &quot;Start-Sleep -s 2; &amp; %SYSTEMDRIVE%\murano\scripts\wpi.ps1&quot;</CommandLine>
+                    <CommandLine>%WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe -Command &quot;Start-Sleep -s 2; &amp; %SYSTEMDRIVE%\murano\scripts\ws-2012-std\wpi.ps1&quot;</CommandLine>
                 </SynchronousCommand>
             </FirstLogonCommands>
         </component>
