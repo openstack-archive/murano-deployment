@@ -1,7 +1,7 @@
 include Deploy-WebApp.ps1
 
 call Import-Module Name="CoreFunctions"
-call Deploy-WebApp URL="git://github.com/Mirantis/murano-mvc-demo.git"
+call Deploy-WebAppFromGit URL="git://github.com/Mirantis/murano-mvc-demo.git"
 
 reboot 0
 
