@@ -64,6 +64,8 @@ http://www.iis.net/learn/manage/powershell/powershell-snap-in-creating-web-sites
     #Set-WebConfigurationProperty -Filter '/system.WebServer/security/authentication/basicAuthentication' -Name 'enabled' -Value $false -Location $Name
 	
 	$WebSite.Start()
+
+	Add-Content -Path "C:\Windows\System32\Drivers\etc\hosts" -Value "$Name   127.0.0.1"
 }
 
 
