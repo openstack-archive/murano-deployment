@@ -14,12 +14,12 @@ class murano::conductor (
     rabbitmq_user { "$rabbit_user":
         admin    => true,
         password => "$rabbit_password",
-        provider => 'rabbitmqctl';
+        provider => 'rabbitmqctl',
     }
 
     rabbitmq_vhost { "$rabbit_vhost":
         ensure   => present,
-        provider => 'rabbitmqctl';
+        provider => 'rabbitmqctl',
     }
 
     rabbitmq_user_permissions { "$rabbit_user@$rabbit_vhost":
@@ -34,7 +34,7 @@ class murano::conductor (
         provider => git,
         source   => 'git://github.com/stackforge/murano-conductor.git',
         revision => 'release-0.1',
-        alias    => 'step1';
+        alias    => 'step1',
     }
 
     exec {'Install new version':
@@ -43,7 +43,7 @@ class murano::conductor (
         user     => 'root',
         provider => shell,
         cwd      => '/tmp/murano-conductor',
-        alias    => 'step2';
+        alias    => 'step2',
     }
 
     exec {'Copy configuration files':
@@ -53,7 +53,7 @@ class murano::conductor (
         provider => shell,
         cwd      => '/etc/murano-conductor',
         path     => '/bin',
-        alias    => 'step3';
+        alias    => 'step3',
     }
 
     ini_setting {'Modify RabbitMQ vhost in configuration file':
@@ -63,7 +63,7 @@ class murano::conductor (
         section  => 'rabbitmq',
         setting  => 'virtual_host',
         value    => "$rabbit_vhost",
-        ensure   => present;
+        ensure   => present,
     }
 
     ini_setting {'Modify RabbitMQ user in configuration file':
@@ -73,7 +73,7 @@ class murano::conductor (
         section  => 'rabbitmq',
         setting  => 'login',
         value    => "$rabbit_user",
-        ensure   => present;
+        ensure   => present,
     }
 
     ini_setting {'Modify RabbitMQ password in configuration file':
@@ -83,7 +83,7 @@ class murano::conductor (
         section  => 'rabbitmq',
         setting  => 'password',
         value    => "$rabbit_password",
-        ensure   => present;
+        ensure   => present,
     }
 
     ini_setting {'Modify RabbitMQ host IP in configuration file':
@@ -93,7 +93,7 @@ class murano::conductor (
         section  => 'rabbitmq',
         setting  => 'host',
         value    => "$rabbit_host",
-        ensure   => present;
+        ensure   => present,
     }
 
     ini_setting {'Modify Keystone auth url in configuration file':
@@ -103,12 +103,12 @@ class murano::conductor (
         section  => 'heat',
         setting  => 'auth_url',
         value    => "$keystone_url",
-        ensure   => present;
+        ensure   => present,
     }
 
     service {'murano-conductor':
         ensure     => running,
         hasrestart => true,
-        hasstatus  => true;
+        hasstatus  => true,
     }
 }
