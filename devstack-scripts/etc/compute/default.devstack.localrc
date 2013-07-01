@@ -1,23 +1,29 @@
 # Devstack's config file for COMPUTE intallation
 
+lab_controller=
+default_password=swordfish
 
-lab_id=102
-lab_password=swordfish
-lab_controller=172.18.124.100
+# Do NOT remove next lines!
+#--------------------------
+# Uncomment the following line to fetch specified branch
+#source /etc/devstack-scripts/branchrc master
+GetOSVersion
+SCREEN_LOGDIR=/opt/stack/log/
+#--------------------------
 
 
 SERVICE_HOST=$lab_controller
-HOST_IP=172.18.124.${lab_id}
+
+HOST_IP=
+
 MULTI_HOST=1
 
-
 FLAT_INTERFACE=eth1
-#PUBLIC_INTERFACE=eth0.261
-
 
 FIXED_RANGE=192.168.102.0/24
 FIXED_NETWORK_SIZE=254
-FLOATING_RANGE=172.18.124.228/27
+
+FLOATING_RANGE=
 
 
 MYSQL_HOST=$lab_controller
@@ -31,17 +37,17 @@ VNCSERVER_LISTEN=$HOST_IP
 VNCSERVER_PROXYCLIENT_ADDRESS=$HOST_IP
 
 
-ADMIN_PASSWORD=$lab_password
-MYSQL_PASSWORD=$lab_password
-RABBIT_PASSWORD=$lab_password
-SERVICE_PASSWORD=$lab_password
+ADMIN_PASSWORD=$default_password
+MYSQL_PASSWORD=$default_password
+RABBIT_PASSWORD=$default_password
+SERVICE_PASSWORD=$default_password
+
 SERVICE_TOKEN=tokentoken
 
 
 ENABLED_SERVICES=n-cpu,n-net,n-api,n-vol,n-novnc
 
 
-SCREEN_LOGDIR=/opt/stack/log/
 LOGFILE=$SCREEN_LOGDIR/stack.sh.log
 
 
@@ -49,3 +55,5 @@ API_RATE_LIMIT=False
 
 
 EXTRA_OPTS=(force_config_drive=true libvirt_images_type=qcow2 force_raw_images=false sql_connection=mysql://root:${MYSQL_PASSWORD}@${MYSQL_HOST}/nova?charset=utf8)
+
+

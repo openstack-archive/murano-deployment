@@ -1,0 +1,49 @@
+# Devstack's localrc for CONTROLLER installation
+
+default_password=swordfish
+
+# Do NOT remove next lines!
+#--------------------------
+# Uncomment the following line to fetch specified branch
+#source /etc/devstack-scripts/branchrc master
+GetOSVersion
+SCREEN_LOGDIR=/opt/stack/log/
+#--------------------------
+#
+
+MULTI_HOST=1
+
+HOST_IP=
+
+FLAT_INTERFACE=eth1
+
+
+FIXED_RANGE=192.168.102.0/24
+FIXED_NETWORK_SIZE=254
+
+PUBLIC_RANGE=
+
+
+ADMIN_PASSWORD=$default_password
+MYSQL_PASSWORD=$default_password
+RABBIT_PASSWORD=$default_password
+SERVICE_PASSWORD=$default_password
+
+SERVICE_TOKEN=tokentoken
+
+
+disable_service n-cpu
+disable_service n-vol
+
+
+ENABLED_SERVICES+=,heat,h-api,h-api-cfn,h-api-cw,h-eng
+
+
+LOGFILE=$SCREEN_LOGDIR/stack.sh.log
+
+
+API_RATE_LIMIT=False
+
+
+EXTRA_OPTS=(force_config_drive=true libvirt_images_type=qcow2 force_raw_images=false)
+

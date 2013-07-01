@@ -1,7 +1,7 @@
 DevStack Scripts
 ================
 
-A bunch of scripts that helps to deploy DevStack in a lab environment.
+A bunch of scripts that help to deploy DevStack in a lab environment.
 
 Single Node and Multi Node deployment modes are supported.
 
@@ -10,36 +10,48 @@ However, these scripts require careful configuration before being applied to the
 Quick Start
 ===========
 
-As *root* do the steps below:
+As user *root* do the steps below:
 
-* Create group *stack* and user *stack*
-
-::
-
-    groupadd stack
-    useradd -g stack -s /bin/bash -m stack
-
-* Alter sudoers config
+* Create folder for cloned repository
 
 ::
 
-    echo 'stack ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/stack
-    chmod 0440 /etc/sudoers.d/stack
+	mkdir -p /opt/git
+	cd /opt/git
 
-* Clone this repo to *stack* home dir
-
-::
-
-    su stack
-    cd
-    git clone https://github.com/Mirantis/murano-deployment.git
-    cd murano-deployment/devstack-scripts
-
-* Check configuration files and start devstack
+* Clone the *murano-deployment* repo
 
 ::
 
-    ./start-devstack.sh standalone
+	git clone git://github.com/stackforge/murano-deployment.git
+
+* Change directory to cloned repo and execute *install-devstack.sh*
+
+::
+
+	cd murano-deployment/devstack-scripts
+	./install-devstack.sh
+
+* Configure devstack's localrc file that will replace one in devstack's folder
+
+::
+
+	vim /etc/devstack-scripts/standalone/$(hostname).devstack.localrc
+
+* Configure devstack-scripts's localrc file
+
+::
+
+	vim /etc/devstack-scripts/$(hostname).devstack-scripts.localrc
+
+
+As user *stack* run *start-devstack.sh*:
+
+::
+
+	su stack
+	cd /opt/git/murano-deployment/devstack-scripts
+	./start-devstack.sh
 
 
 SEE ALSO

@@ -1,0 +1,39 @@
+# Devstack's config file for STANDALONE installation
+
+default_password=swordfish
+
+# Do NOT remove next lines!
+#--------------------------
+# Uncomment the following line to fetch specified branch
+#source /etc/devstack-scripts/branchrc master
+GetOSVersion
+SCREEN_LOGDIR=/opt/stack/log/
+#--------------------------
+
+HOST_IP=
+
+FLAT_INTERFACE=
+
+FIXED_RANGE=10.0.0.0/24
+
+FLOATING_RANGE=
+
+ADMIN_PASSWORD=$default_password
+MYSQL_PASSWORD=$default_password
+RABBIT_PASSWORD=$default_password
+SERVICE_PASSWORD=$default_password
+
+SERVICE_TOKEN=tokentoken
+
+# Enable HEAT
+ENABLED_SERVICES+=,heat,h-api,h-api-cfn,h-api-cw,h-eng
+
+IMAGE_URLS+=",http://fedorapeople.org/groups/heat/prebuilt-jeos-images/F17-x86_64-cfntools.qcow2"
+
+LOGFILE=$SCREEN_LOGDIR/stack.sh.log
+
+API_RATE_LIMIT=False
+
+EXTRA_OPTS=(force_config_drive=true libvirt_images_type=qcow2 force_raw_images=false)
+
+

@@ -1,30 +1,73 @@
 #!/bin/bash
 
 
-# Checks an environment variable is not set or has length 0 OR if the
-# exit code is non-zero and prints "message" and exits
-# NOTE: env-var is the variable name without a '$'
-# die_if_not_set env-var "message"
-function die_if_not_set() {
-    local exitcode=$?
-    set +o xtrace
-    local evar=$1; shift
-    if ! is_set $evar || [ $exitcode != 0 ]; then
-        if [[ -z "$1" ]] ; then
-            die "Env var '$evar' is not set!"
+type -t die
+if [ $? -ne 0 ] ; then
+    function die() {
+        _log "===== Script interrupted ====="
+        echo "$@"
+        echo ''
+        exit 1
+    }
+fi
+
+
+
+function bool() {
+    local var=${1:-}
+    local default=${2:-}
+
+    var="${var,,}"                          # do lowercase
+    var="${var#"${var%%[![:space:]]*}"}"    # remove leading whitespace characters
+    var="${var%"${var##*[![:space:]]}"}"    # remove trailing whitespace characters
+
+    if [[ -z $var ]] ; then
+        if [[ -z $default ]] ; then
+            echo 'False'
+            return
         else
-            die $@
+            echo $default
+            return
         fi
     fi
+
+    if [[ "$var" =~ ^[[:digit:]]+$ ]] ; then
+        if [[ $var == 0 ]] ; then
+            echo 'False'
+            return
+        else
+            echo 'True'
+            return
+        fi
+    fi
+
+    if [[ "$var"  =~ ^[[:alpha:]]+$ ]] ; then
+        if [[ "$var" == 'true' ]] ; then
+            echo 'True'
+            return
+        else
+            echo 'False'
+            return
+        fi
+    fi
+    
+    echo 'False'
+    return
 }
 
 
 
 function restart_service {
-    while [[ -n "$1" ]] ; do
-        _echo "Restarting service '$1' ..."
-        sudo service $1 restart
-        shift 1
+    while [[ -n ${1:-} ]] ; do
+        local err=0
+        sudo service $1 status || err=1
+        if [[ $err -eq 0 ]] ; then
+            _log "Restarting service '$1' ..."
+            sudo service $1 restart
+        else
+            _log "WARNING: Unable to get status of the service '$1'"
+        fi
+        shift
     done
 }
 
@@ -35,8 +78,8 @@ function move_mysql_data_to_ramdrive {
 
     # Moving MySQL database to tmpfs
     #-------------------------------
-    if [[ $( trueorfalse True $MYSQL_DB_TMPFS ) == "True" ]] ; then
-        die_if_not_set MYSQL_DB_TMPFS_SIZE
+    if [[ $( bool "$MYSQL_DB_TMPFS" 'True' ) == "True" ]] ; then
+        #die_if_not_set MYSQL_DB_TMPFS_SIZE
         mount_dir=/var/lib/mysql
         sudo -s << EOF
 echo "Stopping MySQL Server"
@@ -67,7 +110,7 @@ echo "Starting MySQL Server"
 service mysql start
 EOF
     else
-        _echo "MYSQL_DB_TMPFS = '$MYSQL_DB_TMPFS'"
+        _log "MYSQL_DB_TMPFS = '$MYSQL_DB_TMPFS'"
     fi
     #-------------------------------
 }
@@ -76,8 +119,8 @@ EOF
 function move_nova_cache_to_ramdrive {
     # Moving nova images cache to tmpfs
     #----------------------------------
-    if [[ $(trueorfalse True $NOVA_CACHE_TMPFS) == "True" ]] ; then
-        die_if_not_set NOVA_CACHE_TMPFS_SIZE
+    if [[ $(bool "$NOVA_CACHE_TMPFS" 'True') == "True" ]] ; then
+        #die_if_not_set NOVA_CACHE_TMPFS_SIZE
         mount_dir=/opt/stack/data/nova/instances
         sudo -s << EOF
 umount $mount_dir
@@ -86,7 +129,7 @@ chmod 775 $mount_dir
 chown stack:stack $mount_dir
 EOF
     else
-        _echo "NOVA_CACHE_TMPFS = '$NOVA_CACHE_TMPFS'"
+        _log "NOVA_CACHE_TMPFS = '$NOVA_CACHE_TMPFS'"
     fi
     #----------------------------------
 }
@@ -94,7 +137,7 @@ EOF
 
 function check_if_folder_exists {
     if [[ ! -d "$1" ]] ; then
-        _echo "Folder '$1' not exists!"
+        _log "Folder '$1' not exists!"
         return 1
     fi
     return 0
@@ -104,50 +147,58 @@ function check_if_folder_exists {
 function validate_install_mode {
     case $INSTALL_MODE in
         'standalone')
-            check_if_folder_exists "$SCRIPTS_DIR/standalone" || exit
+            check_if_folder_exists "$SCRIPTS_DIR/etc/standalone" || exit
         ;;
         'multihost')
-            check_if_folder_exists "$SCRIPTS_DIR/controller" || exit
-            check_if_folder_exists "$SCRIPTS_DIR/compute" || exit
+            check_if_folder_exists "$SCRIPTS_DIR/etc/controller" || exit
+            check_if_folder_exists "$SCRIPTS_DIR/etc/compute" || exit
         ;;
         'controller')
-            check_if_folder_exists "$SCRIPTS_DIR/controller" || exit
+            check_if_folder_exists "$SCRIPTS_DIR/etc/controller" || exit
         ;;
         'compute')
-            check_if_folder_exists "$SCRIPTS_DIR/compute" || exit
+            check_if_folder_exists "$SCRIPTS_DIR/etc/compute" || exit
         ;;
         *)
-            _echo "Wrong install mode '$INSTALL_MODE'"
+            _log "Wrong install mode '$INSTALL_MODE'"
             exit
         ;;
     esac
 }
 
 
-function update_devstack_localrc {
-    local __install_mode=$1
+function update_devstack_local_files {
+    local install_mode=${1:-}
+    local config_name=${2:-'devstack'}
     
-    [[ -z "$__install_mode" ]] \
+    [[ -z "$install_mode" ]] \
         && die "Install mode for update_devstack_localrc not provided!"
 
     # Replacing devstack's localrc config
     #------------------------------------
-    devstack_localrc="$SCRIPTS_DIR/$__install_mode/devstack.localrc"
-
-    if [[ -f /etc/devstack-scripts/$__install_mode/devstack.localrc ]] ; then
+    local file="/etc/devstack-scripts/$install_mode/$config_name.devstack.localrc"
+    if [[ -f $file ]] ; then
         rm -f "$DEVSTACK_DIR/localrc"
-        cp /etc/devstack-scripts/$__install_mode/devstack.localrc "$DEVSTACK_DIR/localrc"
-    elif [[ -f $devstack_localrc ]] ; then
-        rm -f "$DEVSTACK_DIR/localrc"
-        cp $devstack_localrc "$DEVSTACK_DIR/localrc"
+        cp $file "$DEVSTACK_DIR/localrc"
     else
-        _echo "File 'devstack.localrc' not found!"
+        die "File '$file' not found!"
+    fi
+    #------------------------------------
+
+    # Replacing devstack's local.sh config
+    #------------------------------------
+    local file="/etc/devstack-scripts/$install_mode/$config_name.devstack.local.sh"
+    if [[ -f $file ]] ; then
+        rm -f "$DEVSTACK_DIR/local.sh"
+        cp $file "$DEVSTACK_DIR/local.sh"
+    else
+        die "File '$file' not found!"
     fi
     #------------------------------------
 }
 
 
-function _echo {
+function _log {
     echo "[$(hostname)] $@"
 }
 
