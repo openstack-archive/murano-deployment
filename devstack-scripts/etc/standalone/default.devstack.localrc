@@ -4,8 +4,6 @@ default_password=swordfish
 
 # Do NOT remove next lines!
 #--------------------------
-# Uncomment the following line to fetch specified branch
-#source /etc/devstack-scripts/branchrc master
 GetOSVersion
 SCREEN_LOGDIR=/opt/stack/log/
 #--------------------------

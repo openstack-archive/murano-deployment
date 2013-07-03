@@ -132,6 +132,7 @@ source $DEVSTACK_DIR/openrc admin admin
 #===============================================================================
 _log "* Executing post-stack actions ..."
 
+#<FIXME>
 if [[ $NETWORK_MODE == 'nova' ]] ; then
     if [[ ',standalone,compute,' =~ ,$INSTALL_MODE, ]] ; then
         _log "Adding iptables rule to allow Internet access from instances..."
@@ -144,7 +145,7 @@ if [[ $NETWORK_MODE == 'nova' ]] ; then
         fi
     fi
 fi
-
+#</FIXME>
 
 if [[ ',standalone,compute,' =~ ,$INSTALL_MODE, ]] ; then
     _log "Mouting nova cache as a ramdrive"
@@ -154,53 +155,6 @@ fi
 
 if [[ $INSTALL_MODE == 'compute' ]] ; then
     return
-fi
-
-
-if [[ -z "$(sudo rabbitmqctl list_users | grep murano)" ]] ; then
-    _log "Adding RabbitMQ 'murano' user"
-    sudo rabbitmqctl add_user murano murano
-else
-    _log "User 'Murano' already exists."
-fi
-
-
-if [[ -z "$(sudo rabbitmq-plugins list -e | grep rabbitmq_management)" ]] ; then
-    _log "Enabling RabbitMQ management plugin"
-    sudo rabbitmq-plugins enable rabbitmq_management
-    
-    _log "Restarting RabbitMQ ..."
-    restart_service rabbitmq-server
-else
-    _log "RabbitMQ management plugin already enabled."
-fi
-
-
-_log "* Removing nova flavors ..."
-for id in $(nova flavor-list | awk '$2 ~ /[[:digit:]]/ {print $2}') ; do
-    _log "** Removing flavor '$id'"
-    nova flavor-delete $id
-done
-
-
-_log "* Creating new flavors ..."
-nova flavor-create m1.small  auto 768  40 1
-nova flavor-create m1.medium auto 1024 40 1
-nova flavor-create m1.large  auto 1280 40 2
-
-
-_log "* Creating security group rules ..."
-nova secgroup-add-rule default tcp 1 65535 0.0.0.0/0
-nova secgroup-add-rule default udp 1 65535 0.0.0.0/0
-nova secgroup-add-rule default icmp 0 0 0.0.0.0/0
-nova secgroup-add-rule default icmp 8 0 0.0.0.0/0
-
-
-if [[ -z "$(nova keypair-list | grep murano_key)" ]] ; then
-    _log "Creating keypair 'murano_key' ..."
-    nova keypair-add murano_key
-else
-    _log "Keypair 'murano_key' already exists"
 fi
 
 
@@ -225,14 +179,6 @@ if [[ $NETWORK_MODE == 'quantum' ]] ; then
         --fixed-ip subnet=Public,ip_address=$LAB_ALLOCATION_START \
         Public
 fi
-#===============================================================================
-
-
-
-# Start Muano components
-#===============================================================================
-_log "* Starting Murano components ..."
-#source $SCRIPTS_DIR/start-murano.sh no-localrc
 #===============================================================================
 
 

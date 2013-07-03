@@ -191,6 +191,7 @@ function update_devstack_local_files {
     if [[ -f $file ]] ; then
         rm -f "$DEVSTACK_DIR/local.sh"
         cp $file "$DEVSTACK_DIR/local.sh"
+        chmod +x "$DEVSTACK_DIR/local.sh"
     else
         die "File '$file' not found!"
     fi

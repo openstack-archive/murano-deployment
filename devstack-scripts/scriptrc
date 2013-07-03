@@ -2,6 +2,7 @@
 
 DEVSTACK_DIR=/home/stack/devstack
 DEVSTACK_INSTALL_DIR=/opt/stack
+DEVSTACK_BRANCH='master'
 
 SCREEN_LOGDIR=$DEVSTACK_INSTALL_DIR/log
 
@@ -12,21 +13,15 @@ NOVA_CACHE_TMPFS=false
 NOVA_CACHE_TMPFS_SIZE=24G
 
 #======================================
-if [ -z ${INSTALL_MODE:-} ] ; then
-	INSTALL_MODE='standalone'
-
-	if [[ -f /etc/devstack-scripts/install_mode ]] ; then
-    	INSTALL_MODE=$( cat /etc/devstack-scripts/install_mode )
-	fi
+INSTALL_MODE=${INSTALL_MODE:-'standalone'}
+if [[ -f /etc/devstack-scripts/install_mode ]] ; then
+	INSTALL_MODE=$(cat /etc/devstack-scripts/install_mode)
 fi
 
 
-if [ -z ${CONFIG_NAME:-} ] ; then
-	CONFIG_NAME=$(hostname)
-
-	if [[ -f /etc/devstack-scripts/config_name ]] ; then
-    	CONFIG_NAME=$(cat /etc/devstack-scripts/config_name)
-	fi
+CONFIG_NAME=${CONFIG_NAME:-$(hostname)}
+if [[ -f /etc/devstack-scripts/config_name ]] ; then
+	CONFIG_NAME=$(cat /etc/devstack-scripts/config_name)
 fi
 
 

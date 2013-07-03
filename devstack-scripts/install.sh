@@ -68,16 +68,23 @@ chown stack:stack $DEVSTACK_INSTALL_DIR
 sudo -u stack -s << EOF
 cd ~stack
 git clone git://github.com/openstack-dev/devstack.git
-echo 'GetOSVersion' > devstack/localrc
-echo "SCREEN_LOGDIR=$DEVSTACK_INSTALL_DIR/log" >> devstack/localrc
+cd devstack
+git checkout $DEVSTACK_BRANCH
+echo 'GetOSVersion' > localrc
+echo "SCREEN_LOGDIR=$DEVSTACK_INSTALL_DIR/log" >> localrc
 EOF
-
 
 
 if [ ! -d '/etc/devstack-scripts' ] ; then
 	mkdir -p /etc/devstack-scripts
 	cp -r $scripts_dir/etc/* /etc/devstack-scripts
-	touch "/etc/devstack-scripts/$(hostname).devstack-scripts.localrc"
-	touch "/etc/devstack-scripts/standalone/$(hostname).devstack.localrc"
-	touch "/etc/devstack-scripts/standalone/$(hostname).devstack.local.sh"
 fi
+
+
+cp -n "$scripts_dir/etc/default.devstack-scripts.localrc" "/etc/devstack-scripts/$(hostname).devstack-scripts.localrc"
+cp -n "$scripts_dir/etc/standalone/default.devstack.localrc" "/etc/devstack-scripts/standalone/$(hostname).devstack.localrc"
+
+cp "$scripts_dir/etc/standalone/default.devstack.local.sh" "/etc/devstack-scripts/standalone/$(hostname).devstack.local.sh"
+
+
+chown -R stack /etc/devstack-scripts
