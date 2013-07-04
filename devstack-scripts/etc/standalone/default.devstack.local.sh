@@ -52,7 +52,7 @@ function configure_murano-api {
     iniset $MURANO_API_CONF DEFAULT bind_port 8082
     iniset $MURANO_API_CONF DEFAULT log_file /var/log/murano-api.log
     iniset $MURANO_API_CONF DEFAULT sql_connection  sqlite://$MURANO_API_CONF_DIR/murano.sqlite
-    iniset $MURANO_API_CONF rabbitmq host localhost
+    iniset $MURANO_API_CONF rabbitmq host $HOST_IP
     iniset $MURANO_API_CONF rabbitmq port 5672
     iniset $MURANO_API_CONF rabbitmq virtual_host $RABBIT_VHOST
     iniset $MURANO_API_CONF rabbitmq login $RABBIT_USER
@@ -60,12 +60,18 @@ function configure_murano-api {
 
     # Setting paste
     iniset  $MURANO_API_PASTE_CONF filter:authtoken admin_tenant_name admin 
-    iniset  $MURANO_API_PASTE_CONF filter:authtoken auth_host localhost 
+    iniset  $MURANO_API_PASTE_CONF filter:authtoken auth_host $HOST_IP
     iniset  $MURANO_API_PASTE_CONF filter:authtoken auth_port 35357
     iniset  $MURANO_API_PASTE_CONF filter:authtoken auth_protocol http
     iniset  $MURANO_API_PASTE_CONF filter:authtoken admin_user admin
     iniset  $MURANO_API_PASTE_CONF filter:authtoken admin_password $SERVICE_PASSWORD
     iniset  $MURANO_API_PASTE_CONF filter:authtoken signing_dir /tmp/keystone-signing-muranoapi
+
+    # Register in Keystone
+    m_uuid=$(keystone service-create --name muranoapi --type murano --description "Murano-Api Service" | grep id | awk '{print $4}')
+    m_url=http://$HOST_IP:8082
+    m_region=RegionOne
+    keystone endpoint-create --region $m_region --service-id $m_uuid --publicurl $m_url --internalurl $m_url --adminurl $m_url
 }
 
 function configure_murano-conductor {
@@ -85,8 +91,8 @@ function configure_murano-conductor {
     iniset $MURANO_CONDUCTOR_CONF DEFAULT debug True
     iniset $MURANO_CONDUCTOR_CONF DEFAULT log_file /var/log/murano-conductor.log
     iniset $MURANO_CONDUCTOR_CONF DEFAULT data_dir /etc/murano-conductor
-    iniset $MURANO_CONDUCTOR_CONF heat auth_url http://localhost:5000/v2.0
-    iniset $MURANO_CONDUCTOR_CONF rabbitmq host localhost
+    iniset $MURANO_CONDUCTOR_CONF heat auth_url http://$HOST_IP:5000/v2.0
+    iniset $MURANO_CONDUCTOR_CONF rabbitmq host $HOST_IP
     iniset $MURANO_CONDUCTOR_CONF rabbitmq port 5672
     iniset $MURANO_CONDUCTOR_CONF rabbitmq virtual_host $RABBIT_VHOST
     iniset $MURANO_CONDUCTOR_CONF rabbitmq login $RABBIT_USER

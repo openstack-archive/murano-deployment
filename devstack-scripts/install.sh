@@ -69,6 +69,7 @@ sudo -u stack -s << EOF
 cd ~stack
 git clone git://github.com/openstack-dev/devstack.git
 cd devstack
+echo "Switching to branch '$DEVSTACK_BRANCH'"
 git checkout $DEVSTACK_BRANCH
 echo 'GetOSVersion' > localrc
 echo "SCREEN_LOGDIR=$DEVSTACK_INSTALL_DIR/log" >> localrc
