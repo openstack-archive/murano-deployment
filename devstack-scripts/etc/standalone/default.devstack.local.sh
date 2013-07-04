@@ -157,6 +157,8 @@ EOF
 
 
 #===============================================================================
+# Murano key
+MURANO_KEY_NAME=${MURANO_KEY_NAME:-murano-lb-key}
 
 # murano api service
 MURANO_API_SERVICENAME=murano-api
@@ -254,11 +256,11 @@ nova secgroup-add-rule default icmp 8 0 0.0.0.0/0
 
 # Add Murano key
 #---------------
-if [[ -z "$(nova keypair-list | grep murano_key)" ]] ; then
-    echo "Creating keypair 'murano_key' ..."
-    nova keypair-add murano_key
+if [[ -z "$(nova keypair-list | grep $MURANO_KEY_NAME)" ]] ; then
+    echo "Creating keypair '$MURANO_KEY_NAME' ..."
+    nova keypair-add $MURANO_KEY_NAME
 else
-    echo "Keypair 'murano_key' already exists"
+    echo "Keypair '$MURANO_KEY_NAME' already exists"
 fi
 #---------------
 
