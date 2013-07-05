@@ -18,7 +18,7 @@ Function ConvertTo-Base64String {
     )
     switch($PSCmdlet.ParameterSetName) {
         "FromString" {
-            [System.Text.Encoding]::UTF8.GetBytes($String)
+            $Bytes = [System.Text.Encoding]::UTF8.GetBytes($String)
             [System.Convert]::ToBase64String($Bytes)
         }
         "FromFile" {
