@@ -36,7 +36,7 @@ function Install-WebServer {
 		[String] $PrerequisitesPath
 	)
 	
-	Write-Log "--> Install-WebServerComponents"
+	Write-Log "--> Install-WebServer"
 
 	$FeatureList = @(
 		'Web-Server',
@@ -84,6 +84,6 @@ function Install-WebServer {
 		throw("Installation of 'WebApplications.exe' failed. Process exit code '$($Exec.ExitCode)'")
 	}
 
-	Write-Log "<-- Install-WebServerComponents"
+	Write-Log "<-- Install-WebServer"
 }
 
