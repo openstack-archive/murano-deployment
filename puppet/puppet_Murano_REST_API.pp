@@ -49,13 +49,13 @@ class murano::api (
         ensure   => present,
         provider => git,
         source   => 'git://github.com/stackforge/murano-api.git',
-        revision => 'release-0.1',
+        revision => 'master',
         alias    => 'step1',
     }
 
     exec {'Install new version':
         require  => Exec['step1'],
-        command  => 'git checkout release-0.1; chmod +x setup.sh; ./setup.sh purge-init; ./setup.sh install',
+        command  => 'chmod +x setup.sh; ./setup.sh purge-init; ./setup.sh install',
         user     => 'root',
         provider => shell,
         cwd      => '/tmp/murano-api',
@@ -146,8 +146,8 @@ class murano::api (
         before  => Service["murano-api"],
         require  => Exec['step3.1'],
         path     => '/etc/murano-api/murano-api.conf',
-        section  => 'DEFAULT',
-        setting  => 'sql_connection',
+        section  => 'database',
+        setting  => 'connection',
         value    => "$sql_connection",
         ensure   => present,
     }

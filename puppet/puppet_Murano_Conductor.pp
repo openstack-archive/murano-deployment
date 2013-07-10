@@ -33,13 +33,13 @@ class murano::conductor (
         ensure   => present,
         provider => git,
         source   => 'git://github.com/stackforge/murano-conductor.git',
-        revision => 'release-0.1',
+        revision => 'master',
         alias    => 'step1',
     }
 
     exec {'Install new version':
         require  => Vcsrepo['step1'],
-        command  => 'git checkout release-0.1; chmod +x setup.sh; ./setup.sh purge-init; ./setup.sh install',
+        command  => 'chmod +x setup.sh; ./setup.sh purge-init; ./setup.sh install',
         user     => 'root',
         provider => shell,
         cwd      => '/tmp/murano-conductor',
