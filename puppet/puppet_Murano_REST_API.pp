@@ -54,7 +54,7 @@ class murano::api (
     }
 
     exec {'Install new version':
-        require  => Exec['step1'],
+        require  => Vcsrepo['step1'],
         command  => 'chmod +x setup.sh; ./setup.sh purge-init; ./setup.sh install',
         user     => 'root',
         provider => shell,
@@ -198,3 +198,5 @@ class murano::api (
         hasstatus  => true,
     }
 }
+
+class { 'murano::api': }

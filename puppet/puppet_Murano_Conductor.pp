@@ -112,3 +112,5 @@ class murano::conductor (
         hasstatus  => true,
     }
 }
+
+class { 'murano::conductor': }
