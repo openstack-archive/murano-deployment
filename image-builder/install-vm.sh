@@ -5,18 +5,19 @@
 # Variables below may be changed thru 'env' command when script called like
 #   env BUILD_ROOT=/opt install-vm.sh
 # PLEASE BE CAREFUL RENAMING THEM!
-BUILD_ROOT=${BUILD_ROOT:='/opt/build-system'}
-IMAGE_NAME=${IMAGE_NAME:='ws-2012-std'}
-VM_NAME=${VM_NAME:=$IMAGE_NAME-REF}
+BUILD_ROOT=${BUILD_ROOT:-'/opt/build-system'}
+IMAGE_NAME=${IMAGE_NAME:-'ws-2012-std'}
+VM_NAME=${VM_NAME:-$IMAGE_NAME-REF}
 VM_IMG_SIZE='40G'
-BOOT_ISO=${BOOT_ISO:='ws-2012-eval.iso'}
-VIRTIO_ISO=${VIRTIO_ISO:='virtio-win-0.1-52.iso'}
-FLOPPY_IMG=${FLOPPY_IMG:='floppy.img'}
+BOOT_ISO=${BOOT_ISO:-'ws-2012-eval.iso'}
+VIRTIO_ISO=${VIRTIO_ISO:-'virtio-win-0.1-52.iso'}
+FLOPPY_IMG=${FLOPPY_IMG:-'floppy.img'}
+VM_IMG_FORMAT=${VM_IMG_FORMAT:-'raw'}
 
 # Other variables
 LIBVIRT_IMAGES_DIR=$BUILD_ROOT/libvirt/images
-HDD_IMG_NAME="$VM_NAME.img"
-VM_IMG_PATH="$LIBVIRT_IMAGES_DIR/$HDD_IMG_NAME"
+VM_IMG_NAME="$VM_NAME.$VM_IMG_FORMAT"
+VM_IMG_PATH="$LIBVIRT_IMAGES_DIR/$VM_IMG_NAME"
 VM_REF_IMG_PATH="$BUILD_ROOT/share/images/$IMAGE_NAME.qcow2"
 
 
@@ -39,7 +40,7 @@ prealloc_img() {
     echo ''
     echo '-> Allocating new image file for VM ...'
     echo "* Image file: '$VM_IMG_PATH', requested size: '$VM_IMG_SIZE'"
-    qemu-img create -f raw $VM_IMG_PATH $VM_IMG_SIZE \
+    qemu-img create -f $VM_IMG_FORMAT $VM_IMG_PATH $VM_IMG_SIZE \
       || die "Command 'qemu-img create' failed."
     echo '<- done'
 }
@@ -66,7 +67,7 @@ start_vm_install() {
       --cdrom $LIBVIRT_IMAGES_DIR/$BOOT_ISO \
       --disk path=$LIBVIRT_IMAGES_DIR/$VIRTIO_ISO,device=cdrom \
       --disk path=$LIBVIRT_IMAGES_DIR/$FLOPPY_IMG,device=floppy \
-      --disk path=$VM_IMG_PATH,format=raw,bus=virtio,io=native,cache=none \
+      --disk path=$VM_IMG_PATH,format=$VM_IMG_FORMAT,bus=virtio,io=native,cache=none \
       --network network=default,model=virtio \
       --vnc \
       --os-type=windows \
