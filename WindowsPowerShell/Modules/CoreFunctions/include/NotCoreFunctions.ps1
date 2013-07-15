@@ -52,43 +52,6 @@ Function Set-AutoLogonCredentials {
 
 
 
-Function Join-Domain {
-<#
-.SYNOPSIS
-Executes "Join domain" action.
-#>
-	param (
-		[String] $DomainName,
-		[String] $UserName,
-		[String] $Password,
-        [Switch] $AllowRestart
-	)
-	
-	$Credential = New-Credential -UserName "$DomainName\$UserName" -Password $Password
-
-	# Add the computer to the domain
-	if (Test-ComputerName -DomainName $DomainName) {
-		#Stop-Execution -Success -ExitString "Computer already joined to domain '$DomainName'"
-        Write-LogWarning "Computer already joined to domain '$DomainName'"
-	}
-	else {
-		Write-Log "Joining computer to domain '$DomainName' ..."
-		
-		Add-Computer -DomainName $DomainName -Credential $Credential -Force -ErrorAction Stop
-		
-        if ($AllowRestart) {
-            Write-Log "Restarting computer ..."
-            Restart-Computer -Force
-        }
-        else {
-		    #Stop-Execution -ExitCode 3010 -ExitString "Please restart the computer now."
-            Write-Log "Please restart the computer now."
-        }
-	}
-}
-
-
-
 Function Expand-Template {
     param (
         [String] $TemplateFile,
