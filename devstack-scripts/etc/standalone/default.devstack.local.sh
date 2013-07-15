@@ -258,7 +258,7 @@ nova secgroup-add-rule default icmp 8 0 0.0.0.0/0
 #---------------
 if [[ -z "$(nova keypair-list | grep $MURANO_KEY_NAME)" ]] ; then
     echo "Creating keypair '$MURANO_KEY_NAME' ..."
-    nova keypair-add $MURANO_KEY_NAME
+    nova keypair-add $MURANO_KEY_NAME > ~stack/.ssh/id_rsa
 else
     echo "Keypair '$MURANO_KEY_NAME' already exists"
 fi
