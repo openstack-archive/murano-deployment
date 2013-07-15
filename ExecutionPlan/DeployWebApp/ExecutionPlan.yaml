@@ -1,0 +1,13 @@
+Scripts:
+  - Deploy-WebApp.ps1
+
+Commands:
+  - Name: Import-Module
+    Arguments:
+      Name: "CoreFunctions"
+
+  - Name: Deploy-WebAppFromGit
+    Arguments: 
+      URL: "git://github.com/Mirantis/murano-mvc-demo.git"
+
+RebootOnCompletion: 0
