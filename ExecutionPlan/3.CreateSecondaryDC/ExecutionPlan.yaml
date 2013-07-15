@@ -1,0 +1,16 @@
+Scripts:
+  - Install-RoleSecondaryDomainController.ps1
+
+Commands:
+  - Name: Import-Module
+    Arguments:
+      Name: "CoreFunctions"
+
+  - Name: Install-RoleSecondaryDomainController
+    Arguments:
+      DomainName: "acme.local"
+      UserName: "Administrator"
+      Password: "P@ssw0rd123"
+      SafeModePassword: "P@ssw0rd"
+
+RebootOnCompetion: 1

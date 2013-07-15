@@ -1,0 +1,17 @@
+Scripts:
+  - Install-WebServer.ps1
+
+Commands:
+  - Name: Import-Module
+    Arguments:
+      Name: "CoreFunctions"
+
+  - Name: Copy-Prerequisites
+    Arguments:
+      Destination: "C:\Prerequisites"
+
+  - Name: Install-WebServer
+    Arguments:
+      PrerequisitesPath: "C:\Prerequisites"
+
+RebootOnCompletion: 0
