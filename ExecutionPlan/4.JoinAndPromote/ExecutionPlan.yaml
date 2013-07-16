@@ -1,6 +1,6 @@
 Scripts:
   - Install-RoleSecondaryDomainController.ps1
-  - ../WindowsPowerShell/Functions/Join-Domain.ps1
+  - ../../WindowsPowerShell/Functions/Join-Domain.ps1
 
 Commands:
   - Name: Import-Module

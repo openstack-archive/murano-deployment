@@ -1,5 +1,5 @@
 Scripts:
-  - ../WindowsPowerShell/Functions/Join-Domain.ps1
+  - ../../WindowsPowerShell/Functions/Join-Domain.ps1
 
 Commands:
   - Name: Import-Module
@@ -17,6 +17,6 @@ Commands:
       Username: "Administrator"
       Password: "P@ssw0rd123"
 
-RebootOnCompetion: 1
+RebootOnCompletion: 1
 
 

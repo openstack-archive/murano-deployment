@@ -13,4 +13,4 @@ Commands:
       Password: "P@ssw0rd123"
       SafeModePassword: "P@ssw0rd"
 
-RebootOnCompetion: 1
+RebootOnCompletion: 1
