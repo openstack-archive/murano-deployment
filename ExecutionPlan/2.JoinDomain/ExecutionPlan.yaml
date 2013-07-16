@@ -16,6 +16,7 @@ Commands:
       DomainName: "acme.local"
       Username: "Administrator"
       Password: "P@ssw0rd123"
+      OUPath: ""
 
 RebootOnCompletion: 1
 
