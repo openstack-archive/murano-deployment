@@ -1,23 +1,46 @@
 trap {
-    $_
+    Log "Exception trapped:"
+    Log ($_ -as 'string')
     $CanGo=0;
     exit
 }
 
 $CanGo=1;
-$srcDir = [IO.Path]::Combine($env:systemdrive, "Murano");
-$srcPacksPath = [IO.Path]::Combine($srcDir, "Files");
-$srcScriptsPath = [IO.Path]::Combine($srcDir, "Scripts");
-$agentDir = [IO.Path]::Combine($srcDir,"Agent");
-$modulesDir = [IO.Path]::Combine($srcDir,"Modules");
-$sysIntDir = [IO.Path]::Combine(${Env:ProgramFiles(x86)},"Sysinternals Suite");
+$srcDir = Join-Path $env:systemdrive "Murano"
+$srcPacksPath = Join-Path $srcDir "Files"
+$srcScriptsPath = Join-Path $srcDir "Scripts"
+$agentDir = Join-Path $srcDir "Agent"
+$modulesDir = Join-Path $srcDir "Modules"
+$sysIntDir = Join-Path ${Env:ProgramFiles(x86)} "Sysinternals Suite"
 #Logging levels: 0 - no output, 1 - screen only, 2 - screen and logfile
 $LogLevel=2;
 $logHorSeparator="---------------------------------------------------------------";
 #$scriptLogFile = GetLogPath($MyInvocation);
-$scriptLogFile = [IO.Path]::Combine($srcScriptsPath, "log.txt");
+$scriptLogFile = Join-Path $srcScriptsPath "log.txt"
 # Functions must be declared before their execution like in bash.
 #
+
+Function Show-Variable {
+    param (
+        [String[]] $Name
+    )
+    
+    Log logHorSeparator
+    foreach ($VarName in $Name) {
+        try {
+            $Var = Get-Variable -Name $VarName
+            $VarType = $Var.Value.GetType() -as 'string'
+            $Value = $Var.Value -as 'string'
+        }
+        catch {
+            $VarType = ''
+            $Value = '<NOT FOUND>'
+        }
+        Log ('[{0}] {1} = {2}' -f $VarType, $VarName, $Value)
+    }
+    Log logHorSeparator
+}
+
 # MSI Installer
 function installmsi()
 {
@@ -133,7 +156,7 @@ function Log()
     }
     if($LogLevel -eq 2)
     {
-        Add-Content $scriptLogFile "`n$logString";
+        Add-Content $scriptLogFile "`n$logString" -ErrorAction 'SilentlyContinue'
     }
 }
 
@@ -167,6 +190,9 @@ function GetLogPath()
     $retVal = $fullPathIncFileName.Replace($currentScriptName, "log.txt");
     return $retVal;
 }
+
+Show-Variable srcDir, srcPacksPath, srcScriptsPath, agentDir, modulesDir, sysIntDir, scriptLogFile, LogLevel
+
 #Main sequence
 Log "Creating directories...";
 CreateDir $agentDir;
@@ -226,9 +252,11 @@ foreach($file in $srcFiles)
     }    
 }
 Log $logHorSeparator;
+
 Log "Updating userdata.py for cloudcabe-init";
 & "xcopy.exe" "$srcScriptsPath\userdata.py" "C:\Program Files (x86)\CLoudbase Solutions\Cloudbase-Init\Python27\Lib\site-packages\cloudbase_init-0.9.0-py2.7.egg\cloudbaseinit\plugins\windows\" /y
 Log $logHorSeparator;
+
 #Run sysprep and Co.
 if($CanGo -eq 1)
 {
@@ -243,19 +271,16 @@ if($CanGo -eq 1)
     Log "Changing LowRiskFileTypes list"
     & reg ADD "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\Associations" /f /v "LowRiskFileTypes" /t REG_SZ /d ".exe;.bat;.reg;.vbs;.ps1;"
 
-
     Log "Enabling RDP access ..."
-    #& reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server" /f /v "fDenyTSConnections" /t REG_DWORD /d 0
-    Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
-    New-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0 -PropertyType dword
+    & reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server" /f /v "fDenyTSConnections" /t REG_DWORD /d 0
+    #Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0
+    #New-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server'-name "fDenyTSConnections" -Value 0 -PropertyType dword
     Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-    Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 0
-    New-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 0 -PropertyType dword
+    & reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" /f /v "UserAuthentication" /t REG_DWORD /d 0
+    #Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 0
+    #New-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 0 -PropertyType dword
 
 	Log "Starting Powershell 3 install ..."
 	Start-Process -FilePath wusa.exe -ArgumentList "$srcPacksPath\Prereq\Windows6.1-KB2506143-x64.msu /quiet /forcerestart" -Wait;
-#
-	#Log "Starting of Sysprep processes ...";	
-	#Start-Process -FilePath powershell -ArgumentList "-File $srcScriptsPath\Start-Sysprep.ps1 -BatchExecution"; 
 }
 
