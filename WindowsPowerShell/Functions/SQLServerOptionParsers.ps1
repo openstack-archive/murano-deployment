@@ -14,10 +14,13 @@ function New-OptionParserInstall {
     #>
     $OptionParser = New-OptionParser
 
+    $IsPartOfDomain = (Get-WmiObject Win32_ComputerSystem).PartOfDomain
+
     $OptionParser.AddOption((New-Option "ACTION" -String -Constraints "INSTALL"), $true, "INSTALL")
     $OptionParser.AddOption((New-Option "IACCEPTSQLSERVERLICENSETERMS" -Switch), $true)
     $OptionParser.AddOption((New-Option "ENU" -Switch))
-    $OptionParser.AddOption((New-Option "UpdateEnabled" -Switch))
+    #$OptionParser.AddOption((New-Option "UpdateEnabled" -Switch))
+    $OptionParser.AddOption((New-Option "UpdateEnabled" -Boolean))
     $OptionParser.AddOption((New-Option "UpdateSource" -String))
     $OptionParser.AddOption((New-Option "CONFIGURATIONFILE" -String))
     $OptionParser.AddOption((New-Option "ERRORREPORTING" -Boolean))
@@ -47,7 +50,15 @@ function New-OptionParserInstall {
     $OptionParser.AddOption((New-Option "ASSVCACCOUNT" -String), $true, "NT AUTHORITY\Network Service")
     $OptionParser.AddOption((New-Option "ASSVCPASSWORD" -String))
     $OptionParser.AddOption((New-Option "ASSVCSTARTUPTYPE" -String -Constraints ("Manual", "Automatic", "Disabled")))
-    $OptionParser.AddOption((New-Option "ASSYSADMINACCOUNTS" -String), $true, "$ENV:USERDOMAIN\$ENV:USERNAME")
+
+    #$OptionParser.AddOption((New-Option "ASSYSADMINACCOUNTS" -String), $true, "$ENV:USERDOMAIN\$ENV:USERNAME")
+    if ($IsPartOfDomain) {
+        $OptionParser.AddOption((New-Option "ASSYSADMINACCOUNTS" -String), $true, "$Env:USERDOMAIN\Administrator")
+    }
+    else {
+        $OptionParser.AddOption((New-Option "ASSYSADMINACCOUNTS" -String), $true, "$Env:COMPUTERNAME\Administrator")
+    }
+
     $OptionParser.AddOption((New-Option "ASTEMPDIR" -String))
     $OptionParser.AddOption((New-Option "ASPROVIDERMSOLAP" -Boolean))
     $OptionParser.AddOption((New-Option "FARMACCOUNT" -String))
@@ -65,7 +76,15 @@ function New-OptionParserInstall {
     $OptionParser.AddOption((New-Option "SQLSVCACCOUNT" -String), $true, "NT AUTHORITY\Network Service")
     $OptionParser.AddOption((New-Option "SQLSVCPASSWORD" -String))
     $OptionParser.AddOption((New-Option "SQLSVCSTARTUPTYPE" -String -Constraints ("Manual", "Automatic", "Disabled")))
-    $OptionParser.AddOption((New-Option "SQLSYSADMINACCOUNTS" -String), $true, "$ENV:USERDOMAIN\$ENV:USERNAME")
+    
+    #$OptionParser.AddOption((New-Option "SQLSYSADMINACCOUNTS" -String), $true, "$ENV:USERDOMAIN\$ENV:USERNAME")
+    if ($IsPartOfDomain) {
+        $OptionParser.AddOption((New-Option "SQLSYSADMINACCOUNTS" -String), $true, "$ENV:USERDOMAIN\Administrator")
+    }
+    else {
+        $OptionParser.AddOption((New-Option "SQLSYSADMINACCOUNTS" -String), $true, "$ENV:COMPUTERNAME\Administrator")
+    }
+    
     $OptionParser.AddOption((New-Option "SQLTEMPDBDIR" -String))
     $OptionParser.AddOption((New-Option "SQLTEMPDBLOGDIR" -String))
     $OptionParser.AddOption((New-Option "SQLUSERDBDIR" -String))

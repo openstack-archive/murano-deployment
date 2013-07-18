@@ -271,7 +271,7 @@ function New-OptionParser() {
             $CommandLine = $CommandLine + $CommandLineSuffix
         }
 
-        Write-Host "Executing: $($Binary.FullName) $($CommandLine -join ' ')"
+        Write-Log "Executing: $($Binary.FullName) $($CommandLine -join ' ')"
         $process = [System.Diagnostics.Process]::Start($Binary, $CommandLine)
         $process.WaitForExit()
         $process.Refresh()
