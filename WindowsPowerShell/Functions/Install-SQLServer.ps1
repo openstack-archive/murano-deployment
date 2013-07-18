@@ -1,9 +1,29 @@
+Function ConvertTo-Boolean {
+    param (
+        $InputObject,
+        [Boolean] $Default = $false
+    )
+    try {
+        [System.Convert]::ToBoolean($InputObject)
+    }
+    catch {
+        $Default
+    }
+}
+
+Function Show-Environment {
+    foreach ($item in (Get-ChildItem Env:)) {
+        Write-Log ("'{0}' --> '{1}'" -f $item.Name, $item.Value)
+    }
+}
+
 Function Install-SqlServer {
     param (
         [String] $SetupRoot = '',
         [String] $SAPassword = '',
         [String] $MuranoFileShare = '',
-        [String] $MixedModeAuth = $false
+        [Switch] $MixedModeAuth = $false,
+        [Switch] $UpdateEnabled = $false
     )
     
     if ($SetupRoot -eq '') {
@@ -17,16 +37,11 @@ Function Install-SqlServer {
         $SetupRoot = [IO.Path]::Combine($MuranoFileShare, 'Prerequisites\SQL Server\2012')
     }
     
-    try {
-        $MixedModeAuth = [System.Convert]::ToBoolean($MixedModeAuth)
-    }
-    catch {
-        $MixedModeAuth = $false
-    }
+    #$MixedModeAuthSwitch = ConvertTo-Boolean $MixedModeAuth
 
     $ExtraOptions = @{}
     
-    if ($MixedModeAuth) {
+    if ($MixedModeAuth -eq $true) {
         $ExtraOptions += @{'SECURITYMODE' = 'SQL'}
         if ($SAPassword -eq '') {
             throw("SAPassword must be set when MixedModeAuth is requisted!")
@@ -36,6 +51,12 @@ Function Install-SqlServer {
     if ($SAPassword -ne '') {
         $ExtraOptions += @{'SAPWD' = $SAPassword}
     }
-    
+
+    if (-not $UpdateEnabled) {
+        $ExtraOptions += @{'UpdateEnabled' = $false}
+    }
+
+    Show-Environment
+
     New-SqlServer -SetupRoot $SetupRoot -ExtraOptions $ExtraOptions
 }
