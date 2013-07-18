@@ -3,7 +3,7 @@ Function Install-SqlServer {
         [String] $SetupRoot = '',
         [String] $SAPassword = '',
         [String] $MuranoFileShare = '',
-        [Boolean] $MixedModeAuth = $false
+        [String] $MixedModeAuth = $false
     )
     
     if ($SetupRoot -eq '') {
@@ -17,11 +17,20 @@ Function Install-SqlServer {
         $SetupRoot = [IO.Path]::Combine($MuranoFileShare, 'Prerequisites\SQL Server\2012')
     }
     
+    try {
+        $MixedModeAuth = [System.Convert]::ToBoolean($MixedModeAuth)
+    }
+    catch {
+        $MixedModeAuth = $false
+    }
 
     $ExtraOptions = @{}
     
     if ($MixedModeAuth) {
         $ExtraOptions += @{'SECURITYMODE' = 'SQL'}
+        if ($SAPassword -eq '') {
+            throw("SAPassword must be set when MixedModeAuth is requisted!")
+        }
     }
     
     if ($SAPassword -ne '') {
