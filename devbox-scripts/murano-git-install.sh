@@ -62,38 +62,50 @@ for app_name in $murano_components ; do
 
 	if [ ! -d "$git_clone_dir" ] ; then
 		git clone $git_repo $git_clone_dir || die "Unable to clone repository '$git_repo'"
+		up_to_date='false'
 	else
 		cd "$git_clone_dir"
 		git reset --hard
 		git clean -fd
 		git remote update
 		git checkout master
-		git pull origin master
+
+		rev_on_local=$(git rev-list --max-count=1 master)
+		rev_on_origin=$(git rev-list --max-count=1 origin/master)
+
+		if [ "$rev_on_local" == "$rev_on_origin" ] ; then
+			up_to_date='true'
+		else
+			git pull origin master
+			up_to_date='false'
+		fi
 	fi
 
-	chmod +x "$git_clone_dir"/setup*.sh
-	
-	log "* Uninstalling '$app_name' ..."
-	case $os_version in
-		'CentOS')
-			"$git_clone_dir"/setup-centos.sh uninstall
-		;;
-		'Ubuntu')
-			"$git_clone_dir"/setup.sh uninstall
-		;;
-	esac
-	
-	sleep 2
-	
-	log "* Installing '$app_name' ..."
-	case $os_version in
-		'CentOS')
-			"$git_clone_dir"/setup-centos.sh install
-		;;
-		'Ubuntu')
-			"$git_clone_dir"/setup.sh install
-		;;
-	esac
+	if [ "$up_to_date" == 'false' ] ; then
+		chmod +x "$git_clone_dir"/setup*.sh
+		
+		log "* Uninstalling '$app_name' ..."
+		case $os_version in
+			'CentOS')
+				"$git_clone_dir"/setup-centos.sh uninstall
+			;;
+			'Ubuntu')
+				"$git_clone_dir"/setup.sh uninstall
+			;;
+		esac
+		
+		sleep 2
+		
+		log "* Installing '$app_name' ..."
+		case $os_version in
+			'CentOS')
+				"$git_clone_dir"/setup-centos.sh install
+			;;
+			'Ubuntu')
+				"$git_clone_dir"/setup.sh install
+			;;
+		esac
+	fi
 done
 
 
