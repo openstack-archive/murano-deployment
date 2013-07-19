@@ -2,7 +2,7 @@
 
 #set -o xtrace
 
-mode=${1:-'install'}
+mode=${1:-'help'}
 
 curr_dir=$(cd $(dirname "$0") && pwd)
 
@@ -61,6 +61,40 @@ function iniset {
 
 # Workflow functions
 #-------------------------------------------------
+function install_prerequisites {
+	case $os_version in 
+		'CentOS')
+			log "** Installing additional software sources ..."
+			yum install -y 'http://rdo.fedorapeople.org/openstack/openstack-grizzly/rdo-release-grizzly.rpm'
+			yum install -y 'http://mirror.yandex.ru/epel/6/x86_64/epel-release-6-8.noarch.rpm'
+
+			log "** Updating system ..."
+			yum update -y
+
+			log "** Installing OpenStack dashboard ..."
+			yum install make gcc python-netaddr.noarch python-keystoneclient.noarch python-django-horizon.noarch python-django-openstack-auth.noarch  httpd.x86_64 mod_wsgi.x86_64 openstack-dashboard.noarch --assumeyes
+		;;
+		'Ubuntu')
+			log "** Installing additional software sources ..."
+			echo 'deb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main' > /etc/apt/sources.list.d/grizzly.list
+			apt-get install -y ubuntu-cloud-keyring
+			
+			log "** Updating system ..."
+			apt-get update -y
+			apt-get upgrade -y
+
+			log "** Installing OpenStack dashboard ..."
+			apt-get install -y memcached libapache2-mod-wsgi openstack-dashboard
+
+			log "** Removing Ubuntu Dashboard Theme ..."
+			dpkg --purge openstack-dashboard-ubuntu-theme
+
+			log "** Restarting Apache server ..."
+			service apache2 restart
+		;;
+	esac
+}
+
 function install_murano {
 	configuration_required='false'
 	for config_file in $murano_config_files ; do
@@ -198,6 +232,21 @@ function restart_murano {
 #-------------------------------------------------
 
 
+if [[ $mode =~ '?'|'help'|'-h'|'--help' ]] ; then
+	cat << EOF
+
+The following options are awailable:
+* help - show help. This is a default action.
+* install - install and configure Murano components. Please be sure that you have prerequisites installed first.
+* configure - configure Murano components.
+* prerequisites - install prerequisites for Murano (OpenStack dashboard and other packages)
+* restart - restart Murano components and Apache server
+
+EOF
+	exit
+fi
+
+
 mkdir -p $git_clone_root
 
 if [ -f /etc/redhat-release ] ; then
@@ -222,6 +271,9 @@ case $mode in
 	;;
 	'configure')
 		configure_murano
+	;;
+	'prerequisites')
+		install_prerequisites
 	;;
 	'restart')
 		restart_murano
