@@ -8,27 +8,13 @@ curr_dir=$(cd $(dirname "$0") && pwd)
 
 murano_components="murano-api murano-conductor python-muranoclient murano-dashboard"
 murano_services="murano-api murano-conductor"
-murano_config_files='/etc/murano-api/murano-api.conf /etc/murano-api/murano-api-paste.ini /etc/murano-conductor/conductor.conf /etc/murano-conductor/conductor-paste.ini /etc/openstack-dashboard/local_settings'
+murano_config_files='/etc/murano-api/murano-api.conf /etc/murano-api/murano-api-paste.ini /etc/murano-conductor/conductor.conf /etc/murano-conductor/conductor-paste.ini'
 
 
 git_prefix="https://github.com/stackforge"
 git_clone_root='/opt/git'
 
 os_version=''
-
-# "/etc/murano-deployment/lab-binding.rc" sample
-##################################################
-#LAB_HOST=''
-#
-#AUTH_URL="http://$LAB_HOST:5000/v2.0"
-#
-#ADMIN_USER=''
-#ADMIN_PASSWORD=''
-#
-#RABBITMQ_LOGIN=''
-#RABBITMQ_PASSWORD=''
-#RABBITMQ_VHOST='/'
-##################################################
 
 
 # Helper funtions
@@ -93,16 +79,35 @@ function install_prerequisites {
 			service apache2 restart
 		;;
 	esac
+
+	log "** Creating lab-binding.rc file"
+	if [ ! -f '/etc/murano-deployment/lab-binding.rc' ] ; then
+		mkdir '/etc/murano-deployment'
+
+		cat << EOF > /etc/murano-deployment/lab-binding.rc
+LAB_HOST=''
+
+AUTH_URL="http://$LAB_HOST:5000/v2.0"
+
+ADMIN_USER=''
+ADMIN_PASSWORD=''
+
+RABBITMQ_LOGIN=''
+RABBITMQ_PASSWORD=''
+RABBITMQ_VHOST=''
+EOF
+	fi
+
+	log "***** ***** ***** ***** *****"
+	log "Now you should configure lab binding settings in"
+	log "   /etc/murano-deployment/lab-binding.rc"
+	log "***** ***** ***** ***** *****"
+
 }
 
-function install_murano {
-	configuration_required='false'
-	for config_file in $murano_config_files ; do
-		if [ ! -f "$config_file" ] ; then
-			log "! Required config file '$config_file' not exists. Murano should be configured before start."
-			configuration_required='true'
-		fi
-	done
+
+function fetch_murano_apps {
+	RETURN=''
 
 	for app_name in $murano_components ; do
 		log "* Working with '$app_name'"
@@ -112,7 +117,7 @@ function install_murano {
 
 		if [ ! -d "$git_clone_dir" ] ; then
 			git clone $git_repo $git_clone_dir || die "Unable to clone repository '$git_repo'"
-			up_to_date='false'
+			RETURN="$RETURN $app_name"
 		else
 			cd "$git_clone_dir"
 			git reset --hard
@@ -124,47 +129,48 @@ function install_murano {
 			rev_on_origin=$(git rev-list --max-count=1 origin/master)
 
 			if [ "$rev_on_local" == "$rev_on_origin" ] ; then
-				up_to_date='true'
+				git status
 			else
 				git pull origin master
-				up_to_date='false'
+				RETURN="$RETURN $app_name"
 			fi
 		fi
+}
 
-		if [ "$up_to_date" == 'false' ] ; then
-			chmod +x "$git_clone_dir"/setup*.sh
-			
-			log "* Uninstalling '$app_name' ..."
-			case $os_version in
-				'CentOS')
-					"$git_clone_dir"/setup-centos.sh uninstall
-				;;
-				'Ubuntu')
-					"$git_clone_dir"/setup.sh uninstall
-				;;
-			esac
-			
-			sleep 2
-			
-			log "* Installing '$app_name' ..."
-			case $os_version in
-				'CentOS')
-					"$git_clone_dir"/setup-centos.sh install
-				;;
-				'Ubuntu')
-					"$git_clone_dir"/setup.sh install
-				;;
-			esac
-		fi
+
+function install_murano_apps {
+	local apps_list="$@"
+
+	log "** Installing Murano components '$apps_list'..."
+	for $app_name in $apps_list ; do
+		log "** Installing '$app_name' ..."
+		case $os_version in
+			'CentOS')
+				"$git_clone_dir"/setup-centos.sh install
+			;;
+			'Ubuntu')
+				"$git_clone_dir"/setup.sh install
+			;;
+		esac
 	done
+}
 
 
-	if [ "$configuration_required" == 'true' ] ; then
-		log "One or several configuraiton files were not found before installation was launched."
-		configure_murano
-	fi
+function uninstall_murano_apps {
+	local apps_list="$@"
 
-	restart_murano
+	log "** Uninstalling Murano components '$apps_list'..."
+	for $app_name in $apps_list ; do
+		log "** Uninstalling '$app_name' ..."
+		case $os_version in
+			'CentOS')
+				"$git_clone_dir"/setup-centos.sh uninstall
+			;;
+			'Ubuntu')
+				"$git_clone_dir"/setup.sh uninstall
+			;;
+		esac
+	done
 }
 
 
@@ -236,11 +242,13 @@ if [[ $mode =~ '?'|'help'|'-h'|'--help' ]] ; then
 	cat << EOF
 
 The following options are awailable:
-* help - show help. This is a default action.
-* install - install and configure Murano components. Please be sure that you have prerequisites installed first.
-* configure - configure Murano components.
-* prerequisites - install prerequisites for Murano (OpenStack dashboard and other packages)
-* restart - restart Murano components and Apache server
+   * help          - show help. This is a default action.
+   * prerequisites - install prerequisites for Murano (OpenStack dashboard and other packages)
+   * install       - install and configure Murano components. Please be sure that you have prerequisites installed first.
+   * uninstall     - uninstall Murano components.
+   * update        - fetch changes and reinstall components changed.
+   * configure     - configure Murano components.
+   * restart       - restart Murano components and Apache server
 
 EOF
 	exit
@@ -264,16 +272,54 @@ else
 fi
 
 
+case $os_version in
+	'CentOS')
+		murano_config_files="$murano_config_files /etc/openstack-dashboard/local_settings"
+	;;
+	'Ubuntu')
+		murano_config_files="$murano_config_files /etc/openstack-dashboard/local_settings.py"
+	;;
+esac
+
+
+configuration_required=''
+for config_file in $murano_config_files ; do
+	if [ ! -f "$config_file" ] ; then
+		log "! Required config file '$config_file' not exists. Murano should be configured before start."
+		configuration_required="$configuration_required $config_file"
+	fi
+done
+
+
 log "* Running mode '$mode'"
 case $mode in
 	'install')
-		install_murano
+		fetch_murano_apps
+
+		install_murano_apps $murano_components
+		configure_murano
+
+		restart_murano
+	;;
+	'uninstall')
+		uninstall_murano_apps $murano_components
 	;;
 	'configure')
 		configure_murano
+
+		restart_murano
 	;;
 	'prerequisites')
 		install_prerequisites
+	;;
+	'update')
+		fetch_murano_apps
+		apps_list=$RETURN
+		
+		uninstall_murano_apps $apps_list
+		install_murano_apps $apps_list
+
+		restart_murano
 	;;
 	'restart')
 		restart_murano
