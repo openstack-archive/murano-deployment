@@ -1,10 +1,11 @@
-#!/bin/sh
+#!/bin/bash
+
+mode=${1:-'install'}
 
 curr_dir=$(cd $(dirname "$0") && pwd)
 
 murano_components="murano-api murano-conductor python-muranoclient murano-dashboard"
 murano_services="murano-api murano-conductor"
-murano_config_dirs="/etc/murano-api /etc/murano-conductor /etc/murano-dashboard"
 murano_config_files='/etc/murano-api/murano-api.conf /etc/murano-api/murano-api-paste.ini /etc/murano-conductor/conductor.conf /etc/murano-conductor/conductor-paste.ini /etc/openstack-dashboard/local_settings'
 
 
@@ -12,6 +13,20 @@ git_prefix="https://github.com/stackforge"
 git_clone_root='/opt/git'
 
 os_version=''
+
+# "/etc/murano-deployment/lab-binding.rc" sample
+##################################################
+#LAB_HOST=''
+#
+#AUTH_URL="http://$LAB_HOST:5000/v2.0"
+#
+#ADMIN_USER=''
+#ADMIN_PASSWORD=''
+#
+#RABBITMQ_LOGIN=''
+#RABBITMQ_PASSWORD=''
+#RABBITMQ_VHOST='/'
+##################################################
 
 
 
@@ -26,6 +41,19 @@ function log {
 	printf "$@\n"
 }
 
+function iniset {
+	local section=$1
+	local option=$2
+	local value=$3
+	local file=$4
+
+	if [ -z $section ] ; then
+		sed -i -e "s/^\($option[ \t]*=[ \t]*\).*$/\1$value/" "$file"
+	else
+		sed -i -e "/^\[$section\]/,/^\[.*\]/ s|^\($option[ \t]*=[ \t]*\).*$|\1$value|" "$file"
+	fi
+}
+
 
 
 mkdir -p $git_clone_root
@@ -34,7 +62,7 @@ if [ -f /etc/redhat-release ] ; then
 	os_version=$(cat /etc/redhat-release | cut -d ' ' -f 1)
 fi
 
-if [ -f /etc/lsb_release ] ; then
+if [ -f /etc/lsb-release ] ; then
 	os_version=$(cat /etc/lsb-release | grep DISTRIB_ID | cut -d '=' -f 2)
 fi
 
@@ -110,7 +138,43 @@ done
 
 
 if [ "$configuration_required" == 'true' ] ; then
-	die "One or several configuraiton files were not found before installation started. Please confugure Murano before start services."
+	if [ ! -f '/etc/murano-deployment/lab-binding.rc' ] ; then
+		log "One or several configuraiton files were not found before installation was launched."
+		log "Create '/etc/murano-dashboard/lab-binding.rc' or configure services individually."
+		die "Murano components require configuration."
+	fi
+
+	source /etc/murano-deployment/lab-binding.rc
+
+	for config_file in $murano_config_files ; do
+		if [ ! -f "$config_file" ] ; then
+			cp "$config_file.sample" "$config_file"
+		fi
+
+		case "$config_file" in
+			'/etc/murano-api/murano-api.conf')
+				iniset 'rabbitmq' 'host' "$LAB_HOST" "$config_file"
+				iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
+				iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
+				iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
+			;;
+			'/etc/murano-conductor/conductor.conf')
+				iniset 'filter:authtoken' 'auth_host' "$LAB_HOST" "$config_file"
+				iniset 'filter:authtoken' 'admin_user' "$ADMIN_USER" "$config_file"
+				iniset 'filter:authtoken' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
+			;;
+			'/etc/murano-conductor/conductor-paste.ini')
+				iniset 'heat' 'auth_url' "$AUTH_URL" "$config_file"
+				iniset 'rabbitmq' 'host' "$LAB_HOST" "$config_file"
+				iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
+				iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
+				iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
+			;;
+			'/etc/openstack-dashboard/local_settings')
+				iniset '' 'OPENSTACK_HOST' "$LAB_HOST" "$config_file"
+			;;
+		esac
+	done
 fi
 
 
