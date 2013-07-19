@@ -129,12 +129,16 @@ function fetch_murano_apps {
 			rev_on_origin=$(git rev-list --max-count=1 origin/master)
 
 			if [ "$rev_on_local" == "$rev_on_origin" ] ; then
+				log "\n'$app_name' is up-to-date."
+				log "***** ***** ***** ***** *****"
 				git status
+				log "***** ***** ***** ***** *****"
 			else
 				git pull origin master
 				RETURN="$RETURN $app_name"
 			fi
 		fi
+	done
 }
 
 
@@ -142,8 +146,11 @@ function install_murano_apps {
 	local apps_list="$@"
 
 	log "** Installing Murano components '$apps_list'..."
-	for $app_name in $apps_list ; do
+	for app_name in $apps_list ; do
 		log "** Installing '$app_name' ..."
+
+		git_clone_dir="$git_clone_root/$app_name"
+		
 		case $os_version in
 			'CentOS')
 				"$git_clone_dir"/setup-centos.sh install
@@ -160,8 +167,11 @@ function uninstall_murano_apps {
 	local apps_list="$@"
 
 	log "** Uninstalling Murano components '$apps_list'..."
-	for $app_name in $apps_list ; do
+	for app_name in $apps_list ; do
 		log "** Uninstalling '$app_name' ..."
+
+		git_clone_dir="$git_clone_root/$app_name"
+
 		case $os_version in
 			'CentOS')
 				"$git_clone_dir"/setup-centos.sh uninstall
@@ -293,6 +303,9 @@ done
 
 log "* Running mode '$mode'"
 case $mode in
+	'fetch')
+		fetch_murano_apps
+	;;
 	'install')
 		fetch_murano_apps
 
@@ -316,10 +329,12 @@ case $mode in
 		fetch_murano_apps
 		apps_list=$RETURN
 		
-		uninstall_murano_apps $apps_list
-		install_murano_apps $apps_list
+		if [ -n "$apps_list" ] ; then
+			uninstall_murano_apps $apps_list
+			install_murano_apps $apps_list
 
-		restart_murano
+			restart_murano
+		fi
 	;;
 	'restart')
 		restart_murano
