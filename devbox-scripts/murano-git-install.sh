@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#set -o xtrace
+
 mode=${1:-'install'}
 
 curr_dir=$(cd $(dirname "$0") && pwd)
@@ -133,6 +135,8 @@ function install_murano {
 
 
 function configure_murano {
+	log "** Configuring Murano ..."
+
 	if [ ! -f '/etc/murano-deployment/lab-binding.rc' ] ; then
 		log "Create '/etc/murano-dashboard/lab-binding.rc' or configure services individually."
 		die "Murano components require configuration."
@@ -141,6 +145,8 @@ function configure_murano {
 	source /etc/murano-deployment/lab-binding.rc
 
 	for config_file in $murano_config_files ; do
+		log "** Configuring file '$config_file'"
+
 		if [ ! -f "$config_file" ] ; then
 			cp "$config_file.sample" "$config_file"
 		fi
@@ -152,17 +158,17 @@ function configure_murano {
 				iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
 				iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
 			;;
+			'/etc/murano-api/murano-api-paste.ini')
+				iniset 'filter:authtoken' 'auth_host' "$LAB_HOST" "$config_file"
+				iniset 'filter:authtoken' 'admin_user' "$ADMIN_USER" "$config_file"
+				iniset 'filter:authtoken' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
+			;;
 			'/etc/murano-conductor/conductor.conf')
 				iniset 'heat' 'auth_url' "$AUTH_URL" "$config_file"
 				iniset 'rabbitmq' 'host' "$LAB_HOST" "$config_file"
 				iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
 				iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
 				iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
-			;;
-			'/etc/murano-conductor/conductor-paste.ini')
-				iniset 'filter:authtoken' 'auth_host' "$LAB_HOST" "$config_file"
-				iniset 'filter:authtoken' 'admin_user' "$ADMIN_USER" "$config_file"
-				iniset 'filter:authtoken' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
 			;;
 			'/etc/openstack-dashboard/local_settings')
 				iniset '' 'OPENSTACK_HOST' "$LAB_HOST" "$config_file"
@@ -198,11 +204,15 @@ else
 fi
 
 
+log "* Running mode '$mode'"
 case $mode in
 	'install')
 		install_murano
 	;;
 	'configure')
 		configure_murano
+	;;
+	'restart')
+		restart_murano
 	;;
 esac
