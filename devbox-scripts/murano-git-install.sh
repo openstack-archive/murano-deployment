@@ -171,7 +171,7 @@ function configure_murano {
 				iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
 			;;
 			'/etc/openstack-dashboard/local_settings')
-				iniset '' 'OPENSTACK_HOST' "$LAB_HOST" "$config_file"
+				iniset '' 'OPENSTACK_HOST' "'$LAB_HOST'" "$config_file"
 			;;
 		esac
 	done
@@ -180,9 +180,20 @@ function configure_murano {
 
 function restart_murano {
 	for service_name in $murano_services ; do
+		log "** Restarting '$service_name'"
 		stop "$service_name"
 		start "$service_name"
 	done
+
+	log "** Restarting 'Apache'"
+	case $os_version in
+		'CentOS')
+			service httpd restart
+		;;
+		'Ubuntu')
+			service apache2 restart
+		;;
+	esac
 }
 #-------------------------------------------------
 
