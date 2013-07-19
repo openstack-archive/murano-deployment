@@ -150,6 +150,7 @@ function install_murano_apps {
 		log "** Installing '$app_name' ..."
 
 		git_clone_dir="$git_clone_root/$app_name"
+		chmod +x $git_clone_dir/setup*.sh
 		
 		case $os_version in
 			'CentOS')
@@ -171,6 +172,7 @@ function uninstall_murano_apps {
 		log "** Uninstalling '$app_name' ..."
 
 		git_clone_dir="$git_clone_root/$app_name"
+		chmod +x $git_clone_dir/setup*.sh
 
 		case $os_version in
 			'CentOS')
@@ -310,6 +312,16 @@ case $mode in
 		fetch_murano_apps
 
 		install_murano_apps $murano_components
+		configure_murano
+
+		restart_murano
+	;;
+	'reinstall')
+		fetch_murano_apps
+		
+		uninstall_murano_apps $murano_components
+		install_murano_apps $murano_components
+
 		configure_murano
 
 		restart_murano
