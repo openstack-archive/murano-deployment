@@ -84,7 +84,12 @@ function install_prerequisites {
 	if [ ! -f '/etc/murano-deployment/lab-binding.rc' ] ; then
 		mkdir '/etc/murano-deployment'
 
-		cat << EOF > /etc/murano-deployment/lab-binding.rc
+		cat << "EOF" > /etc/murano-deployment/lab-binding.rc
+# Vi / Vim notes
+# * Press 'i' to enter INSERT mode
+# * Edit the file
+# * Press <ESC>, then type ':wq' to (w)rite changes and (q)uit editor.
+
 LAB_HOST=''
 
 AUTH_URL="http://$LAB_HOST:5000/v2.0"
@@ -103,6 +108,12 @@ EOF
 	log "   /etc/murano-deployment/lab-binding.rc"
 	log "***** ***** ***** ***** *****"
 
+	printf '\n\n'
+	read -p "Press <Enter> to start editing the file in 'vi' (you have no choice) ... "
+
+	if [ -f '/etc/murano-deployment/lab-binding.rc' ] ; then
+		vi '/etc/murano-deployment/lab-binding.rc'
+	fi
 }
 
 
@@ -257,6 +268,7 @@ The following options are awailable:
    * help          - show help. This is a default action.
    * prerequisites - install prerequisites for Murano (OpenStack dashboard and other packages)
    * install       - install and configure Murano components. Please be sure that you have prerequisites installed first.
+   * reinstall     - unisntall and then install all Murano components.
    * uninstall     - uninstall Murano components.
    * update        - fetch changes and reinstall components changed.
    * configure     - configure Murano components.
