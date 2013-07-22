@@ -27,7 +27,7 @@ function die {
 }
 
 function log {
-	printf "$@\n"
+	printf "$@\n" | tee --append /tmp/murano-git-install.log
 }
 
 function iniset {
@@ -234,6 +234,9 @@ function configure_murano {
 				iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
 			;;
 			'/etc/openstack-dashboard/local_settings')
+				iniset '' 'OPENSTACK_HOST' "'$LAB_HOST'" "$config_file"
+			;;
+			'/etc/openstack-dashboard/local_settings.py')
 				iniset '' 'OPENSTACK_HOST' "'$LAB_HOST'" "$config_file"
 			;;
 		esac
