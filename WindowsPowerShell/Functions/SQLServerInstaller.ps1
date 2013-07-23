@@ -1,10 +1,5 @@
 Import-Module NetSecurity
 
-#Import-Module OptionParser
-#Import-Module SQLServerOptionParsers
-
-#$ErrorActionPreference = 'Stop'
-
 function Test-Key([string]$path, [string]$key)
 {
     if(!(Test-Path $path)) { return $false }
@@ -58,8 +53,7 @@ function New-SQLServer {
     param(
         [parameter(Mandatory = $true)]
         [string]$SetupRoot,
-        [array]$ExtraFeatures = @(),
-        [Hashtable]$ExtraOptions = @{}
+        [array]$ExtraFeatures = @()
     )
 
     $SetupDir = Get-Item $SetupRoot
@@ -68,7 +62,7 @@ function New-SQLServer {
     Resolve-SQLServerPrerequisites
 
     $parser = New-OptionParserInstall
-    $ExitCode = $parser.ExecuteBinary($SetupExe.FullName, @{"Q" = $null; "FEATURES" = @("SQLEngine", "Conn", "SSMS", "ADV_SSMS") + $ExtraFeatures} + $ExtraOptions)
+    $ExitCode = $parser.ExecuteBinary($SetupExe.FullName, @{"QS" = $null; "FEATURES" = @("SQLEngine", "Conn", "SSMS", "ADV_SSMS") + $ExtraFeatures})
 
     if ($ExitCode -eq 3010) {
         return $true
@@ -108,7 +102,7 @@ function New-SQLServerForAOAG {
     MS SQL Server user account password.
 
     .PARAMETER ExtraFeatures
-    List of features to be removed besides "SQLEngine", "Conn", "SSMS", "ADV_SSMS", "DREPLAY_CTLR", "DREPLAY_CLT".
+    List of features to be installed besides "SQLEngine", "Conn", "SSMS", "ADV_SSMS", "DREPLAY_CTLR", "DREPLAY_CLT".
     #>
 
     param(
@@ -193,30 +187,7 @@ function Install-SQLServerForSysPrep {
     Installs new MS SQL Server in sysprep mode. Returns $true if a reboot is required after the installation, 
     $false if a reboot is not required and throws an exception in case if installation fails.
 
-    Setup must be completed after booting rearmed machine by using Complete-SQLServer cmdlet
-
-    .PARAMETER SetupRoot
-    MS SQL Server installation files root directory. Normally it is just DVD drive name.
-
-    .PARAMETER ExtraFeatures
-    List of features to be installed in addition to default "SQLEngine". Note that prior to
-    SQL Server version 2012 Service Pack 1 Cumulative Update 2 (January 2013) only "Replication", 
-    "FullText" and "RS" may be installed in addition to "SQLEngine". See the following link for
-    detials: http://msdn.microsoft.com/en-us/library/ms144259.aspx
-
-    #>
-}
-
-function Install-SQLServerForSysPrep {
-    <#
-    .SYNOPSIS
-    Installs new MS SQL Server in sysprep mode.
-
-    .DESCRIPTION
-    Installs new MS SQL Server in sysprep mode. Returns $true if a reboot is required after the installation, 
-    $false if a reboot is not required and throws an exception in case if installation fails.
-
-    Setup must be completed after booting rearmed machine by using Complete-SQLServer cmdlet
+    Setup must be completed after booting rearmed machine by using Complete-SQLServerAfterSysPrep or Complete-SQLServerAfterSysPrepForAOAG cmdlet
 
     .PARAMETER SetupRoot
     MS SQL Server installation files root directory. Normally it is just DVD drive name.
@@ -264,8 +235,6 @@ function Complete-SQLServerAfterSysPrep {
     Returns $true if a reboot is required after the installation, $false if a reboot is not required and throws 
     an exception in case if installation fails.
 
-    Setup must be completed after booting rearmed machine by using Complete-SQLServer cmdlet
-
     .PARAMETER SetupRoot
     MS SQL Server installation files root directory. Normally it is just DVD drive name.
     #>
@@ -290,6 +259,78 @@ function Complete-SQLServerAfterSysPrep {
     }
 
     return $false
+}
+
+function Complete-SQLServerAfterSysPrepForAOAG {
+    <#
+    .SYNOPSIS
+    Completes previously prepared with "Install-SQLServerForSysPrep" MS SQL Server after the system was rearmed.
+    Installs AlwaysOn availability features.
+
+    .DESCRIPTION
+    Completes previously prepared with "Install-SQLServerForSysPrep" MS SQL Server after the system was rearmed.
+    Installs AlwaysOn availability features and any additional features specified.
+    Returns $true if a reboot is required after the installation, $false if a reboot is not required and throws 
+    an exception in case if installation fails.
+
+    .PARAMETER SetupRoot
+    MS SQL Server installation files root directory. Normally it is just DVD drive name.
+
+    .PARAMETER SQLSvcUsrDomain
+    MS SQL Server user account domain name.
+
+    .PARAMETER SQLSvcUsrName
+    MS SQL Server user account name.
+
+    .PARAMETER SQLSvcUsrPassword
+    MS SQL Server user account password.
+
+    .PARAMETER ExtraFeatures
+    List of features to be installed besides "SQLEngine", "Conn", "SSMS", "ADV_SSMS", "DREPLAY_CTLR", "DREPLAY_CLT".
+    #>
+
+    param(
+        [parameter(Mandatory = $true)]
+        [string]$SetupRoot,
+        [parameter(Mandatory = $true)]
+        [string]$SQLSvcUsrDomain,
+        [parameter(Mandatory = $true)]
+        [string]$SQLSvcUsrName,
+        [parameter(Mandatory = $true)]
+        [string]$SQLSvcUsrPassword,
+        [array]$ExtraFeatures = @()
+    )
+
+    $SetupDir = Get-Item $SetupRoot
+    $SetupExe = $SetupDir.GetFiles("setup.exe")[0]
+
+    $SQLUser = "$SQLSvcUsrDomain\$SQLSvcUsrName"
+    $domain = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$SQLSvcUsrDomain", $SQLSvcUsrName, $SQLSvcUsrPassword)
+
+    if ($domain.name -eq $null) {
+        throw "Credentials validation failed for user $SQLUser. Check domain, login name and password."
+    }
+
+    $parser = New-OptionParserCompleteImage
+    $ExitCode = $parser.ExecuteBinary($SetupExe.FullName, @{"QS" = $null;
+        "AGTSVCACCOUNT" = $SQLUser; "AGTSVCPASSWORD" = $SQLSvcUsrPassword;
+        "SQLSVCACCOUNT" = $SQLUser; "SQLSVCPASSWORD" = $SQLSvcUsrPassword; "SQLSYSADMINACCOUNTS" = $SQLUser;
+        "RSSVCACCOUNT" = $SQLUser; "RSSVCPASSWORD" = $SQLSvcUsrPassword})
+
+    $RebootRequired = $false
+
+    if ($ExitCode -eq 3010) {
+        RebootRequired = $true
+        $ExitCode = 0
+    }
+
+    if ($ExitCode -ne 0) {
+        throw "Installation executable exited with code $("{0:X8}" -f $ExitCode) (Decimal: $ExitCode)"
+    }
+
+    $RebootRequired2 = New-SQLServerForAOAG -SetupRoot $SetupRoot -SQLSvcUsrDomain $SQLSvcUsrDomain -SQLSvcUsrName $SQLSvcUsrName -SQLSvcUsrPassword $SQLSvcUsrPassword -ExtraFeatures $ExtraFeatures 
+
+    return $RebootRequired -or $RebootRequired2
 }
 
 function ConvertTo-SQLString {
@@ -1373,21 +1414,3 @@ function Validate-DefinedOption {
     }
     return $Value
 }
-
-
-#Export-ModuleMember -Function New-SQLServer
-#Export-ModuleMember -Function New-SQLServerForAOAG
-#Export-ModuleMember -Function Remove-SQLServer
-#Export-ModuleMember -Function Invoke-SQLText
-#Export-ModuleMember -Function Initialize-MirroringEndpoint
-#Export-ModuleMember -Function Initialize-SQLMirroringPrincipalStep1
-#Export-ModuleMember -Function Initialize-SQLMirroringMirrorStep1
-#Export-ModuleMember -Function Initialize-SQLMirroringPrincipalStep2
-#Export-ModuleMember -Function Initialize-SQLMirroringMirrorStep2
-#Export-ModuleMember -Function Initialize-SQLMirroringPrincipalStep3
-#Export-ModuleMember -Function Initialize-SQLMirroringMirrorStep3
-#Export-ModuleMember -Function Install-SQLServerForSysPrep
-#Export-ModuleMember -Function Complete-SQLServerAfterSysPrep
-#Export-ModuleMember -Function Initialize-AlwaysOn
-#Export-ModuleMember -Function New-AlwaysOnAvailabilityGroup
-#Export-ModuleMember -Function New-AlwaysOnAvailabilityGroupReplica
