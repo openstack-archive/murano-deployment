@@ -103,7 +103,7 @@ function New-SQLServerForAOAG {
     MS SQL Server user account password.
 
     .PARAMETER ExtraFeatures
-    List of features to be removed besides "SQLEngine", "Conn", "SSMS", "ADV_SSMS", "DREPLAY_CTLR", "DREPLAY_CLT".
+    List of features to be installed besides "SQLEngine", "Conn", "SSMS", "ADV_SSMS", "DREPLAY_CTLR", "DREPLAY_CLT".
     #>
 
     param(
@@ -200,29 +200,6 @@ function Install-SQLServerForSysPrep {
     detials: http://msdn.microsoft.com/en-us/library/ms144259.aspx
 
     #>
-}
-
-function Install-SQLServerForSysPrep {
-    <#
-    .SYNOPSIS
-    Installs new MS SQL Server in sysprep mode.
-
-    .DESCRIPTION
-    Installs new MS SQL Server in sysprep mode. Returns $true if a reboot is required after the installation, 
-    $false if a reboot is not required and throws an exception in case if installation fails.
-
-    Setup must be completed after booting rearmed machine by using Complete-SQLServer cmdlet
-
-    .PARAMETER SetupRoot
-    MS SQL Server installation files root directory. Normally it is just DVD drive name.
-
-    .PARAMETER ExtraFeatures
-    List of features to be installed in addition to default "SQLEngine". Note that prior to
-    SQL Server version 2012 Service Pack 1 Cumulative Update 2 (January 2013) only "Replication", 
-    "FullText" and "RS" may be installed in addition to "SQLEngine". See the following link for
-    detials: http://msdn.microsoft.com/en-us/library/ms144259.aspx
-
-    #>
 
     param(
         [parameter(Mandatory = $true)]
@@ -258,8 +235,6 @@ function Complete-SQLServerAfterSysPrep {
     Completes previously prepared with "Install-SQLServerForSysPrep" MS SQL Server after the system was rearmed.
     Returns $true if a reboot is required after the installation, $false if a reboot is not required and throws 
     an exception in case if installation fails.
-
-    Setup must be completed after booting rearmed machine by using Complete-SQLServer cmdlet
 
     .PARAMETER SetupRoot
     MS SQL Server installation files root directory. Normally it is just DVD drive name.

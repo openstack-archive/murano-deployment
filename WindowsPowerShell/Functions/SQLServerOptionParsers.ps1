@@ -145,9 +145,9 @@ function New-OptionParserPrepareImageSP1U2 {
     .DESCRIPTION
     Use this cmdlet to create an option parser for MS SQL Server 2012 setup "PrepareImage" action.
 
-    This cmdlet should be used only for MS SQL Server 2012 SP1 Cimilative Update 2 or later.
+    This cmdlet should be used only for MS SQL Server 2012 SP1 Cumulative Update 2 or later.
 
-    Note that for installer version of MS SQL Server prior to 2012 SP1 Cimilative Update 2 only the
+    Note that for installer version of MS SQL Server prior to 2012 SP1 Cumulative Update 2 only the
     following features are supported: SQLEngine, Replication, FullText, RS
 
     All documented option are supported. See the following link for details:
@@ -241,7 +241,7 @@ function New-OptionParserCompleteImageSP1U2 {
     .DESCRIPTION
     Use this cmdlet to create an option parser for MS SQL Server 2012 setup "CompleteImage" action.
 
-    This cmdlet should be used only for MS SQL Server 2012 SP1 Cimilative Update 2 or later.
+    This cmdlet should be used only for MS SQL Server 2012 SP1 Cumulative Update 2 or later.
 
     All documented option are supported. See the following link for details:
     http://msdn.microsoft.com/en-us/library/ms144259.aspx
