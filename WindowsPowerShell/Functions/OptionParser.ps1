@@ -1,5 +1,3 @@
-#$ErrorActionPreference = 'Stop'
-
 function New-Option ([string]$Name, [switch]$Switch, [switch]$Boolean, [switch]$String, [switch]$List, $Constraints=$null) {
     <#
     .SYNOPSIS
@@ -280,6 +278,3 @@ function New-OptionParser() {
 
     return $OptionParser
 }
-
-#Export-ModuleMember -Function New-OptionParser
-#Export-ModuleMember -Function New-Option
