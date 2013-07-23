@@ -1,10 +1,5 @@
 Import-Module NetSecurity
 
-#Import-Module OptionParser
-#Import-Module SQLServerOptionParsers
-
-#$ErrorActionPreference = 'Stop'
-
 function Test-Key([string]$path, [string]$key)
 {
     if(!(Test-Path $path)) { return $false }
@@ -1373,21 +1368,3 @@ function Validate-DefinedOption {
     }
     return $Value
 }
-
-
-#Export-ModuleMember -Function New-SQLServer
-#Export-ModuleMember -Function New-SQLServerForAOAG
-#Export-ModuleMember -Function Remove-SQLServer
-#Export-ModuleMember -Function Invoke-SQLText
-#Export-ModuleMember -Function Initialize-MirroringEndpoint
-#Export-ModuleMember -Function Initialize-SQLMirroringPrincipalStep1
-#Export-ModuleMember -Function Initialize-SQLMirroringMirrorStep1
-#Export-ModuleMember -Function Initialize-SQLMirroringPrincipalStep2
-#Export-ModuleMember -Function Initialize-SQLMirroringMirrorStep2
-#Export-ModuleMember -Function Initialize-SQLMirroringPrincipalStep3
-#Export-ModuleMember -Function Initialize-SQLMirroringMirrorStep3
-#Export-ModuleMember -Function Install-SQLServerForSysPrep
-#Export-ModuleMember -Function Complete-SQLServerAfterSysPrep
-#Export-ModuleMember -Function Initialize-AlwaysOn
-#Export-ModuleMember -Function New-AlwaysOnAvailabilityGroup
-#Export-ModuleMember -Function New-AlwaysOnAvailabilityGroupReplica

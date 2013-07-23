@@ -1,7 +1,3 @@
-#Import-Module OptionParser
-
-#$ErrorActionPreference = 'Stop'
-
 function New-OptionParserInstall {
     <#
     .SYNOPSIS
@@ -369,20 +365,3 @@ function New-OptionParserRemoveNode {
     # ToDo: Implement
     throw "Not yet implemented"
 }
-
-#Export-ModuleMember -Function New-OptionParserInstall
-#Export-ModuleMember -Function New-OptionParserPrepareImage
-#Export-ModuleMember -Function New-OptionParserPrepareImageSP1U2
-#Export-ModuleMember -Function New-OptionParserCompleteImage
-#Export-ModuleMember -Function New-OptionParserCompleteImageSP1U2
-#Export-ModuleMember -Function New-OptionParserUpgrade
-#Export-ModuleMember -Function New-OptionParserEditionUpgrade
-#Export-ModuleMember -Function New-OptionParserRepair
-#Export-ModuleMember -Function New-OptionParserRebuilddatabase
-#Export-ModuleMember -Function New-OptionParserUninstall
-#Export-ModuleMember -Function New-OptionParserInstallFailoverCluster
-#Export-ModuleMember -Function New-OptionParserPrepareFailoverCluster
-#Export-ModuleMember -Function New-OptionParserCompleteFailoverCluster
-#Export-ModuleMember -Function New-OptionParserUpgrade
-#Export-ModuleMember -Function New-OptionParserAddNode
-#Export-ModuleMember -Function New-OptionParserRemoveNode
