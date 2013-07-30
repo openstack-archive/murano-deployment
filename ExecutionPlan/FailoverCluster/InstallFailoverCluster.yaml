@@ -1,0 +1,48 @@
+#
+# ## Failover Cluster Input Data (from the UI)
+#
+# * Domain Membership
+#     - [String] / [Select box] $DomainName - Domain name
+# * Domain User Credentials
+#     - [String] $UserName - Name of the user who is member of Domain Admins group
+#     - [Password string] $UserPassword - User password
+# * Shared Folder Information
+#     - [String] $ShareServer - Server which will host the shared folder for FC
+#     - [String] $ShareName - 'External' name for the share
+#     - [String] $SharePath - Shared folder internal path
+# * Failover Cluster Members
+#     - [String] $ClusterName - Cluster name
+#     - [String] $ClusterIP - Static IP address that will be assigned to the cluster
+#     - [String[]] $ClusterNodes - List of node names
+#
+#
+#
+# ## Failover Cluster creation workflow
+#
+# * Create AD domain
+# * Join all the VMs to that domain
+# * Prepare nodes (execute on all nodes)
+#     - Install Failover Cluster prerequisites on all FC nodes
+# * Create failover cluster (execute on any node)
+#     - Create new cluster
+#     - Add members
+# * Confugure FC quorum (execute on the same node)
+#     - Create new folder that will be shared
+#     - Share that folder with appropriate permissions
+#     - Configure quorum mode
+#
+
+Scripts:
+  - ../../WindowsPowerShell/Functions/ImportCoreFunctions.ps1
+  - ../../WindowsPowerShell/Functions/Failover-Cluster.ps1
+
+Commands:
+  - Name: New-FailoverCluster
+    Arguments:
+      ClusterName: $clusterName
+      StaticAddress: $clusterIP
+      ClusterNodes: $clusterNodes
+      UserName: $userName
+      UserPassword: $userPassword
+
+RebootOnCompletion: 0
