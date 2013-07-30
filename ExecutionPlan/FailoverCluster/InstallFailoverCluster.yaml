@@ -1,0 +1,14 @@
+Scripts:
+  - ../../WindowsPowerShell/Functions/ImportCoreFunctions.ps1
+  - ../../WindowsPowerShell/Functions/Failover-Cluster.ps1
+
+Commands:
+  - Name: New-FailoverCluster
+    Arguments:
+      ClusterName: $ClusterName
+      StaticAddress: $ClusterIP
+      ClusterNodes: [ $ClusterNodes ]
+      UserName: $UserName
+      UserPassword: $UserPassword
+
+RebootOnCompletion: 0
