@@ -113,7 +113,7 @@ function New-FailoverClusterSharedFolder {
 		[String] $SharePath,
 		[String] $ShareName,
         [String] $UserName,
-        [String] $UserPassword
+        [String] $UserPassword,
         $Credential = $null
 	)
     
@@ -154,7 +154,7 @@ function New-FailoverCluster {
 		[String] $StaticAddress,
 		[String[]] $ClusterNodes,
         [String] $UserName,
-        [String] $UserPassword
+        [String] $UserPassword,
         $Credential
 	)
 
@@ -181,7 +181,7 @@ New-Cluster -Name '$ClusterName' -StaticAddress '$StaticAddress'
             Write-Log "Adding node '$Node' to the cluster '$ClusterName' ..."
             Start-PowerShellProcess -Command @"
 Import-Module FailoverClusters
-Add-ClusterNode -Cluster '$Name' -Name '$Node'
+Add-ClusterNode -Cluster '$ClusterName' -Name '$Node'
 "@ -Credential $Credential
         }
         else {
