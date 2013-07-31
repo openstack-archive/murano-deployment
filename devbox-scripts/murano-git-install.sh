@@ -171,6 +171,13 @@ function install_murano_apps {
 				"$git_clone_dir"/setup.sh install
 			;;
 		esac
+
+		case $app_name in
+			'murano-api')
+				# Ugly workaround
+				sed -i -e "s/^\(\[pipeline:\)api.py/\1murano-api/" /etc/murano-api/murano-api-paste.ini
+			;;
+		esac
 	done
 }
 
@@ -191,6 +198,15 @@ function uninstall_murano_apps {
 			;;
 			'Ubuntu')
 				"$git_clone_dir"/setup.sh uninstall
+			;;
+		esac
+
+		case $app_name in
+			'murano-api')
+				rm -rf /etc/$app_name
+			;;
+			'murano-conductor')
+				rm -rf /etc/$app_name
 			;;
 		esac
 	done
