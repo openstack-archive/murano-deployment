@@ -171,6 +171,7 @@ function install_murano_apps {
 				"$git_clone_dir"/setup.sh install
 			;;
 		esac
+
 	done
 }
 
@@ -191,6 +192,15 @@ function uninstall_murano_apps {
 			;;
 			'Ubuntu')
 				"$git_clone_dir"/setup.sh uninstall
+			;;
+		esac
+
+		case $app_name in
+			'murano-api')
+				rm -rf /etc/$app_name
+			;;
+			'murano-conductor')
+				rm -rf /etc/$app_name
 			;;
 		esac
 	done
@@ -222,6 +232,7 @@ function configure_murano {
 				iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
 			;;
 			'/etc/murano-api/murano-api-paste.ini')
+				sed -i -e "s/^\(\[pipeline:\)api.py/\1murano-api/" "$config_file" # Ugly workaround
 				iniset 'filter:authtoken' 'auth_host' "$LAB_HOST" "$config_file"
 				iniset 'filter:authtoken' 'admin_user' "$ADMIN_USER" "$config_file"
 				iniset 'filter:authtoken' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
