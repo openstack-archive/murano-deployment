@@ -58,6 +58,26 @@ function Install-SqlServerForAOAG {
 
 
 
+function Initialize-AlwaysOnAvailabilityGroup {
+    param (
+        [String] $DomainName,
+        [String] $DomainAdminAccountName,
+        [String] $DomainAdminAccountPassword
+    )
+
+    $DomainAdminAccountCreds = New-Credential -UserName "$DomainName\$DomainAdminAccountName" -Password "$DomainAdminAccountPassword"
+
+    $FunctionsFile = Export-Function 'Get-NextFreePort', 'Initialize-AlwaysOn'
+
+    Start-PowerShellProcess @"
+. $FunctionsFile
+Import-Module CoreFunctions
+Initialize-AlwaysOn
+"@ -Credential $DomainAdminAccountCreds
+
+}
+
+
 function Initialize-AOAGPrimaryReplica {
     param (
         # (OPTIONAL) Name of the new Availability Group. If not specified then default name will be used.
@@ -81,8 +101,13 @@ function Initialize-AOAGPrimaryReplica {
 
         # (REQUIRED) IP address of the listener
         [Parameter(Mandatory=$true)]
-        [String] $ListenerIP
+        [String] $ListenerIP,
+
+        # Sync Mode Node List
+        [String[]] $SyncModeNodeList
     )
+
+
 }
 
 
