@@ -16,9 +16,9 @@ Scripts:
 Commands:
   - Name: Install-SQLServerForAOAG
     Arguments:
-      SQLServiceUserDomain: $sqlServiceUserDomain
       # [String] (REQUIRED) Domain name
-      SQLServiceUserName: $sqlServiceUserName
+      SQLServiceUserDomain: $domainName
       # [String] (REQUIRED) User name for the account which will be used by SQL service
-      SQLServiceUserPassword: $sqlServiceUserPassword
+      SQLServiceUserName: $sqlServiceAccountName
       # [String] (REQUIRED) Password for that user
+      SQLServiceUserPassword: $sqlServiceAccountPassword

@@ -1,39 +1,19 @@
-#
-# ## Failover Cluster Input Data (from the UI)
-#
-# * Domain Membership
-#     - [String] / [Select box] $DomainName - Domain name
-# * Domain User Credentials
-#     - [String] $UserName - Name of the user who is member of Domain Admins group
-#     - [Password string] $UserPassword - User password
-# * Shared Folder Information
-#     - [String] $ShareServer - Server which will host the shared folder for FC
-#     - [String] $ShareName - 'External' name for the share
-#     - [String] $SharePath - Shared folder internal path
-# * Failover Cluster Members
-#     - [String] $ClusterName - Cluster name
-#     - [String] $ClusterIP - Static IP address that will be assigned to the cluster
-#     - [String[]] $ClusterNodes - List of node names
-#
-#
-#
-# ## Failover Cluster creation workflow
-#
-# * Create AD domain
-# * Join all the VMs to that domain
-# * Prepare nodes (execute on all nodes)
+# Workflow:
+#   - Create AD domain
+#   - Join all the VMs to that domain
+#   - Prepare nodes (execute on all nodes)
 #     - Install Failover Cluster prerequisites on all FC nodes
-# * Create failover cluster (execute on any node)
+#   - Create failover cluster and cluster quorum. Execute on any node.
 #     - Create new cluster
 #     - Add members
-# * Confugure FC quorum (execute on the same node)
 #     - Create new folder that will be shared
 #     - Share that folder with appropriate permissions
 #     - Configure quorum mode
-#
+#   - Create system account for SQL service
 
 Scripts:
   - ../../WindowsPowerShell/Functions/ImportCoreFunctions.ps1
+  - ../../WindowsPowerShell/Functions/New-SqlServerSystemAccount.ps1
   - ../../WindowsPowerShell/Functions/Start-PowerShellProcess.ps1
   - ../../WindowsPowerShell/Functions/Failover-Cluster.ps1
 
@@ -50,5 +30,19 @@ Commands:
       UserName: $domainAdminAccountName
       # [Password string] $domainAdminAccountPassword - Password for that user
       UserPassword: $domainAdminAccountPassword
+
+  - Name: New-SqlServerSystemAccount
+    Arguments:
+      # [String] (REQUIRED) Domain Name
+      DomainName: $domainName
+      # [String] (REQUIRED) User name who has permissions to create and modify userPassword
+      # Usually this is the domain administrator '$domainName\Administrator' account
+      UserName: $domainAdminAccountName
+      # [String] (REQUIRED) Password for that user
+      UserPassword: $domainAdminAccountPassword
+      # [String] (REQUIRED) User name for a new account that will be used to run SQL Server
+      SQLServiceUserName: $sqlServiceAccountName
+      # [String] (REQUIRED) Password for that user
+      SQLServiceUserPassword: $sqlServiceAccountPassword
 
 RebootOnCompletion: 0

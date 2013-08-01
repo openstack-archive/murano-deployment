@@ -18,8 +18,8 @@ Scripts:
 Commands:
   - Name: Initialize-AOAGSecondaryReplica
     Arguments:
-      NodeList: $nodeList
       # [String[]] (REQUIRED) Nodes that will be configured as replica partners.
-      PrimaryNode: $primaryNode
+      NodeList: $nodeList
       # [String] (REQUIRED) Node name that will be primary for selected Availability Group
+      PrimaryNode: $primaryNode
       

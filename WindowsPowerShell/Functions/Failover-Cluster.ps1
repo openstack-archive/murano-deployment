@@ -44,59 +44,6 @@
 
 
 
-function Start-PowerShellProcess {
-	param (
-		[String] $Command,
-		$Credential = $null
-	)
-	
-	$Bytes = [Text.Encoding]::Unicode.GetBytes($Command)
-	$EncodedCommand = [Convert]::ToBase64String($Bytes)
-
-	Write-Log $EncodedCommand
-
-	$StdOut = [IO.Path]::GetTempFileName()
-	$StdErr = [IO.Path]::GetTempFileName()
-	$ArgumentList = @('-OutputFormat', 'XML', '-EncodedCommand', $EncodedCommand)
-
-	if ($Credential -eq $null) {
-		$Process = Start-Process -FilePath 'powershell.exe' `
-			-ArgumentList @($ArgumentList) `
-			-RedirectStandardOutput $StdOut `
-			-RedirectStandardError $StdErr `
-			-NoNewWindow `
-			-Wait `
-            -PassThru
-	}
-	else {
-		$Process = Start-Process -FilePath 'powershell.exe' `
-			-ArgumentList @($ArgumentList) `
-			-RedirectStandardOutput $StdOut `
-			-RedirectStandardError $StdErr `
-			-Credential $Credential `
-			-NoNewWindow `
-			-Wait `
-            -PassThru
-	}
-
-	if ((Get-Item $StdOut).Length -gt 0) {
-		Import-Clixml $StdOut
-	}
-
-	if ((Get-Item $StdErr).Length -gt 0) {
-		Import-Clixml $StdErr
-	}
-
-    if ($Process.ExitCode -ne 0) {
-        throw("External PowerShell process exited with code '$($Process.ExitCode)'")
-    }
-
-    #Remove-Item $StdOut -Force
-    #Remove-Item $StdErr -Force
-}
-
-
-
 function Install-FailoverClusterPrerequisites {
     Import-Module FailoverClusters
 
