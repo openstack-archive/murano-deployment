@@ -1,0 +1,18 @@
+{
+  "Commands": [
+    {
+      "Name": "New-SqlServerSystemAccount",
+      "Arguments": {
+        "UserName": "$userName",
+        "SQLServiceUserPassword": "$sqlServiceUserPassword",
+        "UserPassword": "$userPassword",
+        "DomainName": "$domainName",
+        "SQLServiceUserName": "$sqlServiceUserName"
+      }
+    }
+  ],
+  "Scripts": [
+    "SW1wb3J0LU1vZHVsZSBDb3JlRnVuY3Rpb25zIC1Gb3JjZQ==",
+    ""
+  ]
+}

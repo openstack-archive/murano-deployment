@@ -1,0 +1,25 @@
+# Inputs:
+#
+# Workflow:
+#   - Create new domain controller
+#   - Create new Failover Cluster using N nodes
+#   - Create service account for SQL Server using 'ConfigureEnvironmentForAOAG' execution plan
+#   - On each node of Failover Cluster install SQL server using 'InstallSqlServerForAOAG' execution plan
+#   - Execute 'InitializeAOAGPrimaryReplica' execution plan BEFORE current execution plan on ALL nodes of SQL Failover Cluster
+#   - Execute current execution plan AFTER 'InitializeAOAGPrimaryReplica' on ALL nodes of SQL Failover Cluster
+
+Scripts:
+  - ../../WindowsPowerShell/Functions/ImportCoreFunctions.ps1
+  - ../../WindowsPowerShell/Functions/OptionParser.ps1
+  - ../../WindowsPowerShell/Functions/SQLServerOptionParsers.ps1
+  - ../../WindowsPowerShell/Functions/SQLServerInstaller.ps1
+  - ../../WindowsPowerShell/Functions/SQLServerForAOAG.ps1
+
+Commands:
+  - Name: Initialize-AOAGSecondaryReplica
+    Arguments:
+      NodeList: $nodeList
+      # [String[]] (REQUIRED) Nodes that will be configured as replica partners.
+      PrimaryNode: $primaryNode
+      # [String] (REQUIRED) Node name that will be primary for selected Availability Group
+      

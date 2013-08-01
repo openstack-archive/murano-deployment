@@ -1,0 +1,24 @@
+# Inputs:
+#
+# Workflow:
+#   - Create new domain controller
+#   - Create new Failover Cluster using N nodes
+#   - Create service account for SQL Server using 'ConfigureEnvironmentForAOAG' execution plan
+#   - On each node of Failover Cluster install SQL server using this execution plan
+
+Scripts:
+  - ../../WindowsPowerShell/Functions/ImportCoreFunctions.ps1
+  - ../../WindowsPowerShell/Functions/OptionParser.ps1
+  - ../../WindowsPowerShell/Functions/SQLServerOptionParsers.ps1
+  - ../../WindowsPowerShell/Functions/SQLServerInstaller.ps1
+  - ../../WindowsPowerShell/Functions/SQLServerForAOAG.ps1
+
+Commands:
+  - Name: Install-SQLServerForAOAG
+    Arguments:
+      SQLServiceUserDomain: $sqlServiceUserDomain
+      # [String] (REQUIRED) Domain name
+      SQLServiceUserName: $sqlServiceUserName
+      # [String] (REQUIRED) User name for the account which will be used by SQL service
+      SQLServiceUserPassword: $sqlServiceUserPassword
+      # [String] (REQUIRED) Password for that user

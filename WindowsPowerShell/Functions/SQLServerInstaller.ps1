@@ -115,7 +115,7 @@ function New-SQLServerForAOAG {
         [parameter(Mandatory = $true)]
         [string]$SQLSvcUsrPassword,
         [array]$ExtraFeatures = @(),
-        [Hashtable]$ExtraOptions = ${}
+        [Hashtable]$ExtraOptions = @{}
     )
 
     $SetupDir = Get-Item $SetupRoot

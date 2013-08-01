@@ -1,0 +1,26 @@
+# Inputs:
+#
+# Workflow:
+#   - Create new domain controller
+#   - Create new Failover Cluster using N nodes
+#   - Run current execution plan once on any domain controller node 
+
+Scripts:
+  - ../../WindowsPowerShell/Functions/ImportCoreFunctions.ps1
+  - ../../WindowsPowerShell/Functions/New-SqlServerSystemAccount.ps1
+
+Commands:
+  - Name: New-SqlServerSystemAccount
+    Arguments:
+      DomainName: $domainName
+      # [String] (REQUIRED) Domain Name
+      UserName: $userName
+      # [String] (REQUIRED) User name who has permissions to create and modify userPassword
+      # Usually this is the domain administrator '$domainName\Administrator' account
+      UserPassword: $userPassword
+      # [String] (REQUIRED) Password for that user
+      SQLServiceUserName: $sqlServiceUserName
+      # [String] (REQUIRED) User name for a new account that will be used to run SQL Server
+      SQLServiceUserPassword: $sqlServiceUserPassword
+      # [String] (REQUIRED) Password for that user
+
