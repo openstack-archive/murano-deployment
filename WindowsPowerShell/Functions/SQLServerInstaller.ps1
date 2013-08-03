@@ -1147,7 +1147,7 @@ function New-AlwaysOnAvailabilityGroup {
     $ReplicaDefinitions = $ReplicaDefinitionsArray -join ",`r`n        ";
 
     if ($ListenerDef["DHCP"] -ne $null) {
-        if ($ListenerDef["DHCP"].matches("\d+\d+\d+\d+/\d+\d+\d+\d+")) {
+        if ($ListenerDef["DHCP"].matches("\d+\.\d+\.\d+\.\d+/\d+\.\d+\.\d+\.\d+")) {
             ($IpAddr, $Mask) = $ListenerDef["DHCP"] -split "/"
             $ListenerAddr = "DHCP ON ( $IpAddr, $Mask )"
         } else {
@@ -1161,7 +1161,7 @@ function New-AlwaysOnAvailabilityGroup {
             $ConvertedOpts = @()
             foreach ($IpOption in $IPAddresses) {
                 # IPv4
-                if ($IpOption -match "\d+\d+\d+\d+/\d+\d+\d+\d+") {
+                if ($IpOption -match "\d+\.\d+\.\d+\.\d+/\d+\.\d+\.\d+\.\d+") {
                     ($IpAddr, $Mask) = $IpOption -split "/"
                     $ConvertedOpts = $ConvertedOpts + "( $(ConvertTo-SQLString $IpAddr), $(ConvertTo-SQLString $Mask) )"
                     continue
@@ -1391,7 +1391,7 @@ function Install-SqlServerPowerShellModule {
         $MsiPath = Join-Path $SetupRoot $MsiFile
         if ([IO.File]::Exists($MsiPath)) {
             Write-Log "Starting msiexe ..."
-            $Result = Exec -FilePath "msiexec.exe" -ArgumentList @('/o', "`"$MsiPath`"", '/quiet') -PassThru
+            $Result = Exec -FilePath "msiexec.exe" -ArgumentList @('/i', "`"$MsiPath`"", '/quiet') -PassThru
             if ($Result.ExitCode -ne 0) {
                 throw ("Installation of MSI package '$MsiPath' failed with error code '$($Result.ExitCode)'")
             }

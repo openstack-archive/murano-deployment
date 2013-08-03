@@ -24,17 +24,38 @@ function Start-PowerShellProcess {
     param (
         [String] $Command,
         $Credential = $null,
-        [Switch] $IgnoreStdErr
+        [Switch] $IgnoreStdErr,
+        [Switch] $NoBase64
     )
     
-    $Bytes = [Text.Encoding]::Unicode.GetBytes($Command)
-    $EncodedCommand = [Convert]::ToBase64String($Bytes)
-
-    Write-Host $EncodedCommand
-
     $StdOut = [IO.Path]::GetTempFileName()
     $StdErr = [IO.Path]::GetTempFileName()
-    $ArgumentList = @('-OutputFormat', 'XML', '-EncodedCommand', $EncodedCommand)
+
+    $ArgumentList = @('-OutputFormat', 'XML')
+
+    if ($NoBase64) {
+        $TmpScript = [IO.Path]::GetTempFileName()
+        Rename-Item -Path "$TmpScript" -NewName "$TmpScript.ps1" -Force
+        $TmpScript = "$TmpScript.ps1"
+
+        Write-LogDebug $TmpScript
+
+        $Command | Out-File $TmpScript
+
+        $ArgumentList += @('-File', "$TmpScript")
+    }
+    else {
+        $Bytes = [Text.Encoding]::Unicode.GetBytes($Command)
+        $EncodedCommand = [Convert]::ToBase64String($Bytes)
+        
+        Write-LogDebug $EncodedCommand
+
+        $ArgumentList += @('-EncodedCommand', $EncodedCommand)
+    }
+
+    Write-LogDebug $ArgumentList
+
+    Write-Log "Starting external PowerShell process ..."
 
     if ($Credential -eq $null) {
         $Process = Start-Process -FilePath 'powershell.exe' `
@@ -56,30 +77,35 @@ function Start-PowerShellProcess {
             -PassThru
     }
 
+    Write-Log "External PowerShell process exited with exit code '$($Process.ExitCode)'."
+
+    if ($ArgumentList -contains '-File') {
+        Remove-Item -Path $TmpScript -Force
+    }
+
     $ErrorActionPreferenceSaved = $ErrorActionPreference
     $ErrorActionPreference = 'SilentlyContinue'
 
-    Write-Log "StdOut file is '$StdOut'"
-    Write-Log "StdErr file is '$StdErr'"
-
-    Select-CliXmlBlock $StdOut 
+    Write-LogDebug "StdOut file is '$StdOut'"
+    Write-LogDebug "StdErr file is '$StdErr'"
 
     if ((Get-Item $StdOut).Length -gt 0) {
-        Write-Log "Loading StdOut from '$StdOut'"
+        Write-LogDebug "Loading StdOut from '$StdOut'"
         $TmpFile = Select-CliXmlBlock $StdOut
         Import-Clixml $TmpFile
         Remove-Item -Path $TmpFile -Force
     }
 
-    Select-CliXmlBlock $StdErr
-
-    if (-not $IgnoreStdErr) {
-        if ((Get-Item $StdErr).Length -gt 0) {
-            Write-Log "Loading StdErr from '$StdErr'"
-            $TmpFile = Select-CliXmlBlock $StdErr
-            Import-Clixml $TmpFile
-            Remove-Item -Path $TmpFile -Force
+    if ((Get-Item $StdErr).Length -gt 0) {
+        Write-LogDebug "Loading StdErr from '$StdErr'"
+        $TmpFile = Select-CliXmlBlock $StdErr
+        if ($IgnoreStdErr) {
+            Write-LogDebug (Import-Clixml $TmpFile)
         }
+        else {
+            Import-Clixml $TmpFile
+        }
+        Remove-Item -Path $TmpFile -Force
     }
 
     $ErrorActionPreference = $ErrorActionPreferenceSaved
