@@ -17,7 +17,7 @@ Scripts:
 Commands:
   - Name: Initialize-AOAGPrimaryReplica
     Arguments:
-      # [String] (OPTIONAL) Name of the new Availability Group. If not specified then default name will be used.
+      # [String] Availability Group Name
       GroupName: $groupName
       # [String[]] (REQUIRED) Nodes that will be configured as replica partners.
       NodeList: $nodeList
@@ -31,4 +31,10 @@ Commands:
       ListenerIP: $listenerIP
       # [String[]] (REQUIRED) Node list which are in synchronous commit mode
       SyncModeNodeList: $syncModeNodeList
+      # Domain name
+      DomainName: $domainName
+      # Domain admin account user name
+      UserName: $domainAdminAccountName
+      # Domain admin account password
+      UserPassword: $domainAdminAccountPassword
       

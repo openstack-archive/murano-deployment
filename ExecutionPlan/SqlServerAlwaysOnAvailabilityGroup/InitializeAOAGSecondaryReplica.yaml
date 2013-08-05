@@ -22,4 +22,10 @@ Commands:
       NodeList: $nodeList
       # [String] (REQUIRED) Node name that will be primary for selected Availability Group
       PrimaryNode: $primaryNode
+      # Current domain name
+      DomainName: $domainName
+      # Domain Admin user name
+      UserName: $domainAdminAccountName
+      # Password for that user
+      UserPassword: $domainAdminAccountPassword
       

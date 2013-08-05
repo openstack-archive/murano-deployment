@@ -9,7 +9,9 @@
 #     - Create new folder that will be shared
 #     - Share that folder with appropriate permissions
 #     - Configure quorum mode
-#   - Create system account for SQL service
+#
+# Notes:
+#   - This script runs on one node only (Failover Cluster "master" node)
 
 Scripts:
   - ../../WindowsPowerShell/Functions/ImportCoreFunctions.ps1
@@ -30,19 +32,5 @@ Commands:
       UserName: $domainAdminAccountName
       # [Password string] $domainAdminAccountPassword - Password for that user
       UserPassword: $domainAdminAccountPassword
-
-  - Name: New-SqlServerSystemAccount
-    Arguments:
-      # [String] (REQUIRED) Domain Name
-      DomainName: $domainName
-      # [String] (REQUIRED) User name who has permissions to create and modify userPassword
-      # Usually this is the domain administrator '$domainName\Administrator' account
-      UserName: $domainAdminAccountName
-      # [String] (REQUIRED) Password for that user
-      UserPassword: $domainAdminAccountPassword
-      # [String] (REQUIRED) User name for a new account that will be used to run SQL Server
-      SQLServiceUserName: $sqlServiceAccountName
-      # [String] (REQUIRED) Password for that user
-      SQLServiceUserPassword: $sqlServiceAccountPassword
 
 RebootOnCompletion: 0
