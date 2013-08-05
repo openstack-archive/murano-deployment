@@ -62,16 +62,23 @@ function Initialize-AlwaysOnAvailabilityGroup {
     param (
         [String] $DomainName,
         [String] $DomainAdminAccountName,
-        [String] $DomainAdminAccountPassword
+        [String] $DomainAdminAccountPassword,
+        [String] $SqlServiceAccountName,
+        [String] $PrimaryNode,
+        [String] $ShareName = 'SharedWorkDir'
     )
 
-    $DomainAdminAccountCreds = New-Credential -UserName "$DomainName\$DomainAdminAccountName" -Password "$DomainAdminAccountPassword"
+    $ShareNetworkPath = '\\' + $PrimaryNode + '\' + $ShareName
+
+    $DomainAdminAccountCreds = New-Credential `
+        -UserName "$DomainName\$DomainAdminAccountName" `
+        -Password "$DomainAdminAccountPassword"
 
     $FunctionsFile = Export-Function 'Get-NextFreePort', 'Initialize-AlwaysOn'
 
     Start-PowerShellProcess @"
 trap {
-    $_
+    `$_
     exit 1
 }
 
@@ -81,7 +88,9 @@ Write-Log "Importing functions file '$FunctionsFile' ..."
 . "$FunctionsFile"
 
 Write-Log "Starting 'Initialize-AlwaysOn' ..."
-Initialize-AlwaysOn
+`$XmlFile = [IO.Path]::Combine("$ShareNetworkPath", "`$(`$Env:ComputerName).xml")
+Write-Log "Output XML file is '`$XmlFile'"
+Initialize-AlwaysOn | Export-CliXml -Path `$XmlFile
 "@ -Credential $DomainAdminAccountCreds -NoBase64
 
 }
@@ -89,21 +98,38 @@ Initialize-AlwaysOn
 
 function New-SharedFolderForAOAG {
     param (
-        # (OPTIONAL) Domain Name
-        [String] $DomainName,
-
-        # (OPTIONAL) SQL Server Service Account Name
-        [String] $SqlServiceAccountName,
+        # (OPTIONAL)
+        [String] $SharePath = [IO.Path]::Combine($Env:SystemDrive + '\', 'SharedWorkDir'),
 
         # (OPTIONAL)
-        [String] $SharePath = [IO.Path]::Combine($Env:SystemDrive + '\', [IO.Path]::GetRandomFileName()),
-
-        # (OPTIONAL)
-        [String] $ShareName = ''
+        [String] $ShareName = 'SharedWorkDir'
     )
 
     if ($ShareName -eq '') {
         $ShareName = [IO.Path]::GetFileNameWithoutExtension($SharePath)
+    }
+
+    Write-LogDebug "SharePath = '$SharePath'"
+    Write-LogDebug "ShareName = '$ShareName'"
+
+    try {
+        Write-LogDebug "Trying to remove share '$ShareName'"
+        $null = Get-SmbShare -Name $ShareName -ErrorAction 'Stop'
+        Remove-SmbShare -Name $ShareName -Force
+        write-Log "Share '$ShareName' removed."
+    }
+    catch {
+        Write-LogWarning "Share '$ShareName' not exists or cannot be deleted."
+    }
+
+    try {
+        Write-LogDebug "Trying to remove folder '$SharePath"
+        $null = Get-Item -Path $SharePath -ErrorAction 'Stop'
+        Remove-Item -Path $SharePath -Recurse -Force
+        Write-Log "Folder '$SharePath' removed."
+    }
+    catch {
+        Write-LogWarning "Folder '$SharePath' not exists or cannot be deleted."
     }
 
     $null = New-Item -Path $SharePath -ItemType Container -Force
@@ -132,7 +158,7 @@ function New-DatabaseForAOAG {
 
     Start-PowerShellProcess @"
 trap {
-    $_
+    `$_
     exit 1
 }
 
@@ -189,12 +215,25 @@ function Initialize-AOAGPrimaryReplica {
         [String] $UserPassword
     )
 
+    if ($PrimaryNode.ToLower() -ne ($Env:ComputerName).ToLower()) {
+        Write-Log "This function works on PrimaryNode only."
+        Write-Log "Exiting."
+        return
+    }
+
     if ($CliXmlFile -eq '') {
         $ReplicaDefinitionList = @()
         foreach ($Node in $NodeList) {
+            try {
+                $NodeEndpointPort = Import-CliXml -Path "\\$PrimaryNode\SharedWorkDir\$Node.xml"
+            }
+            catch {
+                $NodeEndpointPort = 5022
+            }
+
             $ReplicaDefinition = @{
                 "SERVER_INSTANCE" = "$Node";
-                "ENDPOINT_URL" = "TCP://${Node}:5022";
+                "ENDPOINT_URL" = "TCP://${Node}:${NodeEndpointPort}";
                 "AVAILABILITY_MODE" = "ASYNCHRONOUS_COMMIT";
                 "FAILOVER_MODE"="MANUAL";
             }
@@ -209,7 +248,11 @@ function Initialize-AOAGPrimaryReplica {
 
         $Preferences = @{}
 
-        $ListenerDefinition = @{"NAME"=$ListenerName; "PORT" = "$ListenerPort"; "STATIC" = "$ListenerIP/$ListenerIPMask"}
+        $ListenerDefinition = @{
+            "NAME"=$ListenerName;
+            "PORT" = "$ListenerPort";
+            "STATIC" = "$ListenerIP/$ListenerIPMask"
+        }
 
         $Parameters = @{
             'WorkDir' = "\\$PrimaryNode\$SharedWorkDir";
@@ -219,6 +262,8 @@ function Initialize-AOAGPrimaryReplica {
             'Preferences' = $Preferences;
             'ListenerDef' = $ListenerDefinition;
         }
+
+        Remove-Item -Path "\\$PrimaryNode\SharedWorkDir\*" -Force
 
         $CliXmlFile = [IO.Path]::GetTempFileName()
 
@@ -237,7 +282,7 @@ function Initialize-AOAGPrimaryReplica {
 
         Start-PowerShellProcess @"
 trap {
-    $_
+    `$_
     exit 1
 }
 
@@ -281,11 +326,17 @@ function Initialize-AOAGSecondaryReplica {
         [String] $UserPassword
     ) 
 
-        $Creds = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
+    if ($PrimaryNode.ToLower() -eq ($Env:ComputerName).ToLower()) {
+        Write-Log "This function works on any SecondaryNode only."
+        Write-Log "Exiting."
+        return
+    }
 
-        $FunctionsFile = Export-Function -All
+    $Creds = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
 
-        Start-PowerShellProcess @"
+    $FunctionsFile = Export-Function -All
+
+    Start-PowerShellProcess @"
 trap {
     $_
     exit 1

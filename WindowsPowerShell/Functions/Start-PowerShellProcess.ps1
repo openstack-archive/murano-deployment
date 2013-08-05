@@ -79,9 +79,9 @@ function Start-PowerShellProcess {
 
     Write-Log "External PowerShell process exited with exit code '$($Process.ExitCode)'."
 
-    if ($ArgumentList -contains '-File') {
-        Remove-Item -Path $TmpScript -Force
-    }
+    #if ($ArgumentList -contains '-File') {
+    #    Remove-Item -Path $TmpScript -Force
+    #}
 
     $ErrorActionPreferenceSaved = $ErrorActionPreference
     $ErrorActionPreference = 'SilentlyContinue'
@@ -92,20 +92,25 @@ function Start-PowerShellProcess {
     if ((Get-Item $StdOut).Length -gt 0) {
         Write-LogDebug "Loading StdOut from '$StdOut'"
         $TmpFile = Select-CliXmlBlock $StdOut
-        Import-Clixml $TmpFile
-        Remove-Item -Path $TmpFile -Force
+        $StdOutObject = Import-Clixml $TmpFile
+        Write-LogDebug "<StdOut>"
+        Write-LogDebug ($StdOutObject)
+        Write-LogDebug "</StdOut>"
+        $StdOutObject
+        #Remove-Item -Path $TmpFile -Force
     }
 
     if ((Get-Item $StdErr).Length -gt 0) {
-        Write-LogDebug "Loading StdErr from '$StdErr'"
+        Write-LogDebug "Loading StdErr ..."
         $TmpFile = Select-CliXmlBlock $StdErr
-        if ($IgnoreStdErr) {
-            Write-LogDebug (Import-Clixml $TmpFile)
+        $StdErrObject = Import-Clixml $TmpFile
+        Write-LogDebug "<StdErr>"
+        Write-LogDebug ($StdErrObject)
+        Write-LogDebug "</StdErr>"
+        if (-not $IgnoreStdErr) {
+            $StdErrObject
         }
-        else {
-            Import-Clixml $TmpFile
-        }
-        Remove-Item -Path $TmpFile -Force
+        #Remove-Item -Path $TmpFile -Force
     }
 
     $ErrorActionPreference = $ErrorActionPreferenceSaved
