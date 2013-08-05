@@ -20,6 +20,29 @@ function New-SqlServerSystemAccount {
 
         # (REQUIRED) Password for that user
         [Parameter(Mandatory=$true)]
-        [String] $SQLServiceUserPassword
+        [String] $SQLServiceUserPassword,
+
+        [String] $PrimaryNode = ' '
     )
+
+    if ($PrimaryNode.ToLower() -ne ($Env:ComputerName).ToLower()) {
+        Write-Log "THis function runs on AOAG primary node only."
+        Write-Log "Exiting."
+        return
+    }
+
+    if ((Get-Module -Name 'ActiveDirectory') -eq $null) {
+        Add-WindowsFeature RSAT-AD-PowerShell
+    }
+
+    if ((Get-Module -Name 'ActiveDirectory') -eq $null) {
+        throw "Module 'ActiveDirectory' is not available."
+    }
+
+    $Creds = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
+
+    $null = New-ADUser `
+        -Name $SQLServiceUserName `
+        -AccountPassword $(ConvertTo-SecureString -String $SQLServiceUserPassword -AsPlainText -Force) `
+        -Credential $Creds
 }

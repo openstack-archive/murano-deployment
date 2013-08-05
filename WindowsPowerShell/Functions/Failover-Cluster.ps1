@@ -81,6 +81,9 @@ function New-FailoverClusterSharedFolder {
                 [String] $ClusterAccount
             )
 
+            Remove-SmbShare -Name $ShareName -Force -ErrorAction 'SilentlyContinue'
+            Remove-Item -Path $SharePath -Force -ErrorAction 'SilentlyContinue'
+
             New-Item -Path $SharePath -ItemType Container -Force
             
             New-SmbShare -Path $SharePath `

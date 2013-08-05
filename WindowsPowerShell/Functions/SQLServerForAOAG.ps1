@@ -102,8 +102,16 @@ function New-SharedFolderForAOAG {
         [String] $SharePath = [IO.Path]::Combine($Env:SystemDrive + '\', 'SharedWorkDir'),
 
         # (OPTIONAL)
-        [String] $ShareName = 'SharedWorkDir'
+        [String] $ShareName = 'SharedWorkDir',
+
+        [String] $PrimaryNode = ' '
     )
+
+    if ($PrimaryNode.ToLower() -ne ($Env:ComputerName).ToLower()) {
+        Write-Log "This script runs on primary node only."
+        Write-Log "Exiting script."
+        return
+    }
 
     if ($ShareName -eq '') {
         $ShareName = [IO.Path]::GetFileNameWithoutExtension($SharePath)
@@ -177,7 +185,7 @@ New-SQLDatabase $DatabaseName
 function Initialize-AOAGPrimaryReplica {
     param (
         # (OPTIONAL) Name of the new Availability Group. If not specified then default name will be used.
-        [String] $GroupName = 'MuranoAvailabilityGroup',
+        [String] $GroupName = 'MuranoAG',
 
         # (REQUIRED) Nodes that will be configured as replica partners.
         #[Parameter(Mandatory=$true)]
@@ -193,7 +201,7 @@ function Initialize-AOAGPrimaryReplica {
 
         # (REQUIRED) Listener name that will be used by clients to connect to databases in that AG
         #[Parameter(Mandatory=$true)]
-        [String] $ListenerName,
+        [String] $ListenerName = 'MuranoAG_Listener',
 
         # (REQUIRED) IP address of the listener
         #[Parameter(Mandatory=$true)]
@@ -351,4 +359,17 @@ Write-Log "Starting 'New-AlwaysOnAvailabilityGroupReplica' ..."
 New-AlwaysOnAvailabilityGroupReplica -WorkDir "\\$PrimaryNode\$SharedWorkDir"
 "@ -Credential $Creds -NoBase64
 }
+
+
+
+function Disable-Firewall {
+    netsh advfirewall set allprofiles state off
+}
+
+
+
+function Enable-Firewall {
+    netsh advfirewall set allprofiles state on
+}
+
 
