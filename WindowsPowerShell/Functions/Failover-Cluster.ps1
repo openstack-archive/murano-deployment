@@ -54,14 +54,14 @@ function Install-FailoverClusterPrerequisites {
 
 function New-FailoverClusterSharedFolder {
 	param (
-        [String] $ClusterName,
-        [String] $DomainName,
-        [String] $ShareServer,
+ 		[String] $ClusterName,
+ 		[String] $DomainName,
+ 		[String] $ShareServer = '',
 		[String] $SharePath = $($Env:SystemDrive + '\FCShare'),
 		[String] $ShareName = 'FCShare',
-        [String] $UserName,
-        [String] $UserPassword,
-        $Credential = $null
+ 		[String] $UserName,
+ 		[String] $UserPassword,
+ 		$Credential = $null
 	)
     begin {
         Show-InvocationInfo $MyInvocation
@@ -82,7 +82,20 @@ function New-FailoverClusterSharedFolder {
             throw("Server '$ShareServer' is unreachable via ICMP.")
         }
 
-        $Session = New-PSSession -ComputerName $ShareServer -Credential $Credential
+        if ($ShareServer -eq '') {
+		Write-Log "ShareServer is not provided. Trying to detect it ..."
+		try {
+			Add-WindowsFeature RSAT-AD-PowerShell
+			Import-Module ActiveDirectory
+			$ShareServer = @(Get-ADDomainController)[0].Name
+		}
+		catch {
+			throw "Unable to detect domain cotroller name."
+		}
+		Write-Log "ShareServer is '$ShareServer'"
+	}
+
+	$Session = New-PSSession -ComputerName $ShareServer -Credential $Credential
 
         Write-Log "Creating folder on '$ShareServer' ..."
         Invoke-Command -Session $Session -ScriptBlock {
