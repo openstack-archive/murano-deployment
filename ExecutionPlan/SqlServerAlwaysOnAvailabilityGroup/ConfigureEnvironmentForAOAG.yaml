@@ -26,9 +26,9 @@ Commands:
       DomainName: $domainName
       # [String] (REQUIRED) User name who has permissions to create and modify userPassword
       # Usually this is the domain administrator '$domainName\Administrator' account
-      UserName: $userName
+      UserName: $domainAdminAccountName
       # [String] (REQUIRED) Password for that user
-      UserPassword: $userPassword
+      UserPassword: $domainAdminAccountPassword
       # [String] (REQUIRED) User name for a new account that will be used to run SQL Server
       SQLServiceUserName: $sqlServiceUserName
       # [String] (REQUIRED) Password for that user

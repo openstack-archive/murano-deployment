@@ -3,8 +3,8 @@
     {
       "Name": "Initialize-AlwaysOnAvailabilityGroup",
       "Arguments": {
-        "DomainAdminAccountName": "$DomainAdminAccountName",
-        "DomainAdminAccountPassword": "$DomainAdminAccountPassword",
+        "DomainAdminAccountName": "$domainAdminAccountName",
+        "DomainAdminAccountPassword": "$domainAdminAccountPassword",
         "NodeList": "$nodeList",
         "PrimaryNode": "$primaryNode",
         "DomainName": "$domainName"

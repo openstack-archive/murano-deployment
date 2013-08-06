@@ -13,9 +13,9 @@ Commands:
       # Domain name
       DomainName: $domainName
       # Domain Admin account user name
-      DomainAdminAccountName: $DomainAdminAccountName
+      DomainAdminAccountName: $domainAdminAccountName
       # Domain Admin account password
-      DomainAdminAccountPassword: $DomainAdminAccountPassword
+      DomainAdminAccountPassword: $domainAdminAccountPassword
       # AOAG primary node
       PrimaryNode: $primaryNode
       # List of AOAG nodes

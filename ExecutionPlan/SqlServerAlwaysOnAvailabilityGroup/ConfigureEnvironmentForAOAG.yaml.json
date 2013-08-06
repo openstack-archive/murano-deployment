@@ -11,11 +11,11 @@
     {
       "Name": "New-SqlServerSystemAccount",
       "Arguments": {
-        "UserName": "$userName",
+        "UserName": "$domainAdminAccountName",
         "PrimaryNode": "$primaryNode",
         "DomainName": "$domainName",
         "SQLServiceUserPassword": "$sqlServiceUserPassword",
-        "UserPassword": "$userPassword",
+        "UserPassword": "$domainAdminAccountPassword",
         "SQLServiceUserName": "$sqlServiceUserName"
       }
     },
