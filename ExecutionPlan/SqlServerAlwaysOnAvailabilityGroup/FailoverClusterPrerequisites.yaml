@@ -1,9 +1,17 @@
 Scripts:
   - ../../WindowsPowerShell/Functions/ImportCoreFunctions.ps1
+  - ../../WindowsPowerShell/Functions/Update-ServiceConfig.ps1
   - ../../WindowsPowerShell/Functions/Failover-Cluster.ps1
 
 Commands:
   - Name: Install-FailoverClusterPrerequisites
     Arguments: {}
 
-RebootOnCompletion: 0
+  - Name: Update-ServiceConfig
+    Arguments:
+      Name: Murano Agent
+      RunAsUser: $domainAdminAccountName
+      DomainName: $domainName
+      Password: $domainAdminAccountPassword
+
+RebootOnCompletion: 1
