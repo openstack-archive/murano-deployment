@@ -27,98 +27,115 @@ function Start-PowerShellProcess {
         [Switch] $IgnoreStdErr,
         [Switch] $NoBase64
     )
-    
-    $StdOut = [IO.Path]::GetTempFileName()
-    $StdErr = [IO.Path]::GetTempFileName()
-
-    $ArgumentList = @('-OutputFormat', 'XML')
-
-    if ($NoBase64) {
-        $TmpScript = [IO.Path]::GetTempFileName()
-        Rename-Item -Path "$TmpScript" -NewName "$TmpScript.ps1" -Force
-        $TmpScript = "$TmpScript.ps1"
-
-        Write-LogDebug $TmpScript
-
-        $Command | Out-File $TmpScript
-
-        $ArgumentList += @('-File', "$TmpScript")
+    begin {
+        Show-InvocationInfo $MyInvocation
     }
-    else {
-        $Bytes = [Text.Encoding]::Unicode.GetBytes($Command)
-        $EncodedCommand = [Convert]::ToBase64String($Bytes)
-        
-        Write-LogDebug $EncodedCommand
-
-        $ArgumentList += @('-EncodedCommand', $EncodedCommand)
+    end {
+        Show-InvocationInfo $MyInvocation -End
     }
+    process {
+        $StdOut = [IO.Path]::GetTempFileName()
+        $StdErr = [IO.Path]::GetTempFileName()
 
-    Write-LogDebug $ArgumentList
+        $ArgumentList = @('-OutputFormat', 'XML')
 
-    Write-Log "Starting external PowerShell process ..."
+        if ($NoBase64) {
+            $TmpScript = [IO.Path]::GetTempFileName()
+            Rename-Item -Path "$TmpScript" -NewName "$TmpScript.ps1" -Force
+            $TmpScript = "$TmpScript.ps1"
 
-    if ($Credential -eq $null) {
-        $Process = Start-Process -FilePath 'powershell.exe' `
-            -ArgumentList @($ArgumentList) `
-            -RedirectStandardOutput $StdOut `
-            -RedirectStandardError $StdErr `
-            -NoNewWindow `
-            -Wait `
-            -PassThru
-    }
-    else {
-        $Process = Start-Process -FilePath 'powershell.exe' `
-            -ArgumentList @($ArgumentList) `
-            -RedirectStandardOutput $StdOut `
-            -RedirectStandardError $StdErr `
-            -Credential $Credential `
-            -NoNewWindow `
-            -Wait `
-            -PassThru
-    }
+            Write-LogDebug $TmpScript
 
-    Write-Log "External PowerShell process exited with exit code '$($Process.ExitCode)'."
+            $Command | Out-File $TmpScript
 
-    #if ($ArgumentList -contains '-File') {
-    #    Remove-Item -Path $TmpScript -Force
-    #}
-
-    $ErrorActionPreferenceSaved = $ErrorActionPreference
-    $ErrorActionPreference = 'SilentlyContinue'
-
-    Write-LogDebug "StdOut file is '$StdOut'"
-    Write-LogDebug "StdErr file is '$StdErr'"
-
-    if ((Get-Item $StdOut).Length -gt 0) {
-        Write-LogDebug "Loading StdOut from '$StdOut'"
-        $TmpFile = Select-CliXmlBlock $StdOut
-        $StdOutObject = Import-Clixml $TmpFile
-        Write-LogDebug "<StdOut>"
-        Write-LogDebug ($StdOutObject)
-        Write-LogDebug "</StdOut>"
-        $StdOutObject
-        #Remove-Item -Path $TmpFile -Force
-    }
-
-    if ((Get-Item $StdErr).Length -gt 0) {
-        Write-LogDebug "Loading StdErr ..."
-        $TmpFile = Select-CliXmlBlock $StdErr
-        $StdErrObject = Import-Clixml $TmpFile
-        Write-LogDebug "<StdErr>"
-        Write-LogDebug ($StdErrObject)
-        Write-LogDebug "</StdErr>"
-        if (-not $IgnoreStdErr) {
-            $StdErrObject
+            $ArgumentList += @('-File', "$TmpScript")
         }
-        #Remove-Item -Path $TmpFile -Force
+        else {
+            $Bytes = [Text.Encoding]::Unicode.GetBytes($Command)
+            $EncodedCommand = [Convert]::ToBase64String($Bytes)
+            
+            Write-LogDebug $EncodedCommand
+
+            $ArgumentList += @('-EncodedCommand', $EncodedCommand)
+        }
+
+        Write-LogDebug $ArgumentList
+
+        Write-Log "Starting external PowerShell process ..."
+
+        if ($Credential -eq $null) {
+            $Process = Start-Process -FilePath 'powershell.exe' `
+                -ArgumentList @($ArgumentList) `
+                -RedirectStandardOutput $StdOut `
+                -RedirectStandardError $StdErr `
+                -NoNewWindow `
+                -Wait `
+                -PassThru
+        }
+        else {
+            $Process = Start-Process -FilePath 'powershell.exe' `
+                -ArgumentList @($ArgumentList) `
+                -RedirectStandardOutput $StdOut `
+                -RedirectStandardError $StdErr `
+                -Credential $Credential `
+                -NoNewWindow `
+                -Wait `
+                -PassThru
+        }
+
+        Write-Log "External PowerShell process exited with exit code '$($Process.ExitCode)'."
+
+        #if ($ArgumentList -contains '-File') {
+        #    Remove-Item -Path $TmpScript -Force
+        #}
+
+        $ErrorActionPreferenceSaved = $ErrorActionPreference
+        $ErrorActionPreference = 'SilentlyContinue'
+
+        Write-LogDebug "StdOut file is '$StdOut'"
+        Write-LogDebug "StdErr file is '$StdErr'"
+
+        if ((Get-Item $StdOut).Length -gt 0) {
+            try {
+                Write-LogDebug "Loading StdOut from '$StdOut'"
+                $TmpFile = Select-CliXmlBlock $StdOut
+                $StdOutObject = Import-Clixml $TmpFile
+                Write-LogDebug "<StdOut>"
+                Write-LogDebug ($StdOutObject)
+                Write-LogDebug "</StdOut>"
+                $StdOutObject
+                #Remove-Item -Path $TmpFile -Force
+            }
+            catch {
+                Write-LogDebug "An error occured while loading StdOut from '$TmpFile'"
+            }
+        }
+
+        if ((Get-Item $StdErr).Length -gt 0) {
+            try {
+                Write-LogDebug "Loading StdErr ..."
+                $TmpFile = Select-CliXmlBlock $StdErr
+                $StdErrObject = Import-Clixml $TmpFile
+                Write-LogDebug "<StdErr>"
+                Write-LogDebug ($StdErrObject)
+                Write-LogDebug "</StdErr>"
+                if (-not $IgnoreStdErr) {
+                    $StdErrObject
+                }
+                #Remove-Item -Path $TmpFile -Force
+            }
+            catch {
+                Write-LogDebug "An error occured while loading StdErr from '$TmpFile'"
+            }
+        }
+
+        $ErrorActionPreference = $ErrorActionPreferenceSaved
+
+        if ($Process.ExitCode -ne 0) {
+            throw("External PowerShell process exited with code '$($Process.ExitCode)'")
+        }
+
+        #Remove-Item $StdOut -Force
+        #Remove-Item $StdErr -Force
     }
-
-    $ErrorActionPreference = $ErrorActionPreferenceSaved
-
-    if ($Process.ExitCode -ne 0) {
-        throw("External PowerShell process exited with code '$($Process.ExitCode)'")
-    }
-
-    #Remove-Item $StdOut -Force
-    #Remove-Item $StdErr -Force
 }

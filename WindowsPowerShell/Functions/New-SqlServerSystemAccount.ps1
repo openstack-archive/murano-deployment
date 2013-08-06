@@ -31,18 +31,17 @@ function New-SqlServerSystemAccount {
         return
     }
 
-    if ((Get-Module -Name 'ActiveDirectory') -eq $null) {
-        Add-WindowsFeature RSAT-AD-PowerShell
-    }
+    Write-Log "Installing 'RSAT-AD-PowerShell' ... "
+    Add-WindowsFeature RSAT-AD-PowerShell
 
-    if ((Get-Module -Name 'ActiveDirectory') -eq $null) {
-        throw "Module 'ActiveDirectory' is not available."
-    }
+    Import-Module ActiveDirectory
 
     $Creds = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
 
+    Write-Log "Adding new user ..."
     $null = New-ADUser `
         -Name $SQLServiceUserName `
         -AccountPassword $(ConvertTo-SecureString -String $SQLServiceUserPassword -AsPlainText -Force) `
-        -Credential $Creds
+        -Credential $Creds `
+        -ErrorAction 'Stop'
 }
