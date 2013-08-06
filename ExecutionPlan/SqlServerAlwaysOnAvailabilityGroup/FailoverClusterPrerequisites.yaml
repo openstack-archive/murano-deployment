@@ -6,4 +6,10 @@ Commands:
   - Name: Install-FailoverClusterPrerequisites
     Arguments: {}
 
-RebootOnCompletion: 0
+  - Name: Update-ServiceConfig
+    Arguments:
+      Name: "Murano Agent"
+      RunAsUser: "$domainName\\$domainAdminAccountName"
+      Password: "$domainAdminAccountPassword"
+
+RebootOnCompletion: 1
