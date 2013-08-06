@@ -13,6 +13,8 @@ Scripts:
   - ../../WindowsPowerShell/Functions/SQLServerOptionParsers.ps1
   - ../../WindowsPowerShell/Functions/SQLServerInstaller.ps1
   - ../../WindowsPowerShell/Functions/SQLServerForAOAG.ps1
+  - ../../WindowsPowerShell/Functions/Export-Function.ps1
+  - ../../WindowsPowerShell/Functions/Start-PowerShellProcess.ps1
 
 Commands:
   - Name: Initialize-AOAGPrimaryReplica

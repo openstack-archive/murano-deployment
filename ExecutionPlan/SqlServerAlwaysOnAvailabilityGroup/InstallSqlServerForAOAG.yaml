@@ -19,6 +19,6 @@ Commands:
       # [String] (REQUIRED) Domain name
       SQLServiceUserDomain: $domainName
       # [String] (REQUIRED) User name for the account which will be used by SQL service
-      SQLServiceUserName: $sqlServiceAccountName
+      SQLServiceUserName: $domainAdminAccountName
       # [String] (REQUIRED) Password for that user
-      SQLServiceUserPassword: $sqlServiceAccountPassword
+      SQLServiceUserPassword: $domainAdminAccountPassword

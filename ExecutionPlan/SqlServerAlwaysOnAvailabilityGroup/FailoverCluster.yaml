@@ -35,4 +35,17 @@ Commands:
       # [Password string] $domainAdminAccountPassword - Password for that user
       UserPassword: $domainAdminAccountPassword
 
+  - Name: New-FailoverClusterSharedFolder
+    Arguments:
+      # Share server name - for example, one of domain controllers
+      ShareServer: $shareServer
+      # [String] $ClusterName - Cluster name
+      ClusterName: $clusterName
+      # Domain name
+      DomainName: $domainName
+      # [String] $domainAdminAccountName - Name of the user who is member of Domain Admins group
+      UserName: $domainAdminAccountName
+      # [Password string] $domainAdminAccountPassword - Password for that user
+      UserPassword: $domainAdminAccountPassword
+
 RebootOnCompletion: 0

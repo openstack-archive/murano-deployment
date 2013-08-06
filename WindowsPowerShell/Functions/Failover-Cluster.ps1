@@ -57,43 +57,59 @@ function New-FailoverClusterSharedFolder {
         [String] $ClusterName,
         [String] $DomainName,
         [String] $ShareServer,
-		[String] $SharePath,
-		[String] $ShareName,
+		[String] $SharePath = $($Env:SystemDrive + '\FCShare'),
+		[String] $ShareName = 'FCShare',
         [String] $UserName,
         [String] $UserPassword,
         $Credential = $null
 	)
-    
-    if ($Credential -eq $null) {
-        $Credential = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
+    begin {
+        Show-InvocationInfo $MyInvocation
     }
-
-    if ((Test-Connection -ComputerName $ShareServer -Count 1 -Quiet) -eq $false) {
-        throw("Server '$ShareServer' is unreachable via ICMP.")
+    end {
+        Show-InvocationInfo $MyInvocation -End
     }
+    process {
+        Write-Log "--> New-FailoverClusterSharedFolder"
 
-    $Session = New-PSSession -ComputerName $ShareServer -Credential $Credential
+        Write-Log "Creating shared folder for Failover Cluster ..."
+        
+        if ($Credential -eq $null) {
+            $Credential = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
+        }
 
-    Invoke-Command -Session $Session -ScriptBlock {
-            param (
-                [String] $SharePath,
-                [String] $ShareName,
-                [String] $ClusterAccount
-            )
+        if ((Test-Connection -ComputerName $ShareServer -Count 1 -Quiet) -eq $false) {
+            throw("Server '$ShareServer' is unreachable via ICMP.")
+        }
 
-            Remove-SmbShare -Name $ShareName -Force -ErrorAction 'SilentlyContinue'
-            Remove-Item -Path $SharePath -Force -ErrorAction 'SilentlyContinue'
+        $Session = New-PSSession -ComputerName $ShareServer -Credential $Credential
 
-            New-Item -Path $SharePath -ItemType Container -Force
-            
-            New-SmbShare -Path $SharePath `
-                -Name $ShareName `
-                -FullAccess "$ClusterAccount" `
-                -Description "Shared folder for Failover Cluster."
+        Write-Log "Creating folder on '$ShareServer' ..."
+        Invoke-Command -Session $Session -ScriptBlock {
+                param (
+                    [String] $SharePath,
+                    [String] $ShareName,
+                    [String] $ClusterAccount
+                )
 
-        } -ArgumentList $SharePath, $ShareName, "$DomainName\$ClusterName`$"
+                Remove-SmbShare -Name $ShareName -Force -ErrorAction 'SilentlyContinue'
+                Remove-Item -Path $SharePath -Force -ErrorAction 'SilentlyContinue'
 
-    Set-ClusterQuorum -NodeAndFileShareMajority "\\$ShareServer\$ShareName"
+                New-Item -Path $SharePath -ItemType Container -Force
+                
+                New-SmbShare -Path $SharePath `
+                    -Name $ShareName `
+                    -FullAccess "$ClusterAccount" `
+                    -Description "Shared folder for Failover Cluster."
+
+            } -ArgumentList $SharePath, $ShareName, "$DomainName\$ClusterName`$"
+
+        Write-Log "Confguring Failover Cluster to use shared folder as qourum resourse ..."
+
+        $null = Set-ClusterQuorum -NodeAndFileShareMajority "\\$ShareServer\$ShareName"
+
+        Write-Log "<-- New-FailoverClusterSharedFolder"
+    }
 }
 
 
@@ -108,38 +124,45 @@ function New-FailoverCluster {
         [String] $UserPassword,
         $Credential
     )
-
-    Write-Log "ClusterNodes: $($ClusterNodes -join ', ')"
-
-    if ($Credential -eq $null) {
-        $Credential = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
+    begin {
+        Show-InvocationInfo $MyInvocation
     }
+    end {
+        Show-InvocationInfo $MyInvocation -End
+    }
+    process {
+        Write-Log "ClusterNodes: $($ClusterNodes -join ', ')"
 
-    Import-Module FailoverClusters
+        if ($Credential -eq $null) {
+            $Credential = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
+        }
 
-	if ((Get-Cluster $ClusterName -ErrorAction SilentlyContinue) -eq $null) {
-        Write-Log "Creating new cluster '$ClusterName' ..."
-        Start-PowerShellProcess -Command @"
+        Import-Module FailoverClusters
+
+    	if ((Get-Cluster $ClusterName -ErrorAction SilentlyContinue) -eq $null) {
+            Write-Log "Creating new cluster '$ClusterName' ..."
+            Start-PowerShellProcess -Command @"
 Import-Module FailoverClusters
 New-Cluster -Name '$ClusterName' -StaticAddress '$StaticAddress'
 "@ -Credential $Credential -NoBase64
-        Start-Sleep -Seconds 15
-    }
-    else {
-        Write-Log "Cluster '$ClusterName' already exists."
-    }
+            Start-Sleep -Seconds 15
+        }
+        else {
+            Write-Log "Cluster '$ClusterName' already exists."
+        }
 
-    foreach ($Node in $ClusterNodes) {
-        Write-Log "Adding node '$Node' to the cluster '$ClusterName' ..."
-        if ((Get-ClusterNode $Node -ErrorAction SilentlyContinue) -eq $null) {
-            Write-Log "Adding node ..."
-            Start-PowerShellProcess -Command @"
+        foreach ($Node in $ClusterNodes) {
+            Write-Log "Adding node '$Node' to the cluster '$ClusterName' ..."
+            if ((Get-ClusterNode $Node -ErrorAction SilentlyContinue) -eq $null) {
+                Write-Log "Adding node ..."
+                Start-PowerShellProcess -Command @"
 Import-Module FailoverClusters
 Add-ClusterNode -Cluster '$ClusterName' -Name '$Node'
 "@ -Credential $Credential -NoBase64
-        }
-        else {
-            Write-Log "Node '$Node' already a part of the cluster '$ClusterName'."
+            }
+            else {
+                Write-Log "Node '$Node' already a part of the cluster '$ClusterName'."
+            }
         }
     }
 }

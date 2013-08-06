@@ -1,4 +1,56 @@
 
+function Install-SqlServerPowerShellModule {
+    param (
+        [String] $SetupRoot = ''
+    )
+    begin {
+        Show-InvocationInfo $MyInvocation
+    }
+    end {
+        Show-InvocationInfo $MyInvocation -End
+    }
+    process {
+        if ((Get-Module SQLPS -ListAvailable) -ne $null) {
+            Write-Log "Module SQLSP already installed."
+            return
+        }
+
+        if ($MuranoFileShare -eq '') {
+            $MuranoFileShare = [Environment]::GetEnvironmentVariable('MuranoFileShare')
+            if ($MuranoFileShare -eq '') {
+                throw("Unable to find MuranoFileShare path.")
+            }
+        }
+
+        if ($SetupRoot -eq '') {
+            $SetupRoot = [IO.Path]::Combine($MuranoFileShare, 'Prerequisites\SQL Server\Tools')
+        }
+        
+        $FileList = @(
+            'SQLSysClrTypes.msi',
+            'SharedManagementObjects.msi',
+            'PowerShellTools.msi'
+        )
+
+        foreach ($MsiFile in $FileList) {
+            Write-Log "Trying to install '$MsiFile' ..."
+            $MsiPath = Join-Path $SetupRoot $MsiFile
+            if ([IO.File]::Exists($MsiPath)) {
+                Write-Log "Starting msiexe ..."
+                $Result = Exec -FilePath "msiexec.exe" -ArgumentList @('/i', "`"$MsiPath`"", '/quiet') -PassThru
+                if ($Result.ExitCode -ne 0) {
+                    throw ("Installation of MSI package '$MsiPath' failed with error code '$($Result.ExitCode)'")
+                }
+            }
+            else {
+                Write-Log "File '$MsiPath' not found."
+            }
+        }
+    }
+}
+
+
+
 function Install-SqlServerForAOAG {
     param (
         # Path to folder where msi files for additional SQL features are located
@@ -20,40 +72,40 @@ function Install-SqlServerForAOAG {
 
         [Switch] $UpdateEnabled
     )
-
-
-    if ($MuranoFileShare -eq '') {
-        $MuranoFileShare = [Environment]::GetEnvironmentVariable('MuranoFileShare')
+    begin {
+        Show-InvocationInfo $MyInvocation
+    }
+    end {
+        Show-InvocationInfo $MyInvocation -End
+    }
+    process {
         if ($MuranoFileShare -eq '') {
-            throw("Unable to find MuranoFileShare path.")
+            $MuranoFileShare = [Environment]::GetEnvironmentVariable('MuranoFileShare')
+            if ($MuranoFileShare -eq '') {
+                throw("Unable to find MuranoFileShare path.")
+            }
         }
+
+        if ($SetupRoot -eq '') {
+            $SetupRoot = [IO.Path]::Combine($MuranoFileShare, 'Prerequisites\SQL Server\2012')
+        }
+
+        $ExtraOptions = @{}
+
+        if ($UpdateEnabled) {
+            $ExtraOptions += @{'UpdateEnabled' = $true}
+        }
+        else {
+            $ExtraOptions += @{'UpdateEnabled' = $false}
+        }
+
+        New-SQLServerForAOAG `
+            -SetupRoot $SetupRoot `
+            -SQLSvcUsrDomain $SQLServiceUserDomain `
+            -SQLSvcUsrName $SQLServiceUserName `
+            -SQLSvcUsrPassword $SQLServiceUserPassword `
+            -ExtraOptions $ExtraOptions
     }
-
-    if ($SetupRoot -eq '') {
-        $SetupRoot = [IO.Path]::Combine($MuranoFileShare, 'Prerequisites\SQL Server\2012')
-    }
-
-    if ($SqlpsSetupRoot -eq '') {
-        $SqlpsSetupRoot = [IO.Path]::Combine($MuranoFileShare, 'Prerequisites\SQL Server\Tools')
-    }
-
-    $ExtraOptions = @{}
-
-    if ($UpdateEnabled) {
-        $ExtraOptions += @{'UpdateEnabled' = $true}
-    }
-    else {
-        $ExtraOptions += @{'UpdateEnabled' = $false}
-    }
-
-    New-SQLServerForAOAG `
-        -SetupRoot $SetupRoot `
-        -SQLSvcUsrDomain $SQLServiceUserDomain `
-        -SQLSvcUsrName $SQLServiceUserName `
-        -SQLSvcUsrPassword $SQLServiceUserPassword `
-        -ExtraOptions $ExtraOptions
-
-    Install-SqlServerPowerShellModule -SetupRoot $SqlpsSetupRoot
 }
 
 
@@ -67,16 +119,22 @@ function Initialize-AlwaysOnAvailabilityGroup {
         [String] $PrimaryNode,
         [String] $ShareName = 'SharedWorkDir'
     )
+    begin {
+        Show-InvocationInfo $MyInvocation
+    }
+    end {
+        Show-InvocationInfo $MyInvocation -End
+    }
+    process {
+        $ShareNetworkPath = '\\' + $PrimaryNode + '\' + $ShareName
 
-    $ShareNetworkPath = '\\' + $PrimaryNode + '\' + $ShareName
+        $DomainAdminAccountCreds = New-Credential `
+            -UserName "$DomainName\$DomainAdminAccountName" `
+            -Password "$DomainAdminAccountPassword"
 
-    $DomainAdminAccountCreds = New-Credential `
-        -UserName "$DomainName\$DomainAdminAccountName" `
-        -Password "$DomainAdminAccountPassword"
+        $FunctionsFile = Export-Function 'Get-NextFreePort', 'Initialize-AlwaysOn'
 
-    $FunctionsFile = Export-Function 'Get-NextFreePort', 'Initialize-AlwaysOn'
-
-    Start-PowerShellProcess @"
+        Start-PowerShellProcess @"
 trap {
     `$_
     exit 1
@@ -92,7 +150,7 @@ Write-Log "Starting 'Initialize-AlwaysOn' ..."
 Write-Log "Output XML file is '`$XmlFile'"
 Initialize-AlwaysOn | Export-CliXml -Path `$XmlFile
 "@ -Credential $DomainAdminAccountCreds -NoBase64
-
+    }
 }
 
 
@@ -106,48 +164,55 @@ function New-SharedFolderForAOAG {
 
         [String] $PrimaryNode = ' '
     )
-
-    if ($PrimaryNode.ToLower() -ne ($Env:ComputerName).ToLower()) {
-        Write-Log "This script runs on primary node only."
-        Write-Log "Exiting script."
-        return
+    begin {
+        Show-InvocationInfo $MyInvocation
     }
-
-    if ($ShareName -eq '') {
-        $ShareName = [IO.Path]::GetFileNameWithoutExtension($SharePath)
+    end {
+        Show-InvocationInfo $MyInvocation -End
     }
+    process {
+        if ($PrimaryNode.ToLower() -ne ($Env:ComputerName).ToLower()) {
+            Write-Log "This script runs on primary node only."
+            Write-Log "Exiting script."
+            return
+        }
 
-    Write-LogDebug "SharePath = '$SharePath'"
-    Write-LogDebug "ShareName = '$ShareName'"
+        if ($ShareName -eq '') {
+            $ShareName = [IO.Path]::GetFileNameWithoutExtension($SharePath)
+        }
 
-    try {
-        Write-LogDebug "Trying to remove share '$ShareName'"
-        $null = Get-SmbShare -Name $ShareName -ErrorAction 'Stop'
-        Remove-SmbShare -Name $ShareName -Force
-        write-Log "Share '$ShareName' removed."
+        Write-LogDebug "SharePath = '$SharePath'"
+        Write-LogDebug "ShareName = '$ShareName'"
+
+        try {
+            Write-LogDebug "Trying to remove share '$ShareName'"
+            $null = Get-SmbShare -Name $ShareName -ErrorAction 'Stop'
+            Remove-SmbShare -Name $ShareName -Force
+            write-Log "Share '$ShareName' removed."
+        }
+        catch {
+            Write-LogWarning "Share '$ShareName' not exists or cannot be deleted."
+        }
+
+        try {
+            Write-LogDebug "Trying to remove folder '$SharePath"
+            $null = Get-Item -Path $SharePath -ErrorAction 'Stop'
+            Remove-Item -Path $SharePath -Recurse -Force
+            Write-Log "Folder '$SharePath' removed."
+        }
+        catch {
+            Write-LogWarning "Folder '$SharePath' not exists or cannot be deleted."
+        }
+
+        $null = New-Item -Path $SharePath -ItemType Container -Force
+                
+        $null = New-SmbShare -Path $SharePath `
+            -Name $ShareName `
+            -FullAccess "Everyone" `
+            -Description "Shared folder for AlwaysOn Availability Group setup."
+
+        return '\\' + $Env:ComputerName + '\' + $ShareName
     }
-    catch {
-        Write-LogWarning "Share '$ShareName' not exists or cannot be deleted."
-    }
-
-    try {
-        Write-LogDebug "Trying to remove folder '$SharePath"
-        $null = Get-Item -Path $SharePath -ErrorAction 'Stop'
-        Remove-Item -Path $SharePath -Recurse -Force
-        Write-Log "Folder '$SharePath' removed."
-    }
-    catch {
-        Write-LogWarning "Folder '$SharePath' not exists or cannot be deleted."
-    }
-
-    $null = New-Item -Path $SharePath -ItemType Container -Force
-            
-    $null = New-SmbShare -Path $SharePath `
-        -Name $ShareName `
-        -FullAccess "Everyone" `
-        -Description "Shared folder for AlwaysOn Availability Group setup."
-
-    return '\\' + $Env:ComputerName + '\' + $ShareName
 }
 
 
@@ -222,73 +287,90 @@ function Initialize-AOAGPrimaryReplica {
         [String] $UserName,
         [String] $UserPassword
     )
-
-    if ($PrimaryNode.ToLower() -ne ($Env:ComputerName).ToLower()) {
-        Write-Log "This function works on PrimaryNode only."
-        Write-Log "Exiting."
-        return
+    begin {
+        Show-InvocationInfo $MyInvocation
     }
-
-    if ($CliXmlFile -eq '') {
-        $ReplicaDefinitionList = @()
-        foreach ($Node in $NodeList) {
-            try {
-                $NodeEndpointPort = Import-CliXml -Path "\\$PrimaryNode\SharedWorkDir\$Node.xml"
-            }
-            catch {
-                $NodeEndpointPort = 5022
-            }
-
-            $ReplicaDefinition = @{
-                "SERVER_INSTANCE" = "$Node";
-                "ENDPOINT_URL" = "TCP://${Node}:${NodeEndpointPort}";
-                "AVAILABILITY_MODE" = "ASYNCHRONOUS_COMMIT";
-                "FAILOVER_MODE"="MANUAL";
-            }
-
-            if ($SyncModeNodeList -contains $Node) {
-                $ReplicaDefinition['AVAILABILITY_MODE'] = "SYNCHRONOUS_COMMIT"
-                $ReplicaDefinition['FAILOVER_MODE'] = "AUTOMATIC"
-            }
-
-            $ReplicaDefinitionList += @($ReplicaDefinition)
-        }
-
-        $Preferences = @{}
-
-        $ListenerDefinition = @{
-            "NAME"=$ListenerName;
-            "PORT" = "$ListenerPort";
-            "STATIC" = "$ListenerIP/$ListenerIPMask"
-        }
-
-        $Parameters = @{
-            'WorkDir' = "\\$PrimaryNode\$SharedWorkDir";
-            'Name' = $GroupName;
-            'DatabaseNames' = $DatabaseList;
-            'ReplicaDefs' = $ReplicaDefinitionList;
-            'Preferences' = $Preferences;
-            'ListenerDef' = $ListenerDefinition;
-        }
-
-        Remove-Item -Path "\\$PrimaryNode\SharedWorkDir\*" -Force
-
-        $CliXmlFile = [IO.Path]::GetTempFileName()
-
-        Export-CliXml -Path $CliXmlFile -InputObject $Parameters -Depth 10
-
-        Initialize-AOAGPrimaryReplica `
-            -CliXmlFile $CliXmlFile `
-            -DomainName $DomainName `
-            -UserName $UserName `
-            -UserPassword $UserPassword
+    end {
+        Show-InvocationInfo $MyInvocation -End
     }
-    else {
-        $Creds = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
+    process {
+        Write-Log "Primary node: '$($PrimaryNode.ToLower())'"
+        Write-Log "Current node: '$(($Env:ComputerName).ToLower())'"
 
-        $FunctionsFile = Export-Function -All
+        if ($PrimaryNode.ToLower() -ne $($Env:ComputerName).ToLower()) {
+            Write-Log "This function works on PrimaryNode only."
+            Write-Log "Exiting."
+            return
+        }
 
-        Start-PowerShellProcess @"
+        if ($CliXmlFile -eq '') {
+            $ReplicaDefinitionList = @()
+            foreach ($Node in $NodeList) {
+                try {
+                    $NodeEndpointPort = Import-CliXml -Path "\\$PrimaryNode\SharedWorkDir\$Node.xml"
+                }
+                catch {
+                    Write-Log "Using default endpoint port 5022"
+                    $NodeEndpointPort = 5022
+                }
+
+                $ReplicaDefinition = @{
+                    "SERVER_INSTANCE" = "$Node";
+                    "ENDPOINT_URL" = "TCP://${Node}:${NodeEndpointPort}";
+                    "AVAILABILITY_MODE" = "ASYNCHRONOUS_COMMIT";
+                    "FAILOVER_MODE"="MANUAL";
+                }
+
+                if ($SyncModeNodeList -contains $Node) {
+                    Write-Log "$Node is in SyncModeNodeList"
+                    $ReplicaDefinition['AVAILABILITY_MODE'] = "SYNCHRONOUS_COMMIT"
+                    $ReplicaDefinition['FAILOVER_MODE'] = "AUTOMATIC"
+                }
+                else {
+                    Write-Log "$Node is NOT in SyncModeNodeList"
+                }
+
+                $ReplicaDefinitionList += @($ReplicaDefinition)
+            }
+
+            $Preferences = @{}
+
+            $ListenerDefinition = @{
+                "NAME"=$ListenerName;
+                "PORT" = "$ListenerPort";
+                "STATIC" = "$ListenerIP/$ListenerIPMask"
+            }
+
+            $Parameters = @{
+                'WorkDir' = "\\$PrimaryNode\$SharedWorkDir";
+                'Name' = $GroupName;
+                'DatabaseNames' = $DatabaseList;
+                'ReplicaDefs' = $ReplicaDefinitionList;
+                'Preferences' = $Preferences;
+                'ListenerDef' = $ListenerDefinition;
+            }
+
+            Remove-Item -Path "\\$PrimaryNode\SharedWorkDir\*" -Force
+
+            $CliXmlFile = [IO.Path]::GetTempFileName()
+
+            Write-LogDebug "CliXml file: '$CliXmlFile'"
+
+            Export-CliXml -Path $CliXmlFile -InputObject $Parameters -Depth 10
+
+            Initialize-AOAGPrimaryReplica `
+                -CliXmlFile $CliXmlFile `
+                -DomainName $DomainName `
+                -UserName $UserName `
+                -UserPassword $UserPassword `
+                -PrimaryNode $PrimaryNode
+        }
+        else {
+            $Creds = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
+
+            $FunctionsFile = Export-Function -All
+
+            Start-PowerShellProcess @"
 trap {
     `$_
     exit 1
@@ -311,7 +393,7 @@ New-AlwaysOnAvailabilityGroup ``
     -Preferences `$Parameters['Preferences'] ``
     -ListenerDef `$Parameters['ListenerDef']
 "@ -Credential $Creds -NoBase64
-
+        }
     }
 }
 
@@ -333,18 +415,24 @@ function Initialize-AOAGSecondaryReplica {
         [String] $UserName,
         [String] $UserPassword
     ) 
-
-    if ($PrimaryNode.ToLower() -eq ($Env:ComputerName).ToLower()) {
-        Write-Log "This function works on any SecondaryNode only."
-        Write-Log "Exiting."
-        return
+    begin {
+        Show-InvocationInfo $MyInvocation
     }
+    end {
+        Show-InvocationInfo $MyInvocation -End
+    }
+    process {
+        if ($PrimaryNode.ToLower() -eq ($Env:ComputerName).ToLower()) {
+            Write-Log "This function works on any SecondaryNode only."
+            Write-Log "Exiting."
+            return
+        }
 
-    $Creds = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
+        $Creds = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
 
-    $FunctionsFile = Export-Function -All
+        $FunctionsFile = Export-Function -All
 
-    Start-PowerShellProcess @"
+        Start-PowerShellProcess @"
 trap {
     $_
     exit 1
@@ -358,18 +446,35 @@ Write-Log "Importing functions from '$FunctionsFile' ..."
 Write-Log "Starting 'New-AlwaysOnAvailabilityGroupReplica' ..."
 New-AlwaysOnAvailabilityGroupReplica -WorkDir "\\$PrimaryNode\$SharedWorkDir"
 "@ -Credential $Creds -NoBase64
+    }
 }
 
 
 
 function Disable-Firewall {
-    netsh advfirewall set allprofiles state off
+    begin {
+        Show-InvocationInfo $MyInvocation
+    }
+    end {
+        Show-InvocationInfo $MyInvocation -End
+    }
+    process {
+        netsh advfirewall set allprofiles state off
+    }
 }
 
 
 
 function Enable-Firewall {
-    netsh advfirewall set allprofiles state on
+    begin {
+        Show-InvocationInfo $MyInvocation
+    }
+    end {
+        Show-InvocationInfo $MyInvocation -End
+    }
+    process {
+        netsh advfirewall set allprofiles state on
+    }
 }
 
 
