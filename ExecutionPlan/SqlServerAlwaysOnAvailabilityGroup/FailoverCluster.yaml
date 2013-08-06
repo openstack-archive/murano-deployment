@@ -28,6 +28,8 @@ Commands:
       StaticAddress: $clusterIP
       # [String[]] $ClusterNodes - List of cluster nodes
       ClusterNodes: $clusterNodes
+      # Domain name
+      DomainName: $domainName
       # [String] $domainAdminAccountName - Name of the user who is member of Domain Admins group
       UserName: $domainAdminAccountName
       # [Password string] $domainAdminAccountPassword - Password for that user

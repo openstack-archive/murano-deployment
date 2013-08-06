@@ -100,13 +100,16 @@ function New-FailoverClusterSharedFolder {
 
 function New-FailoverCluster {
 	param (
-		[String] $ClusterName,
-		[String] $StaticAddress,
-		[String[]] $ClusterNodes,
+        [String] $ClusterName,
+        [String] $StaticAddress,
+        [String[]] $ClusterNodes,
+        [String] $DomainName,
         [String] $UserName,
         [String] $UserPassword,
         $Credential
-	)
+    )
+
+    Write-Log "ClusterNodes: $($ClusterNodes -join ', ')"
 
     if ($Credential -eq $null) {
         $Credential = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
@@ -119,7 +122,7 @@ function New-FailoverCluster {
         Start-PowerShellProcess -Command @"
 Import-Module FailoverClusters
 New-Cluster -Name '$ClusterName' -StaticAddress '$StaticAddress'
-"@ -Credential $Credential
+"@ -Credential $Credential -NoBase64
         Start-Sleep -Seconds 15
     }
     else {
@@ -127,12 +130,13 @@ New-Cluster -Name '$ClusterName' -StaticAddress '$StaticAddress'
     }
 
     foreach ($Node in $ClusterNodes) {
+        Write-Log "Adding node '$Node' to the cluster '$ClusterName' ..."
         if ((Get-ClusterNode $Node -ErrorAction SilentlyContinue) -eq $null) {
-            Write-Log "Adding node '$Node' to the cluster '$ClusterName' ..."
+            Write-Log "Adding node ..."
             Start-PowerShellProcess -Command @"
 Import-Module FailoverClusters
 Add-ClusterNode -Cluster '$ClusterName' -Name '$Node'
-"@ -Credential $Credential
+"@ -Credential $Credential -NoBase64
         }
         else {
             Write-Log "Node '$Node' already a part of the cluster '$ClusterName'."
