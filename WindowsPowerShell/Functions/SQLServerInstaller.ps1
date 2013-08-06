@@ -131,7 +131,7 @@ function New-SQLServerForAOAG {
     Resolve-SQLServerPrerequisites
 
     $parser = New-OptionParserInstall
-    $ExitCode = $parser.ExecuteBinary($SetupExe.FullName, @{"QS" = $null; "FEATURES" = @("SQLEngine", "Conn", "SSMS", "ADV_SSMS", "DREPLAY_CTLR", "DREPLAY_CLT") + $ExtraFeatures;
+    $ExitCode = $parser.ExecuteBinary($SetupExe.FullName, @{"Q" = $null; "FEATURES" = @("SQLEngine", "Conn", "SSMS", "ADV_SSMS", "DREPLAY_CTLR", "DREPLAY_CLT") + $ExtraFeatures;
         "AGTSVCACCOUNT" = $SQLUser; "AGTSVCPASSWORD" = $SQLSvcUsrPassword; "ASSVCACCOUNT" = $SQLUser; "ASSVCPASSWORD" = $SQLSvcUsrPassword; "ASSYSADMINACCOUNTS" = $SQLUSer;
         "SQLSVCACCOUNT" = $SQLUser; "SQLSVCPASSWORD" = $SQLSvcUsrPassword; "SQLSYSADMINACCOUNTS" = $SQLUser; "ISSVCACCOUNT" = $SQLUser; "ISSVCPASSWORD" = $SQLSvcUsrPassword; 
         "RSSVCACCOUNT" = $SQLUser; "RSSVCPASSWORD" = $SQLSvcUsrPassword} + $ExtraOptions)
@@ -1370,35 +1370,4 @@ function Validate-DefinedOption {
 }
 
 
-function Install-SqlServerPowerShellModule {
-    param (
-        [String] $SetupRoot
-    )
-
-    if ((Get-Module SQLPS -ListAvailable) -ne $null) {
-        Write-Log "Module SQLSP already installed."
-        return
-    }
-
-    $FileList = @(
-        'SQLSysClrTypes.msi',
-        'SharedManagementObjects.msi',
-        'PowerShellTools.msi'
-    )
-
-    foreach ($MsiFile in $FileList) {
-        Write-Log "Trying to install '$MsiFile' ..."
-        $MsiPath = Join-Path $SetupRoot $MsiFile
-        if ([IO.File]::Exists($MsiPath)) {
-            Write-Log "Starting msiexe ..."
-            $Result = Exec -FilePath "msiexec.exe" -ArgumentList @('/i', "`"$MsiPath`"", '/quiet') -PassThru
-            if ($Result.ExitCode -ne 0) {
-                throw ("Installation of MSI package '$MsiPath' failed with error code '$($Result.ExitCode)'")
-            }
-        }
-        else {
-            Write-Log "File '$MsiPath' not found."
-        }
-    }
-}
 

@@ -20,21 +20,21 @@ Commands:
   - Name: Disable-Firewall
     Arguments: {}
 
-  - Name: New-SqlServerSystemAccount
-    Arguments:
-      # [String] (REQUIRED) Domain Name
-      DomainName: $domainName
-      # [String] (REQUIRED) User name who has permissions to create and modify userPassword
-      # Usually this is the domain administrator '$domainName\Administrator' account
-      UserName: $domainAdminAccountName
-      # [String] (REQUIRED) Password for that user
-      UserPassword: $domainAdminAccountPassword
-      # [String] (REQUIRED) User name for a new account that will be used to run SQL Server
-      SQLServiceUserName: $sqlServiceUserName
-      # [String] (REQUIRED) Password for that user
-      SQLServiceUserPassword: $sqlServiceUserPassword
-      # Name of the AOAG primary node
-      PrimaryNode: $primaryNode
+#  - Name: New-SqlServerSystemAccount
+#    Arguments:
+#      # [String] (REQUIRED) Domain Name
+#      DomainName: $domainName
+#      # [String] (REQUIRED) User name who has permissions to create and modify userPassword
+#      # Usually this is the domain administrator '$domainName\Administrator' account
+#      UserName: $domainAdminAccountName
+#      # [String] (REQUIRED) Password for that user
+#      UserPassword: $domainAdminAccountPassword
+#      # [String] (REQUIRED) User name for a new account that will be used to run SQL Server
+#      SQLServiceUserName: $sqlServiceUserName
+#      # [String] (REQUIRED) Password for that user
+#      SQLServiceUserPassword: $sqlServiceUserPassword
+#      # Name of the AOAG primary node
+#      PrimaryNode: $primaryNode
 
   - Name: New-SharedFolderForAOAG
     Arguments:
