@@ -7,19 +7,44 @@ function Update-ServiceConfig {
         [String] $Password = '',
         [Switch] $RunAsLocalService
     )
-
-    $ArgumentList = @('config', "`"$Name`"")
-
-    if ($RunAsLocalService) {
-        $ArgumentList += @("obj=", "`"NT AUTHORITY\LocalService`"")
+    begin {
+        Show-InvocationInfo $MyInvocation
     }
-    elseif ($RunAsUser -ne '') {
-        $ArgumentList += @("obj=", "`"$DomainName\$RunAsUser`"", "password=", "`"$Password`"")
+    end {
+        Show-InvocationInfo $MyInvocation -End
     }
+    process {
+        $ArgumentList = @('config', "`"$Name`"")
 
-    $Process = Exec 'sc.exe' $ArgumentList -PassThru -RedirectStreams
+        if ($RunAsLocalService) {
+            $ArgumentList += @("obj=", "`"NT AUTHORITY\LocalService`"")
+        }
+        elseif ($RunAsUser -ne '') {
+            $ArgumentList += @("obj=", "`"$DomainName\$RunAsUser`"", "password=", "`"$Password`"")
+        }
 
-    if ($Process.ExitCode -ne 0) {
-        throw "Command 'sc.exe' returned exit code '$($Process.ExitCode)'"
+        $Process = Exec 'sc.exe' $ArgumentList -PassThru -RedirectStreams
+
+        if ($Process.ExitCode -ne 0) {
+            throw "Command 'sc.exe' returned exit code '$($Process.ExitCode)'"
+        }
+
+        $NtRights = "C:\Murano\Tools\ntrights.exe"
+
+        if (-not ([IO.File]::Exists($NtRights))) {
+            throw "File '$NtRights' not found."
+        }
+
+        $Process = Exec $NtRights @('-u', "$DomainName\$RunAsUser", '+r', 'SeServiceLogonRight') -RedirectStreams -PassThru
+
+        if ($Process.ExitCode -ne 0) {
+            throw "Command '$NtRights' returned exit code '$($Process.ExitCode)'"
+        }
+
+        $Process = Exec $NtRights @('-u', "$DomainName\$RunAsUser", '+r', 'SeBatchLogonRight') -RedirectStreams -PassThru
+
+        if ($Process.ExitCode -ne 0) {
+            throw "Command '$NtRights' returned exit code '$($Process.ExitCode)'"
+        }
     }
 }
