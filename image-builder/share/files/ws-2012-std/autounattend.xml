@@ -131,14 +131,19 @@
                     <Description>Copying content to local folder</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>8</Order>
-                    <CommandLine>%WINDIR%\System32\net.exe use m: /delete /y</CommandLine>
-                    <Description>Unmounting network share</Description>
+                    <Order>7</Order>
+                    <CommandLine>%WINDIR%\System32\xcopy.exe m:\Tools %HOMEDRIVE%\Murano\Tools /s /i /y /q</CommandLine>
+                    <Description>Copying content to local folder</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>7</Order>
+                    <Order>8</Order>
                     <Description>Windows post install process with sysprep</Description>
                     <CommandLine>%WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe -Command &quot;Start-Sleep -s 2; &amp; %SYSTEMDRIVE%\murano\scripts\ws-2012-std\wpi.ps1&quot;</CommandLine>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>9</Order>
+                    <CommandLine>%WINDIR%\System32\net.exe use m: /delete /y</CommandLine>
+                    <Description>Unmounting network share</Description>
                 </SynchronousCommand>
             </FirstLogonCommands>
         </component>

@@ -105,19 +105,19 @@
                     <Description>Add dot Net2</Description>
                     <CommandLine>%WINDIR%\System32\ocsetup.exe NetFx2-ServerCore</CommandLine>
                 </SynchronousCommand>
-		 <SynchronousCommand wcm:action="add">
+                <SynchronousCommand wcm:action="add">
                     <Order>2</Order>
                     <RequiresUserInput>false</RequiresUserInput>
                     <Description>Add dot Net3</Description>
                     <CommandLine>i%WINDIR%\System32\ocsetup.exe NetFx3-ServerCore</CommandLine>
                 </SynchronousCommand>
-		 <SynchronousCommand wcm:action="add">
+                <SynchronousCommand wcm:action="add">
                     <Order>3</Order>
                     <RequiresUserInput>false</RequiresUserInput>
                     <Description>Add dot Net2</Description>
                     <CommandLine>%WINDIR%\System32\ocsetup.exe NetFx2-ServerCore-WOW64</CommandLine>
                 </SynchronousCommand>
-		 <SynchronousCommand wcm:action="add">
+                <SynchronousCommand wcm:action="add">
                     <Order>4</Order>
                     <RequiresUserInput>false</RequiresUserInput>
                     <Description>Add dot Net3</Description>
@@ -135,7 +135,7 @@
                     <Description>Add Powershell 2</Description>
                     <CommandLine>%WINDIR%\System32\ocsetup.exe MicrosoftWindowsPowerShell-WOW64</CommandLine>
                 </SynchronousCommand>
-		<SynchronousCommand wcm:action="add">
+                <SynchronousCommand wcm:action="add">
                     <Order>7</Order>
                     <RequiresUserInput>false</RequiresUserInput>
                     <Description>Add cmdlets</Description>
@@ -174,21 +174,26 @@
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>14</Order>
+                    <CommandLine>%WINDIR%\System32\xcopy.exe m:\Tools %HOMEDRIVE%\Murano\Tools /s /i /y /q</CommandLine>
+                    <Description>Copying content to local folder</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>15</Order>
                     <CommandLine>%SYSTEMDRIVE%\murano\Files\dotNetFx40_Full_x86_x64.exe /q /norestart</CommandLine>
                     <Description>Installing dotNet 4.0</Description>
                 </SynchronousCommand>
-		<SynchronousCommand wcm:action="add">
-                    <Order>15</Order>
+                <SynchronousCommand wcm:action="add">
+                    <Order>16</Order>
                     <CommandLine>%SYSTEMDRIVE%\murano\Files\dotNetFx45_Full_setup.exe /q /norestart</CommandLine>
                     <Description>Installing dotNet 4.5</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
-                    <Order>16</Order>
+                    <Order>17</Order>
                     <Description>Windows post install process with sysprep</Description>
                     <CommandLine>%WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe -Command &quot;Start-Sleep -s 2; &amp; %SYSTEMDRIVE%\murano\scripts\ws-2008r2-core\wpi.ps1&quot;</CommandLine>
                 </SynchronousCommand>
-		<SynchronousCommand wcm:action="add">
-                    <Order>17</Order>
+                <SynchronousCommand wcm:action="add">
+                    <Order>18</Order>
                     <CommandLine>%WINDIR%\System32\net.exe use m: /delete /y</CommandLine>
                     <Description>Unmounting network share</Description>
                 </SynchronousCommand>
