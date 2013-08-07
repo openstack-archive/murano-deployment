@@ -478,3 +478,15 @@ function Enable-Firewall {
 }
 
 
+
+function Enable-TrustedHosts {
+    begin {
+        Show-InvocationInfo $MyInvocation
+    }
+    end {
+        Show-InvocationInfo $MyInvocation -End
+    }
+    process {
+        Set-Item WSMan:\localhost\Client\TrustedHosts -Value '*' -Force
+    }
+}

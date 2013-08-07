@@ -20,6 +20,9 @@ Commands:
   - Name: Disable-Firewall
     Arguments: {}
 
+  - Name: Enable-TrustedHosts
+    Arguments: {}
+
 #  - Name: New-SqlServerSystemAccount
 #    Arguments:
 #      # [String] (REQUIRED) Domain Name

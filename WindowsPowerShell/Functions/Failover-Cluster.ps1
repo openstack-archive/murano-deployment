@@ -70,6 +70,13 @@ function New-FailoverClusterSharedFolder {
         Show-InvocationInfo $MyInvocation -End
     }
     process {
+        trap {
+            Write-LogError $_ -EntireObject
+            break
+        }
+
+        $ErrorActionPreference = 'Stop'
+
         Write-Log "--> New-FailoverClusterSharedFolder"
 
         Write-Log "Creating shared folder for Failover Cluster ..."
@@ -131,6 +138,13 @@ function New-FailoverCluster {
         Show-InvocationInfo $MyInvocation -End
     }
     process {
+        trap {
+            Write-LogError $_ -EntireObject
+            break
+        }
+        
+        $ErrorActionPreference = 'Stop'
+
         Write-Log "ClusterNodes: $($ClusterNodes -join ', ')"
 
         if ($Credential -eq $null) {
