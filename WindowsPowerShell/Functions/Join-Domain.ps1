@@ -1,3 +1,9 @@
+
+trap {
+    &$TrapHandler
+}
+
+
 Function Join-Domain {
 <#
 .SYNOPSIS

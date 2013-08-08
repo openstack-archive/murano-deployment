@@ -14,6 +14,9 @@ Scripts:
   - ../../WindowsPowerShell/Functions/SQLServerForAOAG.ps1
 
 Commands:
+  - Name: Disable-Firewall
+    Arguments: {}
+
   - Name: Install-SQLServerForAOAG
     Arguments:
       # [String] (REQUIRED) Domain name
@@ -22,3 +25,6 @@ Commands:
       SQLServiceUserName: $domainAdminAccountName
       # [String] (REQUIRED) Password for that user
       SQLServiceUserPassword: $domainAdminAccountPassword
+
+  - Name: Install-SqlServerPowerShellModule
+    Arguments: {}

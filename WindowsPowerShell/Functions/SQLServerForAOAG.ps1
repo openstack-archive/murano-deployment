@@ -1,4 +1,8 @@
 
+trap {
+    &$TrapHandler
+}
+
 function Install-SqlServerPowerShellModule {
     param (
         [String] $SetupRoot = ''
@@ -146,7 +150,7 @@ function Initialize-AlwaysOnAvailabilityGroup {
 
         $FunctionsFile = Export-Function 'Get-NextFreePort', 'Initialize-AlwaysOn'
 
-        Start-PowerShellProcess @"
+        $null = Start-PowerShellProcess @"
 trap {
     `$_
     exit 1
@@ -203,7 +207,7 @@ function New-SharedFolderForAOAG {
         try {
             Write-LogDebug "Trying to remove share '$ShareName'"
             $null = Get-SmbShare -Name $ShareName -ErrorAction 'Stop'
-            Remove-SmbShare -Name $ShareName -Force
+            $null = Remove-SmbShare -Name $ShareName -Force
             write-Log "Share '$ShareName' removed."
         }
         catch {
@@ -213,7 +217,7 @@ function New-SharedFolderForAOAG {
         try {
             Write-LogDebug "Trying to remove folder '$SharePath"
             $null = Get-Item -Path $SharePath -ErrorAction 'Stop'
-            Remove-Item -Path $SharePath -Recurse -Force
+            $null = Remove-Item -Path $SharePath -Recurse -Force
             Write-Log "Folder '$SharePath' removed."
         }
         catch {
@@ -370,27 +374,29 @@ function Initialize-AOAGPrimaryReplica {
                 'ListenerDef' = $ListenerDefinition;
             }
 
-            Remove-Item -Path "\\$PrimaryNode\SharedWorkDir\*" -Force
+            $null = Remove-Item -Path "\\$PrimaryNode\SharedWorkDir\*" -Force
 
             $CliXmlFile = [IO.Path]::GetTempFileName()
 
             Write-LogDebug "CliXml file: '$CliXmlFile'"
 
-            Export-CliXml -Path $CliXmlFile -InputObject $Parameters -Depth 10
+            $null = Export-CliXml -Path $CliXmlFile -InputObject $Parameters -Depth 10
 
-            Initialize-AOAGPrimaryReplica `
+            $null = Initialize-AOAGPrimaryReplica `
                 -CliXmlFile $CliXmlFile `
                 -DomainName $DomainName `
                 -UserName $UserName `
                 -UserPassword $UserPassword `
                 -PrimaryNode $PrimaryNode
+
+            Write-LogDebug "Inner 'Initialize-AOAGPrimaryReplica' call completed."
         }
         else {
             $Creds = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
 
             $FunctionsFile = Export-Function -All
 
-            Start-PowerShellProcess @"
+            $null = Start-PowerShellProcess @"
 trap {
     `$_
     exit 1
@@ -456,7 +462,7 @@ function Initialize-AOAGSecondaryReplica {
 
         $FunctionsFile = Export-Function -All
 
-        Start-PowerShellProcess @"
+        $null = Start-PowerShellProcess @"
 trap {
     $_
     exit 1

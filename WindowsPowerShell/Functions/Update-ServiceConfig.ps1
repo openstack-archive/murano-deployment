@@ -1,4 +1,10 @@
 
+trap {
+    &$TrapHandler
+}
+
+
+
 function Update-ServiceConfig {
     param (
         [String] $Name,

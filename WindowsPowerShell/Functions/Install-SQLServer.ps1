@@ -1,3 +1,10 @@
+
+trap {
+    &$TrapHandler
+}
+
+
+
 Function ConvertTo-Boolean {
     param (
         $InputObject,
@@ -11,11 +18,15 @@ Function ConvertTo-Boolean {
     }
 }
 
+
+
 Function Show-Environment {
     foreach ($item in (Get-ChildItem Env:)) {
         Write-Log ("'{0}' --> '{1}'" -f $item.Name, $item.Value)
     }
 }
+
+
 
 Function Install-SqlServer {
     param (

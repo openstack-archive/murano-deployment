@@ -1,4 +1,10 @@
 
+trap {
+    &$TrapHandler
+}
+
+
+
 function New-SqlServerSystemAccount {
     param (
         # (REQUIRED) Domain Name

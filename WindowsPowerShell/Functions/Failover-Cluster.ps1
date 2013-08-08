@@ -42,10 +42,14 @@
 
 #>
 
+trap {
+    &$TrapHandler
+}
+
 
 
 function Install-FailoverClusterPrerequisites {
-    Import-Module FailoverClusters
+    #Import-Module FailoverClusters
 
     Add-WindowsFeature Failover-Clustering, RSAT-Clustering-PowerShell
 }
@@ -103,7 +107,7 @@ function New-FailoverClusterSharedFolder {
                 
                 New-SmbShare -Path $SharePath `
                     -Name $ShareName `
-                    -FullAccess "$ClusterAccount" `
+                    -FullAccess "$ClusterAccount", 'Everyone' `
                     -Description "Shared folder for Failover Cluster."
 
             } -ArgumentList $SharePath, $ShareName, "$DomainName\$ClusterName`$"

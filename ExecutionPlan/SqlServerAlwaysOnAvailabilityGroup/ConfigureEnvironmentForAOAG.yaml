@@ -14,11 +14,11 @@ Scripts:
   - ../../WindowsPowerShell/Functions/New-SqlServerSystemAccount.ps1
 
 Commands:
-  - Name: Install-SqlServerPowerShellModule
-    Arguments: {}
+#  - Name: Install-SqlServerPowerShellModule
+#    Arguments: {}
 
-  - Name: Disable-Firewall
-    Arguments: {}
+#  - Name: Disable-Firewall
+#    Arguments: {}
 
   - Name: Enable-TrustedHosts
     Arguments: {}

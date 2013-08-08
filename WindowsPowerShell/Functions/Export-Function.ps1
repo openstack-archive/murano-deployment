@@ -1,4 +1,8 @@
 
+trap {
+    &$TrapHandler
+}
+
 function Export-Function {
     param (
         [String[]] $Name,

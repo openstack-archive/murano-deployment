@@ -1,4 +1,10 @@
 
+trap {
+    &$TrapHandler
+}
+
+
+
 function Select-CliXmlBlock {
     param (
         [String] $Path,
