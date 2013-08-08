@@ -24,24 +24,35 @@ function New-SqlServerSystemAccount {
 
         [String] $PrimaryNode = ' '
     )
-
-    if ($PrimaryNode.ToLower() -ne ($Env:ComputerName).ToLower()) {
-        Write-Log "THis function runs on AOAG primary node only."
-        Write-Log "Exiting."
-        return
+    begin {
+        Show-InvocationInfo $MyInvocation
     }
+    end {
+        Show-InvocationInfo $MyInvocation -End
+    }
+    process {
+        trap {
+            &$TrapHandler
+        }
 
-    Write-Log "Installing 'RSAT-AD-PowerShell' ... "
-    Add-WindowsFeature RSAT-AD-PowerShell
+        if ($PrimaryNode.ToLower() -ne ($Env:ComputerName).ToLower()) {
+            Write-Log "THis function runs on AOAG primary node only."
+            Write-Log "Exiting."
+            return
+        }
 
-    Import-Module ActiveDirectory
+        Write-Log "Installing 'RSAT-AD-PowerShell' ... "
+        Add-WindowsFeature RSAT-AD-PowerShell
 
-    $Creds = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
+        Import-Module ActiveDirectory
 
-    Write-Log "Adding new user ..."
-    $null = New-ADUser `
-        -Name $SQLServiceUserName `
-        -AccountPassword $(ConvertTo-SecureString -String $SQLServiceUserPassword -AsPlainText -Force) `
-        -Credential $Creds `
-        -ErrorAction 'Stop'
+        $Creds = New-Credential -UserName "$DomainName\$UserName" -Password "$UserPassword"
+
+        Write-Log "Adding new user ..."
+        $null = New-ADUser `
+            -Name $SQLServiceUserName `
+            -AccountPassword $(ConvertTo-SecureString -String $SQLServiceUserPassword -AsPlainText -Force) `
+            -Credential $Creds `
+            -ErrorAction 'Stop'
+    }
 }

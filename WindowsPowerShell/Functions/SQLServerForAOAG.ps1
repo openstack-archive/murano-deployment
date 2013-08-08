@@ -10,6 +10,10 @@ function Install-SqlServerPowerShellModule {
         Show-InvocationInfo $MyInvocation -End
     }
     process {
+        trap {
+            &$TrapHandler
+        }
+
         if ((Get-Module SQLPS -ListAvailable) -ne $null) {
             Write-Log "Module SQLSP already installed."
             return
@@ -79,6 +83,10 @@ function Install-SqlServerForAOAG {
         Show-InvocationInfo $MyInvocation -End
     }
     process {
+        trap {
+            &$TrapHandler
+        }
+
         if ($MuranoFileShare -eq '') {
             $MuranoFileShare = [Environment]::GetEnvironmentVariable('MuranoFileShare')
             if ($MuranoFileShare -eq '') {
@@ -126,6 +134,10 @@ function Initialize-AlwaysOnAvailabilityGroup {
         Show-InvocationInfo $MyInvocation -End
     }
     process {
+        trap {
+            &$TrapHandler
+        }
+
         $ShareNetworkPath = '\\' + $PrimaryNode + '\' + $ShareName
 
         $DomainAdminAccountCreds = New-Credential `
@@ -171,6 +183,10 @@ function New-SharedFolderForAOAG {
         Show-InvocationInfo $MyInvocation -End
     }
     process {
+        trap {
+            &$TrapHandler
+        }
+
         if ($PrimaryNode.ToLower() -ne ($Env:ComputerName).ToLower()) {
             Write-Log "This script runs on primary node only."
             Write-Log "Exiting script."
@@ -294,6 +310,10 @@ function Initialize-AOAGPrimaryReplica {
         Show-InvocationInfo $MyInvocation -End
     }
     process {
+        trap {
+            &$TrapHandler
+        }
+
         Write-Log "Primary node: '$($PrimaryNode.ToLower())'"
         Write-Log "Current node: '$(($Env:ComputerName).ToLower())'"
 
@@ -422,6 +442,10 @@ function Initialize-AOAGSecondaryReplica {
         Show-InvocationInfo $MyInvocation -End
     }
     process {
+        trap {
+            &$TrapHandler
+        }
+
         if ($PrimaryNode.ToLower() -eq ($Env:ComputerName).ToLower()) {
             Write-Log "This function works on any SecondaryNode only."
             Write-Log "Exiting."
@@ -459,6 +483,10 @@ function Disable-Firewall {
         Show-InvocationInfo $MyInvocation -End
     }
     process {
+        trap {
+            &$TrapHandler
+        }
+
         netsh advfirewall set allprofiles state off
     }
 }
@@ -473,6 +501,10 @@ function Enable-Firewall {
         Show-InvocationInfo $MyInvocation -End
     }
     process {
+        trap {
+            &$TrapHandler
+        }
+
         netsh advfirewall set allprofiles state on
     }
 }
@@ -487,6 +519,10 @@ function Enable-TrustedHosts {
         Show-InvocationInfo $MyInvocation -End
     }
     process {
+        trap {
+            &$TrapHandler
+        }
+
         Set-Item WSMan:\localhost\Client\TrustedHosts -Value '*' -Force
     }
 }

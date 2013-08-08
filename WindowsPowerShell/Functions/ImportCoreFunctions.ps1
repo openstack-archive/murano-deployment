@@ -1,5 +1,6 @@
 Import-Module CoreFunctions -Force
 
+
 function Show-InvocationInfo {
     param (
         $Invocation,
@@ -24,6 +25,21 @@ function Show-InvocationInfo {
     }
 }
 
+
+$TrapHandler = {
+    Write-LogError @("<exception>", $_) -EntireObject
+    Write-LogError "</exception>"
+    break
+}
+
+
+trap {
+    &$TrapHandler
+}
+
+$ErrorActionPreference = 'Stop'
+
+
 <#
 # Usage example for Show-InvocationInfo
 
@@ -40,6 +56,9 @@ function MyFunction {
         Show-InvocationInfo $MyInvocation -End
     }
     process {
+        trap {
+            &$TrapHandler
+        }
         # Main code here
     }
 }

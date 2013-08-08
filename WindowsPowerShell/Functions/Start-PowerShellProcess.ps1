@@ -34,6 +34,10 @@ function Start-PowerShellProcess {
         Show-InvocationInfo $MyInvocation -End
     }
     process {
+        trap {
+            &$TrapHandler
+        }
+
         $StdOut = [IO.Path]::GetTempFileName()
         $StdErr = [IO.Path]::GetTempFileName()
 

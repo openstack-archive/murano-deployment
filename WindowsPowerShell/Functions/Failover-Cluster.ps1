@@ -71,11 +71,8 @@ function New-FailoverClusterSharedFolder {
     }
     process {
         trap {
-            Write-LogError $_ -EntireObject
-            break
+            &$TrapHandler
         }
-
-        $ErrorActionPreference = 'Stop'
 
         Write-Log "--> New-FailoverClusterSharedFolder"
 
@@ -139,11 +136,8 @@ function New-FailoverCluster {
     }
     process {
         trap {
-            Write-LogError $_ -EntireObject
-            break
+            &$TrapHandler
         }
-        
-        $ErrorActionPreference = 'Stop'
 
         Write-Log "ClusterNodes: $($ClusterNodes -join ', ')"
 

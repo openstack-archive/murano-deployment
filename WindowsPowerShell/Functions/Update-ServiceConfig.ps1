@@ -14,6 +14,10 @@ function Update-ServiceConfig {
         Show-InvocationInfo $MyInvocation -End
     }
     process {
+        trap {
+            &$TrapHandler
+        }
+
         $ArgumentList = @('config', "`"$Name`"")
 
         if ($RunAsLocalService) {
