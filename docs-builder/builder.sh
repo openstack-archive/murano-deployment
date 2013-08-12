@@ -1,3 +1,6 @@
+#!/bin/sh -x
+#
+
 cd ~/tests
 
 #clone and clean github pages
@@ -29,8 +32,8 @@ cd ~/tests
 cd murano-docs/src/murano-deployment-guide
 mvn clean generate-sources
 
-#copy murano-manual
-mkdir ~/tests/gh-pages/docs/murano-manual
+#copy murano-deployment-guide
+mkdir ~/tests/gh-pages/docs/murano-deployment-guide
 cp -r target/docbkx/webhelp/murano-deployment-guide/* ~/tests/gh-pages/docs/murano-deployment-guide
 cp -r target/docbkx/pdf/murano-deployment-guide.pdf ~/tests/gh-pages/docs/murano-deployment-guide
 cd ~/tests
