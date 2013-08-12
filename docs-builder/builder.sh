@@ -1,10 +1,12 @@
+cd ~/tests
+
 #clone and clean github pages
 rm -rf gh-pages
 git clone -b gh-pages git@github.com:Mirantis/murano-docs.git gh-pages
 cd gh-pages
 rm -rf '!(.git|.nojekyll|CNAME)'
 git add -A
-cd ..
+cd ~/tests
 
 #clone Murano Docs
 rm -rf murano-docs
@@ -18,6 +20,7 @@ cd murano-docs/src/murano-manual
 mvn clean generate-sources
 
 #copy murano-manual
+mkdir ~/tests/gh-pages/docs/murano-manual
 cp -r target/docbkx/webhelp/murano-manual/* ~/tests/gh-pages/docs/murano-manual
 cp target/docbkx/pdf/murano-manual.pdf ~/tests/gh-pages/docs/murano-manual
 cd ~/tests
@@ -27,6 +30,7 @@ cd murano-docs/src/murano-deployment-guide
 mvn clean generate-sources
 
 #copy murano-manual
+mkdir ~/tests/gh-pages/docs/murano-manual
 cp -r target/docbkx/webhelp/murano-deployment-guide/* ~/tests/gh-pages/docs/murano-deployment-guide
 cp -r target/docbkx/pdf/murano-deployment-guide.pdf ~/tests/gh-pages/docs/murano-deployment-guide
 cd ~/tests
