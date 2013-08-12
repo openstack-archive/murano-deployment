@@ -7,8 +7,7 @@ cd ~/tests
 rm -rf gh-pages
 git clone -b gh-pages git@github.com:Mirantis/murano-docs.git gh-pages
 cd gh-pages
-rm -rf '!(.git|.nojekyll|CNAME)'
-git add -A
+git rm -rf !(.git|.nojekyll|CNAME)
 cd ~/tests
 
 #clone Murano Docs
