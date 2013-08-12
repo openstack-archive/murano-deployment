@@ -20,7 +20,7 @@ mvn clean generate-sources
 #copy murano-manual
 cp -r target/docbkx/webhelp/murano-manual/* ~/tests/gh-pages/docs/murano-manual
 cp target/docbkx/pdf/murano-manual.pdf ~/tests/gh-pages/docs/murano-manual
-cd ~/tests/gh-pages
+cd ~/tests
 
 #generate murano-deployment-guide
 cd murano-docs/src/murano-deployment-guide
@@ -29,7 +29,7 @@ mvn clean generate-sources
 #copy murano-manual
 cp -r target/docbkx/webhelp/murano-deployment-guide/* ~/tests/gh-pages/docs/murano-deployment-guide
 cp -r target/docbkx/pdf/murano-deployment-guide.pdf ~/tests/gh-pages/docs/murano-deployment-guide
-cd ~/tests/gh-pages
+cd ~/tests
 
 #commit generated data
 cd ~/tests/gh-pages
