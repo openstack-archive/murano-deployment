@@ -100,6 +100,8 @@ ADMIN_PASSWORD=''
 RABBITMQ_LOGIN=''
 RABBITMQ_PASSWORD=''
 RABBITMQ_VHOST=''
+
+BRANCH_NAME='master'
 EOF
 	fi
 
@@ -134,10 +136,10 @@ function fetch_murano_apps {
 			git reset --hard
 			git clean -fd
 			git remote update
-			git checkout master
+			git checkout origin/$BRANCH_NAME
 
-			rev_on_local=$(git rev-list --max-count=1 master)
-			rev_on_origin=$(git rev-list --max-count=1 origin/master)
+			rev_on_local=$(git rev-list --max-count=1 $BRANCH_NAME)
+			rev_on_origin=$(git rev-list --max-count=1 origin/$BRANCH_NAME)
 
 			if [ "$rev_on_local" == "$rev_on_origin" ] ; then
 				log "\n'$app_name' is up-to-date."
@@ -145,7 +147,7 @@ function fetch_murano_apps {
 				git status
 				log "***** ***** ***** ***** *****"
 			else
-				git pull origin master
+				git pull origin $BRANCH_NAME
 				RETURN="$RETURN $app_name"
 			fi
 		fi
@@ -209,13 +211,6 @@ function uninstall_murano_apps {
 
 function configure_murano {
 	log "** Configuring Murano ..."
-
-	if [ ! -f '/etc/murano-deployment/lab-binding.rc' ] ; then
-		log "Create '/etc/murano-dashboard/lab-binding.rc' or configure services individually."
-		die "Murano components require configuration."
-	fi
-
-	source /etc/murano-deployment/lab-binding.rc
 
 	for config_file in $murano_config_files ; do
 		log "** Configuring file '$config_file'"
@@ -327,6 +322,13 @@ for config_file in $murano_config_files ; do
 		configuration_required="$configuration_required $config_file"
 	fi
 done
+
+
+if [ ! -f '/etc/murano-deployment/lab-binding.rc' ] ; then
+	die "Configuration file '/etc/murano-dashboard/lab-binding.rc' not found."
+fi
+
+source /etc/murano-deployment/lab-binding.rc
 
 
 log "* Running mode '$mode'"
