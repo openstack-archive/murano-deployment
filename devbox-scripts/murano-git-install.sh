@@ -79,43 +79,6 @@ function install_prerequisites {
 			service apache2 restart
 		;;
 	esac
-
-	log "** Creating lab-binding.rc file"
-	if [ ! -f '/etc/murano-deployment/lab-binding.rc' ] ; then
-		mkdir '/etc/murano-deployment'
-
-		cat << "EOF" > /etc/murano-deployment/lab-binding.rc
-# Vi / Vim notes
-# * Press 'i' to enter INSERT mode
-# * Edit the file
-# * Press <ESC>, then type ':wq' to (w)rite changes and (q)uit editor.
-
-LAB_HOST=''
-
-AUTH_URL="http://$LAB_HOST:5000/v2.0"
-
-ADMIN_USER=''
-ADMIN_PASSWORD=''
-
-RABBITMQ_LOGIN=''
-RABBITMQ_PASSWORD=''
-RABBITMQ_VHOST=''
-
-BRANCH_NAME='master'
-EOF
-	fi
-
-	log "***** ***** ***** ***** *****"
-	log "Now you should configure lab binding settings in"
-	log "   /etc/murano-deployment/lab-binding.rc"
-	log "***** ***** ***** ***** *****"
-
-	printf '\n\n'
-	read -p "Press <Enter> to start editing the file in 'vi' (you have no choice) ... "
-
-	if [ -f '/etc/murano-deployment/lab-binding.rc' ] ; then
-		vi '/etc/murano-deployment/lab-binding.rc'
-	fi
 }
 
 
@@ -324,11 +287,50 @@ for config_file in $murano_config_files ; do
 done
 
 
-if [ ! -f '/etc/murano-deployment/lab-binding.rc' ] ; then
-	die "Configuration file '/etc/murano-dashboard/lab-binding.rc' not found."
+devbox_config='/etc/murano-deployment/lab-binding.rc'
+
+if [ ! -f "$devbox_config" ] ; then
+	mkdir '/etc/murano-deployment'
+
+	cat << "EOF" > $devbox_config
+# Vi / Vim notes
+# * Press 'i' to enter INSERT mode
+# * Edit the file
+# * Press <ESC>, then type ':wq' to (w)rite changes and (q)uit editor.
+
+LAB_HOST=''
+
+AUTH_URL="http://$LAB_HOST:5000/v2.0"
+
+ADMIN_USER=''
+ADMIN_PASSWORD=''
+
+RABBITMQ_LOGIN=''
+RABBITMQ_PASSWORD=''
+RABBITMQ_VHOST=''
+
+BRANCH_NAME='master'
+EOF
+
+	log "***** ***** ***** ***** *****"
+	log "Now you should configure lab binding settings in"
+	log "   $devbox_config"
+	log "***** ***** ***** ***** *****"
+
+	printf '\n\n'
+	read -p "Press <Enter> to start editing the file in 'vi' ... "
+
+	if [ -f "$devbox_config" ] ; then
+		vi "$devbox_config"
+	fi
 fi
 
-source /etc/murano-deployment/lab-binding.rc
+if [ ! -f "$devbox_config" ] ; then
+	die "Configuration file '$devbox_config' not found."
+fi
+
+source "$devbox_config"
+
 
 
 log "* Running mode '$mode'"
