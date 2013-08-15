@@ -16,7 +16,6 @@ git_clone_root='/opt/git'
 
 os_version=''
 
-
 # Helper funtions
 #-------------------------------------------------
 function die {
@@ -91,6 +90,24 @@ function fetch_murano_apps {
 		git_repo="$git_prefix/$app_name.git"
 		git_clone_dir="$git_clone_root/$app_name"
 
+		case $app_name in
+			'murano-api')
+				REMOTE_BRANCH=${BRANCH_MURANO_API:-$BRANCH_NAME}
+			;;
+			'murano-conductor')
+				REMOTE_BRANCH=${BRANCH_MURANO_CONDUCTOR:-$BRANCH_NAME}
+			;;
+			'python-muranoclient')
+				REMOTE_BRANCH=${BRANCH_MURANO_CLIENT:-$BRANCH_NAME}
+			;;
+			'murano-dashboard')
+				REMOTE_BRANCH=${BRANCH_MURANO_DASHBOARD:-$BRANCH_NAME}
+			;;
+			*)
+				REMOTE_BRANCH=$BRANCH_NAME
+			;;
+		esac
+
 		if [ ! -d "$git_clone_dir" ] ; then
 			git clone $git_repo $git_clone_dir || die "Unable to clone repository '$git_repo'"
 			RETURN="$RETURN $app_name"
@@ -99,18 +116,26 @@ function fetch_murano_apps {
 			git reset --hard
 			git clean -fd
 			git remote update
-			git checkout origin/$BRANCH_NAME
 
-			rev_on_local=$(git rev-list --max-count=1 $BRANCH_NAME)
-			rev_on_origin=$(git rev-list --max-count=1 origin/$BRANCH_NAME)
+			git fetch origin $REMOTE_BRANCH
+
+			rev_on_local=$(git rev-list --max-count=1 HEAD)
+			rev_on_origin=$(git rev-list --max-count=1 origin FETCH_HEAD)
 
 			if [ "$rev_on_local" == "$rev_on_origin" ] ; then
 				log "\n'$app_name' is up-to-date."
 				log "***** ***** ***** ***** *****"
 				git status
 				log "***** ***** ***** ***** *****"
+				git log -1
+				log "***** ***** ***** ***** *****"
 			else
-				git pull origin $BRANCH_NAME
+				#git pull origin $BRANCH_NAME
+				git checkout FETCH_HEAD
+				log "\nSwitched to '$REMOTE_BRANCH':"
+				log "***** ***** ***** ***** *****"
+				git log -1
+				log "***** ***** ***** ***** *****"
 				RETURN="$RETURN $app_name"
 			fi
 		fi
@@ -310,6 +335,11 @@ RABBITMQ_PASSWORD=''
 RABBITMQ_VHOST=''
 
 BRANCH_NAME='master'
+
+#BRANCH_MURANO_API=''
+#BRANCH_MURANO_DASHBOARD=''
+#BRANCH_MURANO_CLIENT=''
+#BRANCH_MURANO_CONDUCTOR=''
 EOF
 
 	log "***** ***** ***** ***** *****"
@@ -368,6 +398,13 @@ case $mode in
 		install_prerequisites
 	;;
 	'update')
+		fetch_murano_apps
+		log "\nList of updated apps:"
+		log "***** ***** ***** ***** *****"
+		log $RETURN
+		log "***** ***** ***** ***** *****"
+	;;
+	'upgrade')
 		fetch_murano_apps
 		apps_list=$RETURN
 		
