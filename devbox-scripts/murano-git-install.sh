@@ -26,7 +26,7 @@ function die {
 }
 
 function log {
-    printf "$@\n" | tee --append /tmp/murano-git-install.log
+    printf "%s\n" "$@" | tee --append /tmp/murano-git-install.log
 }
 
 function iniset {
@@ -85,7 +85,9 @@ function fetch_murano_apps {
     RETURN=''
 
     for app_name in $murano_components ; do
-        log "* Working with '$app_name'"
+        log ''
+        log ''
+        log "*** Working with '$app_name'"
 
         git_repo="$git_prefix/$app_name.git"
         git_clone_dir="$git_clone_root/$app_name"
@@ -117,25 +119,37 @@ function fetch_murano_apps {
             git clean -fd
             git remote update
 
-            git fetch origin $REMOTE_BRANCH
-
             rev_on_local=$(git rev-list --max-count=1 HEAD)
-            rev_on_origin=$(git rev-list --max-count=1 origin FETCH_HEAD)
+            rev_on_origin=$(git rev-list --max-count=1 origin/$REMOTE_BRANCH)
+
+            log "* Revision on local  = $rev_on_local"
+            log "* Revision on origin = $rev_on_origin"
 
             if [ "$rev_on_local" == "$rev_on_origin" ] ; then
-                log "\n'$app_name' is up-to-date."
-                log "***** ***** ***** ***** *****"
+                log "* '$app_name' is up-to-date."
+                log "----- ----- ----- ----- -----"
+                log "(git status):"
                 git status
                 log "***** ***** ***** ***** *****"
+                log "(git log -1):"
                 git log -1
-                log "***** ***** ***** ***** *****"
+                log "===== ===== ===== ===== ====="
             else
                 #git pull origin $BRANCH_NAME
-                git checkout FETCH_HEAD
-                log "\nSwitched to '$REMOTE_BRANCH':"
-                log "***** ***** ***** ***** *****"
+                if [ -n "$(git branch | grep $REMOTE_BRANCH)" ] ; then
+                    log "* branch '$REMOTE_BRANCH' found locally, updating ..."
+                    git checkout $REMOTE_BRANCH
+                else
+                    log "* branch '$REMOTE_BRANCH' not found locally, fetching ..."
+                    git checkout -b $REMOTE_BRANCH origin/$REMOTE_BRANCH
+                fi
+                git pull
+
+                log "* Switched to '$REMOTE_BRANCH':"
+                log "----- ----- ----- ----- -----"
+                log "(git log -1):"
                 git log -1
-                log "***** ***** ***** ***** *****"
+                log "===== ===== ===== ===== ====="
                 RETURN="$RETURN $app_name"
             fi
         fi
@@ -399,7 +413,8 @@ case $mode in
     ;;
     'update')
         fetch_murano_apps
-        log "\nList of updated apps:"
+        log ''
+        log "List of updated apps:"
         log "***** ***** ***** ***** *****"
         log $RETURN
         log "***** ***** ***** ***** *****"
