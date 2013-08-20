@@ -110,38 +110,45 @@ function fetch_murano_apps {
             ;;
         esac
 
-        if [ ! -d "$git_clone_dir" ] ; then
-            git clone $git_repo $git_clone_dir || die "Unable to clone repository '$git_repo'"
-            cd "$git_clone_dir"
-            if [ -n "$(git branch | grep $REMOTE_BRANCH)" ] ; then
-                log "* branch '$REMOTE_BRANCH' found locally, updating ..."
-                git checkout $REMOTE_BRANCH
-            else
-                log "* branch '$REMOTE_BRANCH' not found locally, fetching ..."
-                git checkout -b $REMOTE_BRANCH origin/$REMOTE_BRANCH
-            fi
-            RETURN="$RETURN $app_name"
-        else
+        local do_checkout=''
+        if [ -d "$git_clone_dir" ] ; then
             cd "$git_clone_dir"
             git reset --hard
             git clean -fd
             git remote update || die "'git remote update' failed for '$git_repo'"
 
             rev_on_local=$(git rev-list --max-count=1 HEAD)
-            rev_on_origin=$(git rev-list --max-count=1 origin/$REMOTE_BRANCH)
+            if [[ "$REMOTE_BRANCH" =~ ^refs ]] ; then
+                git fetch "$git_repo" "$REMOTE_BRANCH"
+                rev_on_origin=$(git rev-list --max-count=1 FETCH_HEAD)
+            else
+                rev_on_origin=$(git rev-list --max-count=1 origin/$REMOTE_BRANCH)
+            fi
 
             log "* Revision on local  = $rev_on_local"
             log "* Revision on origin = $rev_on_origin"
 
-            if [ "$rev_on_local" == "$rev_on_origin" ] ; then
-                log "* '$app_name' is up-to-date."
-                log "----- ----- ----- ----- -----"
-                log "(git status):"
-                git status
-                log "***** ***** ***** ***** *****"
-                log "(git log -1):"
-                git log -1
-                log "===== ===== ===== ===== ====="
+            if [[ "$rev_on_local" != "$rev_on_origin" ]] ; then
+                do_checkout=$app_name
+            fi
+        else
+            git clone $git_repo $git_clone_dir || die "Unable to clone repository '$git_repo'"
+            cd "$git_clone_dir"
+            do_checkout=$app_name
+        fi
+
+        if [ -z $do_checkout ] ; then
+            log "* '$app_name' is up-to-date."
+            log "----- ----- ----- ----- -----"
+            log "(git status):"
+            git status
+            log "***** ***** ***** ***** *****"
+            log "(git log -1):"
+            git log -1
+            log "===== ===== ===== ===== ====="
+        else
+            if [[ "$REMOTE_BRANCH" =~ ^refs ]] ; then
+                git fetch "$git_repo" "$REMOTE_BRANCH" && git checkout FETCH_HEAD
             else
                 if [ -n "$(git branch | grep $REMOTE_BRANCH)" ] ; then
                     log "* branch '$REMOTE_BRANCH' found locally, updating ..."
@@ -151,14 +158,15 @@ function fetch_murano_apps {
                     git checkout -b $REMOTE_BRANCH origin/$REMOTE_BRANCH
                 fi
                 git pull
-
-                log "* Switched to '$REMOTE_BRANCH':"
-                log "----- ----- ----- ----- -----"
-                log "(git log -1):"
-                git log -1
-                log "===== ===== ===== ===== ====="
-                RETURN="$RETURN $app_name"
             fi
+
+            log "* Switched to '$REMOTE_BRANCH':"
+            log "----- ----- ----- ----- -----"
+            log "(git log -1):"
+            git log -1
+            log "===== ===== ===== ===== ====="
+
+            RETURN="$RETURN $app_name"
         fi
     done
 }
