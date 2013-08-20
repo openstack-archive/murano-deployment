@@ -6,7 +6,7 @@ mode=${1:-'help'}
 
 curr_dir=$(cd $(dirname "$0") && pwd)
 
-murano_components="murano-api murano-conductor python-muranoclient murano-dashboard"
+murano_components="murano-api murano-conductor murano-dashboard"
 murano_services="murano-api murano-conductor"
 murano_config_files='/etc/murano-api/murano-api.conf /etc/murano-api/murano-api-paste.ini /etc/murano-conductor/conductor.conf /etc/murano-conductor/conductor-paste.ini'
 
@@ -112,12 +112,20 @@ function fetch_murano_apps {
 
         if [ ! -d "$git_clone_dir" ] ; then
             git clone $git_repo $git_clone_dir || die "Unable to clone repository '$git_repo'"
+            cd "$git_clone_dir"
+            if [ -n "$(git branch | grep $REMOTE_BRANCH)" ] ; then
+                log "* branch '$REMOTE_BRANCH' found locally, updating ..."
+                git checkout $REMOTE_BRANCH
+            else
+                log "* branch '$REMOTE_BRANCH' not found locally, fetching ..."
+                git checkout -b $REMOTE_BRANCH origin/$REMOTE_BRANCH
+            fi
             RETURN="$RETURN $app_name"
         else
             cd "$git_clone_dir"
             git reset --hard
             git clean -fd
-            git remote update
+            git remote update || die "'git remote update' failed for '$git_repo'"
 
             rev_on_local=$(git rev-list --max-count=1 HEAD)
             rev_on_origin=$(git rev-list --max-count=1 origin/$REMOTE_BRANCH)
@@ -135,7 +143,6 @@ function fetch_murano_apps {
                 git log -1
                 log "===== ===== ===== ===== ====="
             else
-                #git pull origin $BRANCH_NAME
                 if [ -n "$(git branch | grep $REMOTE_BRANCH)" ] ; then
                     log "* branch '$REMOTE_BRANCH' found locally, updating ..."
                     git checkout $REMOTE_BRANCH
