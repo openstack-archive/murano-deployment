@@ -10,15 +10,11 @@ cd murano-docs
 ls -A1 | grep -v -e '\.git' | xargs git rm -rf
 cd ~/tests
 
-#clone Murano Docs
-rm -rf murano-docs
-git clone https://github.com/stackforge/murano-docs
-
 #copy site
-cp murano-docs/site/index.html ~/tests/murano-docs/
+cp $WORKSPACE/site/index.html ~/tests/murano-docs/
 
 #generate murano-manual
-cd murano-docs/src/murano-manual
+cd $WORKSPACE/src/murano-manual
 mvn clean generate-sources
 
 #copy murano-manual
@@ -28,7 +24,7 @@ cp target/docbkx/pdf/murano-manual.pdf ~/tests/murano-docs/docs/murano-manual
 cd ~/tests
 
 #generate murano-deployment-guide
-cd murano-docs/src/murano-deployment-guide
+cd $WORKSPACE/src/murano-deployment-guide
 mvn clean generate-sources
 
 #copy murano-deployment-guide
