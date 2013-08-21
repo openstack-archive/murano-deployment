@@ -11,7 +11,7 @@ ls -A1 | grep -v -e '\.git' | xargs git rm -rf
 cd ~/tests
 
 #copy site
-cp $WORKSPACE/site/index.html ~/tests/murano-docs/
+cp -r $WORKSPACE/site/* ~/tests/murano-docs/
 
 #generate murano-manual
 cd $WORKSPACE/src/murano-manual
