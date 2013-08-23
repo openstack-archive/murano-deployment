@@ -58,6 +58,14 @@ function install_prerequisites {
 
             log "** Installing OpenStack dashboard ..."
             yum install make gcc python-netaddr.noarch python-keystoneclient.noarch python-django-horizon.noarch python-django-openstack-auth.noarch  httpd.x86_64 mod_wsgi.x86_64 openstack-dashboard.noarch --assumeyes
+
+            log "** Disabling firewall ..."
+            service iptables stop
+            chkconfig iptables off
+
+            log "** Disabling SELinux ..."
+            setenforce permissive
+            iniset '' 'SELINUX' 'permissive' '/etc/selinux/config'
         ;;
         'Ubuntu')
             log "** Installing additional software sources ..."
@@ -67,6 +75,9 @@ function install_prerequisites {
             log "** Updating system ..."
             apt-get update -y
             apt-get upgrade -y
+
+            log "** Installing additional packages ..."
+            apt-get install -y node-less
 
             log "** Installing OpenStack dashboard ..."
             apt-get install -y memcached libapache2-mod-wsgi openstack-dashboard
