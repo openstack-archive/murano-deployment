@@ -249,6 +249,7 @@ function configure_murano {
 
         case "$config_file" in
             '/etc/murano-api/murano-api.conf')
+                iniset 'DEFAULT' 'log_file' '/var/log/murano-api.log' "$config_file"
                 iniset 'rabbitmq' 'host' "$LAB_HOST" "$config_file"
                 iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
                 iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
@@ -261,7 +262,8 @@ function configure_murano {
                 iniset 'filter:authtoken' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
             ;;
             '/etc/murano-conductor/conductor.conf')
-                iniset 'heat' 'auth_url' "$AUTH_URL" "$config_file"
+                iniset 'DEFAULT' 'log_file' '/var/log/murano-conductor.log' "$config_file"
+                iniset 'keystone' 'auth_url' "$AUTH_URL" "$config_file"
                 iniset 'rabbitmq' 'host' "$LAB_HOST" "$config_file"
                 iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
                 iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
