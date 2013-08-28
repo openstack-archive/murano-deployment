@@ -6,9 +6,15 @@ mode=${1:-'help'}
 
 curr_dir=$(cd $(dirname "$0") && pwd)
 
-murano_components="murano-api murano-conductor murano-dashboard"
-murano_services="murano-api murano-conductor"
-murano_config_files='/etc/murano-api/murano-api.conf /etc/murano-api/murano-api-paste.ini /etc/murano-conductor/conductor.conf /etc/murano-conductor/conductor-paste.ini'
+murano_components='murano-api murano-conductor murano-dashboard'
+
+murano_services='murano-api murano-conductor'
+
+murano_config_files='/etc/murano-api/murano-api.conf
+ /etc/murano-api/murano-api-paste.ini
+ /etc/murano-conductor/conductor.conf
+ /etc/murano-conductor/conductor-paste.ini
+ /usr/share/openstack-dashboard/openstack_dashboard/settings.py'
 
 
 git_prefix="https://github.com/stackforge"
@@ -34,11 +40,29 @@ function iniset {
     local option=$2
     local value=$3
     local file=$4
+    local line
 
     if [ -z $section ] ; then
+        # No section name specified
         sed -i -e "s/^\($option[ \t]*=[ \t]*\).*$/\1$value/" "$file"
     else
-        sed -i -e "/^\[$section\]/,/^\[.*\]/ s|^\($option[ \t]*=[ \t]*\).*$|\1$value|" "$file"
+        # Check if section already exists
+        if [ ! grep -q "^\[$section\]" "$file" ]; then
+            # Add section at the end
+            echo -e "\n[$section]" >>"$file"
+        fi
+
+        # Check if parameter in the section exists
+        line=$(sed -ne "/^\[$section\]/,/^\[.*\]/ { /^$option[ \t]*=/ p; }" "$file")
+        if [ -z "$line" ] ; then
+            # Add parameter if it is not exists
+            sed -i -e "/^\[$section\]/ a\\
+$option = $value
+" "$file"
+        else
+            # Replace existing parameter
+            sed -i -e "/^\[$section\]/,/^\[.*\]/ s|^\($option[ \t]*=[ \t]*\).*$|\1$value|" "$file"
+        fi
     fi
 }
 #-------------------------------------------------
@@ -276,6 +300,27 @@ function configure_murano {
                 iniset '' 'OPENSTACK_HOST' "'$LAB_HOST'" "$config_file"
             ;;
         esac
+
+        if [ "$SSL_ENABLED" = 'true' ] ; then
+            case "$config_file" in
+                '/etc/murano-api/murano-api.conf')
+                    iniset 'ssl' 'cert_file' '/etc/murano-api/server.crt' "$config_file"
+                    iniset 'ssl' 'key_file' '/etc/murano-api/server.key' "$config_file"
+                ;;
+                '/etc/murano-api/murano-api-paste.ini')
+                    iniset 'filter:authtoken' 'auth_protocol' 'https' "$config_file"
+                ;;
+                '/etc/murano-conductor/conductor.conf')
+                    iniset 'keystone' 'insecure' 'True' "$config_file"
+                    iniset 'heat' 'insecure' 'True' "$config_file"
+                ;;
+                '/usr/share/openstack-dashboard/openstack_dashboard/settings.py')
+                    echo '' >> "$config_file"
+                    echo "MURANO_API_INSECURE = True" >> "$config_file"
+                    echo "MURANO_API_URL = 'https://localhost:8082'" >> "$config_file"
+                ;;
+            esac
+        fi
     done
 }
 
@@ -378,6 +423,9 @@ RABBITMQ_VHOST=''
 
 BRANCH_NAME='master'
 
+# Only 'true' or 'false' values are allowed!
+SSL_ENABLED='false'
+
 #BRANCH_MURANO_API=''
 #BRANCH_MURANO_DASHBOARD=''
 #BRANCH_MURANO_CLIENT=''
@@ -403,6 +451,7 @@ fi
 
 source "$devbox_config"
 
+SSL_ENABLED=${SSL_ENABLED:-'false'}
 
 
 log "* Running mode '$mode'"
