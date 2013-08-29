@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Approved+1: Alexander Tivelkov <ativelkov@mirantis.com>
+Code-Review+2: Alexander Tivelkov <ativelkov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 29 Aug 2013 10:06:30 +0000
+Reviewed-on: https://review.openstack.org/44037
+Project: stackforge/murano-deployment
+Branch: refs/heads/release-0.2
