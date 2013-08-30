@@ -47,7 +47,7 @@ function iniset {
         sed -i -e "s/^\($option[ \t]*=[ \t]*\).*$/\1$value/" "$file"
     else
         # Check if section already exists
-        if [ ! $(grep -q "^\[$section\]" "$file") ]; then
+        if ! grep -q "^\[$section\]" "$file" ; then
             # Add section at the end
             echo -e "\n[$section]" >>"$file"
         fi
