@@ -174,7 +174,7 @@ function AddToEnvPath()
     else
     {
 	    $newPath=$oldPath+';'+$addString;
-        Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH –Value $newPath
+        Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newPath
 		Log "$addString was add to system PATH";
     }
 }
