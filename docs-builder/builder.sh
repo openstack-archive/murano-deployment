@@ -22,7 +22,7 @@ do
 
     git clone -b ${branch} git@github.com:stackforge/murano-docs.git docs-${version}
 
-    for manual in "murano-manual" "murano-deployment-guide"
+    for manual in "developers-guide" "murano-deployment-guide"
     do
         cd "${TEMP}/docs-${version}/src/${manual}"
         mvn clean generate-sources
