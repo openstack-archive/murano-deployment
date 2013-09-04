@@ -1,46 +1,39 @@
 #!/bin/sh -x
-#
 
-cd ~/tests
+VERSIONS[0]="0.1"
+VERSIONS[1]="0.2"
+
+#create temp directory where we going to work
+TEMP=$PWD/temp-$(date +%s)
+mkdir "${TEMP}"
 
 #clone and clean github pages
-rm -rf gh-pages
-git clone -b gh-pages git@github.com:Mirantis/murano-docs.git gh-pages
-cd gh-pages
-ls -A1 | grep -v -e 'CNAME' -e '\.git' -e '\.nojekyll' | xargs git rm -rf
-cd ~/tests
+cd "${TEMP}"
+git clone git@github.com:murano-docs/murano-docs.github.io.git murano-docs
+cd murano-docs
+ls -A1 | grep -v -e '\.git' | xargs git rm -rf
 
-#clone Murano Docs
-rm -rf murano-docs
-git clone https://github.com/stackforge/murano-docs
+for version in ${VERSIONS[@]}
+do
+    cd "${TEMP}"
+    git clone -b release-${version} git@github.com:stackforge/murano-docs.git docs-${version}
 
-#copy site
-cp murano-docs/site/index.html ~/tests/gh-pages/
+    for manual in "murano-manual" "murano-deployment-guide"
+    do
+        cd "${TEMP}/docs-${version}/src/${manual}"
+        mvn clean generate-sources
 
-#generate murano-manual
-cd murano-docs/src/murano-manual
-mvn clean generate-sources
-
-#copy murano-manual
-mkdir -p ~/tests/gh-pages/docs/murano-manual
-cp -r target/docbkx/webhelp/murano-manual/* ~/tests/gh-pages/docs/murano-manual
-cp target/docbkx/pdf/murano-manual.pdf ~/tests/gh-pages/docs/murano-manual
-cd ~/tests
-
-#generate murano-deployment-guide
-cd murano-docs/src/murano-deployment-guide
-mvn clean generate-sources
-
-#copy murano-deployment-guide
-mkdir -p ~/tests/gh-pages/docs/murano-deployment-guide
-cp -r target/docbkx/webhelp/murano-deployment-guide/* ~/tests/gh-pages/docs/murano-deployment-guide
-cp -r target/docbkx/pdf/murano-deployment-guide.pdf ~/tests/gh-pages/docs/murano-deployment-guide
-cd ~/tests
+        built_manual=${TEMP}/murano-docs/docs/v${version}/${manual}
+        mkdir -p "${built_manual}"
+        cp -r "target/docbkx/webhelp/${manual}"/* "${built_manual}"
+        cp "target/docbkx/pdf/${manual}.pdf ${built_manual}"
+    done
+done
 
 #commit generated data
-cd ~/tests/gh-pages
-git config user.email "tnurlygayanov@mirantis.com"
-git config user.name "Timur Nurlygayanov"
+cd "${TEMP}/murano-docs"
+git config user.email "murano-eng@mirantis.com"
+git config user.name "murano-docs"
 git add .
 git commit -am "generated `date`."
-git push origin gh-pages
+git push origin master
