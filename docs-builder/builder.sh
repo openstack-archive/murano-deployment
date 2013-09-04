@@ -1,8 +1,5 @@
 #!/bin/sh -x
 
-VERSIONS[0]="0.1"
-VERSIONS[1]="0.2"
-
 #create temp directory where we going to work
 TEMP=$PWD/temp-$(date +%s)
 mkdir "${TEMP}"
@@ -13,7 +10,7 @@ git clone git@github.com:murano-docs/murano-docs.github.io.git murano-docs
 cd murano-docs
 ls -A1 | grep -v -e '\.git' | xargs git rm -rf
 
-for version in ${VERSIONS[@]}
+for version in "0.1" "0.2"
 do
     cd "${TEMP}"
     git clone -b release-${version} git@github.com:stackforge/murano-docs.git docs-${version}
