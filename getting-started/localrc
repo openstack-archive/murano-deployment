@@ -1,0 +1,71 @@
+#
+# Devstack's config file for Murano Getting Started
+# Replace strings '***' with your values.
+#
+
+# Default password for this config
+#
+default_password='***'
+
+# Other passwords
+#
+ADMIN_PASSWORD=$default_password
+MYSQL_PASSWORD=$default_password
+RABBIT_PASSWORD=$default_password
+SERVICE_PASSWORD=$default_password
+
+SERVICE_TOKEN=tokentoken
+
+
+# IP address of your devstack box
+#
+HOST_IP='***.***.***.***'
+
+
+# Name of the interface which will be shared with Fixed Network
+#
+FLAT_INTERFACE='***'
+
+
+# IP range for Fixed Network
+# Addresses which will be assigned to instances at startup are taken from that range
+#
+FIXED_RANGE='10.0.0.0/24'
+
+
+# IP range fo Floating Network
+#
+FLOATING_RANGE='***.***.***.***/***'
+
+
+# Enable MySQL backend explicitely
+#
+ENABLED_SERVICES+=,mysql
+
+
+# Enable Heat
+#
+ENABLED_SERVICES+=,heat,h-api,h-api-cfn,h-api-cw,h-eng
+
+
+# Add Fedora 17 image for load balancer
+#
+IMAGE_URLS+=",http://fedorapeople.org/groups/heat/prebuilt-jeos-images/F17-x86_64-cfntools.qcow2"
+
+
+# Logger settings
+#
+SCREEN_LOGDIR=/opt/stack/log/
+LOGFILE=$SCREEN_LOGDIR/stack.sh.log
+
+
+# Disable check of API requests rate
+#
+API_RATE_LIMIT=False
+
+
+# Extra options for nova.conf
+#
+EXTRA_OPTS=(force_config_drive=true libvirt_images_type=qcow2 force_raw_images=false)
+
+
