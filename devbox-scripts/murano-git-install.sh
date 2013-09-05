@@ -421,7 +421,7 @@ RABBITMQ_LOGIN=''
 RABBITMQ_PASSWORD=''
 RABBITMQ_VHOST=''
 
-BRANCH_NAME='master'
+BRANCH_NAME='release-0.2'
 
 # Only 'true' or 'false' values are allowed!
 SSL_ENABLED='false'
