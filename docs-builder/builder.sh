@@ -28,22 +28,31 @@ do
     cd "${TEMP}"
 
     if [ ${version} = "latest" ]; then
+        guides="murano-manual murano-deployment-guide"
         branch="master"
+    elif [ ${version} = "0.2" ]; then
+        guides="developers-guide murano-deployment-guide user-guide"
+        branch="release-${version}"
+    elif [ ${version} = "0.1" ]; then
+        guides="murano-manual murano-deployment-guide"
+        branch="release-${version}"
     else
+        guides="developers-guide murano-deployment-guide"
         branch="release-${version}"
     fi
 
     git clone -b ${branch} git@github.com:stackforge/murano-docs.git docs-${version}
+    cd docs-${version} && git pull && cd ..
 
-    for manual in "developers-guide" "murano-deployment-guide"
+    for guide in ${guides}
     do
-        cd "${TEMP}/docs-${version}/src/${manual}"
+        cd "${TEMP}/docs-${version}/src/${guide}"
         mvn clean generate-sources
 
-        built_manual=${TEMP}/murano-docs/${version}/${manual}
+        built_manual=${TEMP}/murano-docs/${version}/${guide}
         mkdir -p "${built_manual}"
-        cp -r "target/docbkx/webhelp/${manual}"/* "${built_manual}"
-        cp "target/docbkx/pdf/${manual}.pdf" "${built_manual}"
+        cp -r "target/docbkx/webhelp/${guide}"/* "${built_manual}"
+        cp "target/docbkx/pdf/${guide}.pdf" "${built_manual}"
     done
 done
 
