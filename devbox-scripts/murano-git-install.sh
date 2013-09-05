@@ -80,6 +80,11 @@ function install_prerequisites {
             log "** Updating system ..."
             yum update -y
 
+            log "** Upgrading pip ..."
+            pip install --upgrade pip
+            #rm /usr/bin/pip
+            #ln -s /usr/local/bin/pip /usr/bin/pip
+
             log "** Installing OpenStack dashboard ..."
             yum install make gcc python-netaddr.noarch python-keystoneclient.noarch python-django-horizon.noarch python-django-openstack-auth.noarch  httpd.x86_64 mod_wsgi.x86_64 openstack-dashboard.noarch --assumeyes
 
@@ -101,7 +106,12 @@ function install_prerequisites {
             apt-get upgrade -y
 
             log "** Installing additional packages ..."
-            apt-get install -y node-less
+            apt-get install -y node-less python-pip
+
+            log "** Upgrading pip ..."
+            pip install --upgrade pip
+            rm /usr/bin/pip
+            ln -s /usr/local/bin/pip /usr/bin/pip
 
             log "** Installing OpenStack dashboard ..."
             apt-get install -y memcached libapache2-mod-wsgi openstack-dashboard
