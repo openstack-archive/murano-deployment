@@ -107,7 +107,7 @@
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>2</Order>
-                    <CommandLine>%WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe Import-Module ServerManager; Install-WindowsFeature NET-Framework-Core –Source D:\Sources\SxS</CommandLine>
+                    <CommandLine>%WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe Import-Module ServerManager; Install-WindowsFeature NET-Framework-Core -Source D:\Sources\SxS</CommandLine>
                     <Description>Add dot Net 3.5 feature</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
