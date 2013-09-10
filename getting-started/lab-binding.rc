@@ -1,0 +1,69 @@
+#
+# Insert your values instead of '***' marks anywhere in the config below.
+#
+
+
+# Lab Settings
+#-------------
+# Address of the host which provides Keystone service.
+#
+# LAB_HOST='172.18.124.201'
+LAB_HOST='***.***.***.***'
+
+# An OpenStack Admin user.
+#
+# ADMIN_USER='admin'
+ADMIN_USER='admin'
+
+# A password for OpenStack admin user.
+#
+# ADMIN_PASSWORD=''
+ADMIN_PASSWORD='***'
+#-------------
+
+
+# RabbitMQ Settings
+#------------------
+# A user which has permissions to connect to RabbitMQ vHost specified below.
+# NOTE: For now, this user MUST have an 'Administrator' tag
+#
+# RABBITMQ_USER='muranouser'
+RABBITMQ_USER='muranouser'
+
+# A password for RabbitMQ user
+#
+# RABBITMQ_PASSWORD='murano'
+RABBITMQ_PASSWORD='***'
+
+# A vHost for current devbox.
+# NOTE: It's a good practice to create new vHost dedicated to only one devbox.
+#       This prevents name collisions and message stealing.
+#
+# RABBITMQ_VHOST='muranovhost'
+RABBITMQ_VHOST='***'
+#------------------
+
+
+# Murano Components Branch
+#-------------------------
+# Default branch name for all Murano components
+#
+# BRANCH_NAME='master'
+BRANCH_NAME='release-0.2'
+
+# NOTE: Any Murano component can be checked out from its own branch.
+#       This is useful for testing purposes.
+#       Per-components branch variables are shown below.
+#       Their names are self-explanatory.
+#
+#BRANCH_MURANO_API='master'
+#BRANCH_MURANO_CONDUCTOR='master'
+#BRANCH_MURANO_DASHBOARD='master'
+
+#-------------------------
+
+
+# DO NOT MODIFY ANYTHING BELOW THIS LINE
+#=======================================
+
+AUTH_URL="http://$LAB_HOST:5000/v2.0"
