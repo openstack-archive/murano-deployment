@@ -5,11 +5,12 @@
 #      Need to track all installation actions from puppet recepies
 
 class murano::conductor (
-    $rabbit_vhost = 'murano',
-    $rabbit_user = 'murano',
+    $rabbit_vhost    = 'murano',
+    $rabbit_user     = 'murano',
     $rabbit_password = 'murano',
-    $rabbit_host = '127.0.0.1',
-    $keystone_url = 'http://127.0.0.1:5000/v2.0'
+    $rabbit_host     = '127.0.0.1',
+    $keystone_url    = 'http://127.0.0.1:5000/v2.0',
+    $branch          = 'master'
 ) {
     rabbitmq_user { "$rabbit_user":
         admin    => true,
@@ -33,18 +34,24 @@ class murano::conductor (
         ensure   => present,
         provider => git,
         source   => 'git://github.com/stackforge/murano-conductor.git',
-        revision => 'master',
+        revision => $branch,
         alias    => 'step1',
+    }
+
+    case  $operatingsystem {
+        centos: { $cmd = "sh setup-centos.sh purge-init; sh setup-centos.sh install" }
+        default: { $cmd = "sh setup.sh purge-init; sh setup.sh install" }
     }
 
     exec {'Install new version':
         require  => Vcsrepo['step1'],
-        command  => 'chmod +x setup.sh; ./setup.sh purge-init; ./setup.sh install',
+        command  => $cmd,
         user     => 'root',
         provider => shell,
         cwd      => '/tmp/murano-conductor',
         alias    => 'step2',
     }
+
 
     exec {'Copy configuration files':
         require  => Exec['step2'],
