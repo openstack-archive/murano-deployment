@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Approved+1: Serg Melikyan <smelikyan@mirantis.com>
+Code-Review+2: Serg Melikyan <smelikyan@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 11 Sep 2013 08:42:03 +0000
+Reviewed-on: https://review.openstack.org/46028
+Project: stackforge/murano-deployment
+Branch: refs/heads/release-0.2
