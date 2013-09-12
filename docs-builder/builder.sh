@@ -28,7 +28,7 @@ do
     cd "${TEMP}"
 
     if [ ${version} = "latest" ]; then
-        guides="developers-guide murano-deployment-guide user-guide getting-started"
+        guides="developers-guide administrators-guide user-guide getting-started"
         branch="master"
     elif [ ${version} = "0.2" ]; then
         guides="developers-guide administrators-guide user-guide getting-started"
