@@ -28,10 +28,10 @@ do
     cd "${TEMP}"
 
     if [ ${version} = "latest" ]; then
-        guides="murano-manual murano-deployment-guide"
+        guides="developers-guide administrators-guide user-guide getting-started"
         branch="master"
     elif [ ${version} = "0.2" ]; then
-        guides="developers-guide administrators-guide user-guide"
+        guides="developers-guide administrators-guide user-guide getting-started"
         branch="release-${version}"
     elif [ ${version} = "0.1" ]; then
         guides="murano-manual murano-deployment-guide"
