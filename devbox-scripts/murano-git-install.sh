@@ -137,8 +137,16 @@ function install_prerequisites {
         ;;
         'Ubuntu')
             log "** Installing additional software sources ..."
-            echo 'deb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main' > /etc/apt/sources.list.d/grizzly.list
+            cat << EOF > /etc/apt/sources.list.d/ubuntu-cloud.list
+deb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main
+EOF
             apt-get install -y ubuntu-cloud-keyring
+
+            cat << EOF > /etc/apt/sources.list.d/gplhost-archive.list
+deb http://archive.gplhost.com/debian grizzly main
+deb http://archive.gplhost.com/debian grizzly-backports main
+EOF
+            apt-get install --yes --force-yes gplhost-archive-keyring
 
             log "** Updating system ..."
             apt-get update -y
