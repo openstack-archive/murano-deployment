@@ -369,8 +369,21 @@ function configure_murano {
                     iniset 'filter:authtoken' 'auth_protocol' 'https' "$config_file"
                 ;;
                 '/etc/murano-conductor/conductor.conf')
-                    iniset 'keystone' 'insecure' 'True' "$config_file"
-                    iniset 'heat' 'insecure' 'True' "$config_file"
+                    local ssl_insecure='True'
+                    # If any variable is not empty then ssl_insecure = False
+                    if [ -n "${SSL_CA_FILE}${SSL_CERT_FILE}${SSL_KEY_FILE}" ] ; then
+                        ssl_insecure='False'
+                    fi
+
+                    iniset 'keystone' 'ca_file' "$SSL_CA_FILE" "$config_file"
+                    iniset 'keystone' 'cert_file' "$SSL_CERT_FILE" "$config_file"
+                    iniset 'keystone' 'key_file' "$SSL_KEY_FILE" "$config_file"
+                    iniset 'keystone' 'insecure' "$ssl_insecure" "$config_file"
+
+                    iniset 'heat' 'ca_file' "$SSL_CA_FILE" "$config_file"
+                    iniset 'heat' 'cert_file' "$SSL_CERT_FILE" "$config_file"
+                    iniset 'heat' 'key_file' "$SSL_KEY_FILE" "$config_file"
+                    iniset 'heat' 'insecure' "$ssl_insecure" "$config_file"
                 ;;
                 '/etc/murano-conductor/data/templates/agent-config/Default.template')
                     replace '%RABBITMQ_SSL%' 'true' "$config_file"
@@ -489,6 +502,9 @@ BRANCH_NAME='release-0.2'
 
 # Only 'true' or 'false' values are allowed!
 SSL_ENABLED='false'
+SSL_CA_FILE=''
+SSL_CERT_FILE=''
+SSL_KEY_FILE=''
 
 #BRANCH_MURANO_API=''
 #BRANCH_MURANO_DASHBOARD=''
