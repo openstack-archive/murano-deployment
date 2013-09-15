@@ -14,6 +14,8 @@ murano_config_files='/etc/murano-api/murano-api.conf
  /etc/murano-api/murano-api-paste.ini
  /etc/murano-conductor/conductor.conf
  /etc/murano-conductor/conductor-paste.ini
+ /etc/murano-conductor/data/init.ps1
+ /etc/murano-conductor/data/templates/agent-config/Default.template
  /usr/share/openstack-dashboard/openstack_dashboard/settings.py'
 
 
@@ -64,6 +66,14 @@ $option = $value
             sed -i -e "/^\[$section\]/,/^\[.*\]/ s|^\($option[ \t]*=[ \t]*\).*$|\1$value|" "$file"
         fi
     fi
+}
+
+function replace {
+    local what_replace=$1
+    local replace_with=$2
+    local file=$3
+
+    sed -i "s/$what_replace/$replace_with/g" "$file"
 }
 #-------------------------------------------------
 
@@ -309,6 +319,14 @@ function configure_murano {
             '/etc/openstack-dashboard/local_settings.py')
                 iniset '' 'OPENSTACK_HOST' "'$LAB_HOST'" "$config_file"
             ;;
+            '/etc/murano-conductor/data/init.ps1')
+                [ -n "$FILE_SHARE_HOST" ] && \
+                  replace '%MURANO_FILE_SHARE%' "$FILE_SHARE_HOST" "$config_file"
+            ;;
+            '/etc/murano-conductor/data/templates/agent-config/Default.template')
+                [ -n "$RABBITMQ_HOST" ] && \
+                  replace '%RABBITMQ_HOST%' "$RABBITMQ_HOST" "$config_file"
+            ;;
         esac
 
         if [ "$SSL_ENABLED" = 'true' ] ; then
@@ -323,6 +341,9 @@ function configure_murano {
                 '/etc/murano-conductor/conductor.conf')
                     iniset 'keystone' 'insecure' 'True' "$config_file"
                     iniset 'heat' 'insecure' 'True' "$config_file"
+                ;;
+                '/etc/murano-conductor/data/templates/agent-config/Default.template')
+                    replace '%RABBITMQ_SSL%' 'true' "$config_file"
                 ;;
                 '/usr/share/openstack-dashboard/openstack_dashboard/settings.py')
                     echo '' >> "$config_file"
@@ -429,6 +450,11 @@ RABBITMQ_LOGIN=''
 RABBITMQ_PASSWORD=''
 RABBITMQ_VHOST=''
 
+RABBITMQ_NODE_LIST=''
+#RABBITMQ_HOST=''
+
+#FILE_SHARE_HOST=''
+
 BRANCH_NAME='release-0.2'
 
 # Only 'true' or 'false' values are allowed!
@@ -447,6 +473,8 @@ if [ "$SSL_ENABLED" = 'true' ] ; then
 fi
 
 AUTH_URL="$AUTH_PROTO://$LAB_HOST:5000/v2.0"
+
+RABBITMQ_HOST=${RABBITMQ_HOST:-$(echo $RABBITMQ_NODE_LIST | cut -d ' ' -f 1)}
 
 EOF
 
