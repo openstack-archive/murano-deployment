@@ -357,7 +357,7 @@ function configure_murano {
             ;;
             '/etc/murano-conductor/data/init.ps1')
                 [ -n "$FILE_SHARE_HOST" ] && \
-                  replace '%MURANO_FILE_SHARE%' "$FILE_SHARE_HOST" "$config_file"
+                  replace '%MURANO_SERVER_ADDRESS%' "$FILE_SHARE_HOST" "$config_file"
             ;;
             '/etc/murano-conductor/data/templates/agent-config/Default.template')
                 [ -n "$RABBITMQ_HOST" ] && \
