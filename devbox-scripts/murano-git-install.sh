@@ -228,7 +228,7 @@ function fetch_murano_apps {
             git status
             log "***** ***** ***** ***** *****"
             log "(git log -1):"
-            git log -1
+            git --no-pager log -1
             log "===== ===== ===== ===== ====="
         else
             if [[ "$REMOTE_BRANCH" =~ ^refs ]] ; then
@@ -247,7 +247,7 @@ function fetch_murano_apps {
             log "* Switched to '$REMOTE_BRANCH':"
             log "----- ----- ----- ----- -----"
             log "(git log -1):"
-            git log -1
+            git --no-pager log -1
             log "===== ===== ===== ===== ====="
 
             RETURN="$RETURN $app_name"
