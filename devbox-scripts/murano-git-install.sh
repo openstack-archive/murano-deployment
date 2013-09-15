@@ -422,8 +422,6 @@ if [ ! -f "$devbox_config" ] ; then
 
 LAB_HOST=''
 
-AUTH_URL="http://$LAB_HOST:5000/v2.0"
-
 ADMIN_USER=''
 ADMIN_PASSWORD=''
 
@@ -440,6 +438,16 @@ SSL_ENABLED='false'
 #BRANCH_MURANO_DASHBOARD=''
 #BRANCH_MURANO_CLIENT=''
 #BRANCH_MURANO_CONDUCTOR=''
+
+#-------------------------------------------------------------------------------
+
+AUTH_PROTO=http
+if [ "$SSL_ENABLED" = 'true' ] ; then
+    AUTH_PROTO=https
+fi
+
+AUTH_URL="$AUTH_PROTO://$LAB_HOST:5000/v2.0"
+
 EOF
 
     log "***** ***** ***** ***** *****"
