@@ -14,6 +14,8 @@ murano_config_files='/etc/murano-api/murano-api.conf
  /etc/murano-api/murano-api-paste.ini
  /etc/murano-conductor/conductor.conf
  /etc/murano-conductor/conductor-paste.ini
+ /etc/murano-conductor/data/init.ps1
+ /etc/murano-conductor/data/templates/agent-config/Default.template
  /usr/share/openstack-dashboard/openstack_dashboard/settings.py'
 
 
@@ -65,6 +67,43 @@ $option = $value
         fi
     fi
 }
+
+function replace {
+    local what_replace=$1
+    local replace_with=$2
+    local file=$3
+
+    sed -i "s/$what_replace/$replace_with/g" "$file"
+}
+
+function generate_sample_certificate {
+    local location=$1
+    local cert_name=$2
+
+    local old_pwd=$(pwd)
+    cd $location
+
+    openssl genrsa -des3 -passout pass:x -out "$cert_name.pass.key" 2048
+    openssl rsa -passin pass:x -in "$cert_name.pass.key" -out "$cert_name.key"
+    rm "$cert_name.pass.key"
+
+    openssl req -new \
+     -subj "/C=RU" \
+     -subj "/ST=Center" \
+     -subj "/L=Moscow" \
+     -subj "/O=Mirantis" \
+     -subj "/OU=Murano" \
+     -subj "/CN=murano" \
+     -subj "/emailAddress=murano-all@mirantis.com" \
+     -key "$cert_name.key" -out "$cert_name.csr"
+
+    openssl x509 -req -days 365 \
+      -in "$cert_name.csr" \
+      -signkey "$cert_name.key" \
+      -out "$cert_name.crt"
+
+    cd $old_pwd
+}
 #-------------------------------------------------
 
 
@@ -112,6 +151,9 @@ function install_prerequisites {
             pip install --upgrade pip
             rm /usr/bin/pip
             ln -s /usr/local/bin/pip /usr/bin/pip
+
+            log "** Upgrading pbr ..."
+            pip install --upgrade pbr
 
             log "** Installing OpenStack dashboard ..."
             apt-get install -y memcached libapache2-mod-wsgi openstack-dashboard
@@ -189,7 +231,7 @@ function fetch_murano_apps {
             git status
             log "***** ***** ***** ***** *****"
             log "(git log -1):"
-            git log -1
+            git --no-pager log -1
             log "===== ===== ===== ===== ====="
         else
             if [[ "$REMOTE_BRANCH" =~ ^refs ]] ; then
@@ -208,7 +250,7 @@ function fetch_murano_apps {
             log "* Switched to '$REMOTE_BRANCH':"
             log "----- ----- ----- ----- -----"
             log "(git log -1):"
-            git log -1
+            git --no-pager log -1
             log "===== ===== ===== ===== ====="
 
             RETURN="$RETURN $app_name"
@@ -274,6 +316,13 @@ function uninstall_murano_apps {
 function configure_murano {
     log "** Configuring Murano ..."
 
+    # Try to assign to the local variable value of RABBITMQ_HOST
+    #    If it's undefined or empty - use LAB_HOST instead.
+    # The RABBITMQ_HOST couldn't be defined that way because it
+    #    holds an address of a RabbitMQ host ONLY when this host
+    #    differs from one where Murano runs.
+    local rabbitmq_host=${RABBITMQ_HOST:-$LAB_HOST}
+
     for config_file in $murano_config_files ; do
         log "** Configuring file '$config_file'"
 
@@ -284,7 +333,7 @@ function configure_murano {
         case "$config_file" in
             '/etc/murano-api/murano-api.conf')
                 iniset 'DEFAULT' 'log_file' '/var/log/murano-api.log' "$config_file"
-                iniset 'rabbitmq' 'host' "$LAB_HOST" "$config_file"
+                iniset 'rabbitmq' 'host' "$rabbitmq_host" "$config_file"
                 iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
                 iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
                 iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
@@ -298,7 +347,7 @@ function configure_murano {
             '/etc/murano-conductor/conductor.conf')
                 iniset 'DEFAULT' 'log_file' '/var/log/murano-conductor.log' "$config_file"
                 iniset 'keystone' 'auth_url' "$AUTH_URL" "$config_file"
-                iniset 'rabbitmq' 'host' "$LAB_HOST" "$config_file"
+                iniset 'rabbitmq' 'host' "$rabbitmq_host" "$config_file"
                 iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
                 iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
                 iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
@@ -309,11 +358,20 @@ function configure_murano {
             '/etc/openstack-dashboard/local_settings.py')
                 iniset '' 'OPENSTACK_HOST' "'$LAB_HOST'" "$config_file"
             ;;
+            '/etc/murano-conductor/data/init.ps1')
+                [ -n "$FILE_SHARE_HOST" ] && \
+                  replace '%MURANO_SERVER_ADDRESS%' "$FILE_SHARE_HOST" "$config_file"
+            ;;
+            '/etc/murano-conductor/data/templates/agent-config/Default.template')
+                [ -n "$RABBITMQ_HOST" ] && \
+                  replace '%RABBITMQ_HOST%' "$RABBITMQ_HOST" "$config_file"
+            ;;
         esac
 
         if [ "$SSL_ENABLED" = 'true' ] ; then
             case "$config_file" in
                 '/etc/murano-api/murano-api.conf')
+                    generate_sample_certificate '/etc/murano-api' 'server'
                     iniset 'ssl' 'cert_file' '/etc/murano-api/server.crt' "$config_file"
                     iniset 'ssl' 'key_file' '/etc/murano-api/server.key' "$config_file"
                 ;;
@@ -321,8 +379,24 @@ function configure_murano {
                     iniset 'filter:authtoken' 'auth_protocol' 'https' "$config_file"
                 ;;
                 '/etc/murano-conductor/conductor.conf')
-                    iniset 'keystone' 'insecure' 'True' "$config_file"
-                    iniset 'heat' 'insecure' 'True' "$config_file"
+                    local ssl_insecure='True'
+                    # If any variable is not empty then ssl_insecure = False
+                    if [ -n "${SSL_CA_FILE}${SSL_CERT_FILE}${SSL_KEY_FILE}" ] ; then
+                        ssl_insecure='False'
+                    fi
+
+                    iniset 'keystone' 'ca_file' "$SSL_CA_FILE" "$config_file"
+                    iniset 'keystone' 'cert_file' "$SSL_CERT_FILE" "$config_file"
+                    iniset 'keystone' 'key_file' "$SSL_KEY_FILE" "$config_file"
+                    iniset 'keystone' 'insecure' "$ssl_insecure" "$config_file"
+
+                    iniset 'heat' 'ca_file' "$SSL_CA_FILE" "$config_file"
+                    iniset 'heat' 'cert_file' "$SSL_CERT_FILE" "$config_file"
+                    iniset 'heat' 'key_file' "$SSL_KEY_FILE" "$config_file"
+                    iniset 'heat' 'insecure' "$ssl_insecure" "$config_file"
+                ;;
+                '/etc/murano-conductor/data/templates/agent-config/Default.template')
+                    replace '%RABBITMQ_SSL%' 'true' "$config_file"
                 ;;
                 '/usr/share/openstack-dashboard/openstack_dashboard/settings.py')
                     echo '' >> "$config_file"
@@ -422,8 +496,6 @@ if [ ! -f "$devbox_config" ] ; then
 
 LAB_HOST=''
 
-AUTH_URL="http://$LAB_HOST:5000/v2.0"
-
 ADMIN_USER=''
 ADMIN_PASSWORD=''
 
@@ -431,15 +503,35 @@ RABBITMQ_LOGIN=''
 RABBITMQ_PASSWORD=''
 RABBITMQ_VHOST=''
 
-BRANCH_NAME='master'
+#RABBITMQ_NODE_LIST=''
+#RABBITMQ_HOST=''
+
+#FILE_SHARE_HOST=''
+
+BRANCH_NAME='release-0.2'
 
 # Only 'true' or 'false' values are allowed!
 SSL_ENABLED='false'
+SSL_CA_FILE=''
+SSL_CERT_FILE=''
+SSL_KEY_FILE=''
 
 #BRANCH_MURANO_API=''
 #BRANCH_MURANO_DASHBOARD=''
 #BRANCH_MURANO_CLIENT=''
 #BRANCH_MURANO_CONDUCTOR=''
+
+#-------------------------------------------------------------------------------
+
+AUTH_PROTO=http
+if [ "$SSL_ENABLED" = 'true' ] ; then
+    AUTH_PROTO=https
+fi
+
+AUTH_URL="$AUTH_PROTO://$LAB_HOST:5000/v2.0"
+
+RABBITMQ_HOST=${RABBITMQ_HOST:-$(echo $RABBITMQ_NODE_LIST | cut -d ' ' -f 1)}
+
 EOF
 
     log "***** ***** ***** ***** *****"
