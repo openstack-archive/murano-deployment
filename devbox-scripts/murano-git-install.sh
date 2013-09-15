@@ -75,6 +75,35 @@ function replace {
 
     sed -i "s/$what_replace/$replace_with/g" "$file"
 }
+
+function generate_sample_certificate {
+    local location=$1
+    local cert_name=$2
+
+    local old_pwd=$(pwd)
+    cd $location
+
+    openssl genrsa -des3 -passout pass:x -out "$cert_name.pass.key" 2048
+    openssl rsa -passin pass:x -in "$cert_name.pass.key" -out "$cert_name.key"
+    rm "$cert_name.pass.key"
+
+    openssl req -new \
+     -subj "/C=RU" \
+     -subj "/ST=Center" \
+     -subj "/L=Moscow" \
+     -subj "/O=Mirantis" \
+     -subj "/OU=Murano" \
+     -subj "/CN=murano" \
+     -subj "/emailAddress=murano-all@mirantis.com" \
+     -key "$cert_name.key" -out "$cert_name.csr"
+
+    openssl x509 -req -days 365 \
+      -in "$cert_name.csr" \
+      -signkey "$cert_name.key" \
+      -out "$cert_name.crt"
+
+    cd $old_pwd
+}
 #-------------------------------------------------
 
 
@@ -332,6 +361,7 @@ function configure_murano {
         if [ "$SSL_ENABLED" = 'true' ] ; then
             case "$config_file" in
                 '/etc/murano-api/murano-api.conf')
+                    generate_sample_certificate '/etc/murano-api' 'server'
                     iniset 'ssl' 'cert_file' '/etc/murano-api/server.crt' "$config_file"
                     iniset 'ssl' 'key_file' '/etc/murano-api/server.key' "$config_file"
                 ;;
