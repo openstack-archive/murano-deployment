@@ -313,6 +313,13 @@ function uninstall_murano_apps {
 function configure_murano {
     log "** Configuring Murano ..."
 
+    # Try to assign to the local variable value of RABBITMQ_HOST
+    #    If it's undefined or empty - use LAB_HOST instead.
+    # The RABBITMQ_HOST couldn't be defined that way because it
+    #    holds an address of a RabbitMQ host ONLY when this host
+    #    differs from one where Murano runs.
+    local rabbitmq_host=${RABBITMQ_HOST:-$LAB_HOST}
+
     for config_file in $murano_config_files ; do
         log "** Configuring file '$config_file'"
 
@@ -323,7 +330,7 @@ function configure_murano {
         case "$config_file" in
             '/etc/murano-api/murano-api.conf')
                 iniset 'DEFAULT' 'log_file' '/var/log/murano-api.log' "$config_file"
-                iniset 'rabbitmq' 'host' "$RABBITMQ_HOST" "$config_file"
+                iniset 'rabbitmq' 'host' "$rabbitmq_host" "$config_file"
                 iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
                 iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
                 iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
@@ -337,7 +344,7 @@ function configure_murano {
             '/etc/murano-conductor/conductor.conf')
                 iniset 'DEFAULT' 'log_file' '/var/log/murano-conductor.log' "$config_file"
                 iniset 'keystone' 'auth_url' "$AUTH_URL" "$config_file"
-                iniset 'rabbitmq' 'host' "$RABBITMQ_HOST" "$config_file"
+                iniset 'rabbitmq' 'host' "$rabbitmq_host" "$config_file"
                 iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
                 iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
                 iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
@@ -521,7 +528,6 @@ fi
 AUTH_URL="$AUTH_PROTO://$LAB_HOST:5000/v2.0"
 
 RABBITMQ_HOST=${RABBITMQ_HOST:-$(echo $RABBITMQ_NODE_LIST | cut -d ' ' -f 1)}
-RABBITMQ_HOST=${RABBITMQ_HOST:-$LAB_HOST}
 
 EOF
 
