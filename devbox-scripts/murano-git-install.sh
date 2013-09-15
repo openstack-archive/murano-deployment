@@ -323,7 +323,7 @@ function configure_murano {
         case "$config_file" in
             '/etc/murano-api/murano-api.conf')
                 iniset 'DEFAULT' 'log_file' '/var/log/murano-api.log' "$config_file"
-                iniset 'rabbitmq' 'host' "$LAB_HOST" "$config_file"
+                iniset 'rabbitmq' 'host' "$RABBITMQ_HOST" "$config_file"
                 iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
                 iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
                 iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
@@ -337,7 +337,7 @@ function configure_murano {
             '/etc/murano-conductor/conductor.conf')
                 iniset 'DEFAULT' 'log_file' '/var/log/murano-conductor.log' "$config_file"
                 iniset 'keystone' 'auth_url' "$AUTH_URL" "$config_file"
-                iniset 'rabbitmq' 'host' "$LAB_HOST" "$config_file"
+                iniset 'rabbitmq' 'host' "$RABBITMQ_HOST" "$config_file"
                 iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
                 iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
                 iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
@@ -521,6 +521,7 @@ fi
 AUTH_URL="$AUTH_PROTO://$LAB_HOST:5000/v2.0"
 
 RABBITMQ_HOST=${RABBITMQ_HOST:-$(echo $RABBITMQ_NODE_LIST | cut -d ' ' -f 1)}
+RABBITMQ_HOST=${RABBITMQ_HOST:-$LAB_HOST}
 
 EOF
 
