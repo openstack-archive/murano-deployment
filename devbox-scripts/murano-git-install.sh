@@ -125,7 +125,7 @@ function install_prerequisites {
             #ln -s /usr/local/bin/pip /usr/bin/pip
 
             log "** Installing OpenStack dashboard ..."
-            yum install make gcc python-netaddr.noarch python-keystoneclient.noarch python-django-horizon.noarch python-django-openstack-auth.noarch  httpd.x86_64 mod_wsgi.x86_64 openstack-dashboard.noarch --assumeyes
+            yum install make gcc memcached python-memcached mod_wsgi openstack-dashboard --assumeyes
 
             log "** Disabling firewall ..."
             service iptables stop
