@@ -362,6 +362,7 @@ function configure_murano {
                 iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
                 iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
                 iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
+                iniset 'rabbitmq' 'ssl' "False" "$config_file"
             ;;
             '/etc/murano-api/murano-api-paste.ini')
                 sed -i -e "s/^\(\[pipeline:\)api.py/\1murano-api/" "$config_file" # Ugly workaround
@@ -376,6 +377,7 @@ function configure_murano {
                 iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
                 iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
                 iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
+                iniset 'rabbitmq' 'ssl' "False" "$config_file"
             ;;
             '/etc/openstack-dashboard/local_settings')
                 iniset '' 'OPENSTACK_HOST' "'$LAB_HOST'" "$config_file"
@@ -399,6 +401,7 @@ function configure_murano {
                     generate_sample_certificate '/etc/murano-api' 'server'
                     iniset 'ssl' 'cert_file' '/etc/murano-api/server.crt' "$config_file"
                     iniset 'ssl' 'key_file' '/etc/murano-api/server.key' "$config_file"
+                    iniset 'rabbitmq' 'ssl' "True" "$config_file"
                 ;;
                 '/etc/murano-api/murano-api-paste.ini')
                     iniset 'filter:authtoken' 'auth_protocol' 'https' "$config_file"
@@ -419,6 +422,8 @@ function configure_murano {
                     iniset 'heat' 'cert_file' "$SSL_CERT_FILE" "$config_file"
                     iniset 'heat' 'key_file' "$SSL_KEY_FILE" "$config_file"
                     iniset 'heat' 'insecure' "$ssl_insecure" "$config_file"
+
+                    iniset 'rabbitmq' 'ssl' "True" "$config_file"
                 ;;
                 '/etc/murano-conductor/data/templates/agent-config/Default.template')
                     replace '%RABBITMQ_SSL%' 'true' "$config_file"
