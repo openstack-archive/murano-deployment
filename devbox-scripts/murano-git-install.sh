@@ -152,6 +152,9 @@ function install_prerequisites {
             rm /usr/bin/pip
             ln -s /usr/local/bin/pip /usr/bin/pip
 
+            log "** Upgrading pbr ..."
+            pip install --upgrade pbr
+
             log "** Installing OpenStack dashboard ..."
             apt-get install -y memcached libapache2-mod-wsgi openstack-dashboard
 
