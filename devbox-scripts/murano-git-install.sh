@@ -408,6 +408,17 @@ function configure_murano {
                     echo "MURANO_API_INSECURE = True" >> "$config_file"
                     echo "MURANO_API_URL = 'https://localhost:8082'" >> "$config_file"
                 ;;
+                '/etc/openstack-dashboard/local_settings'|'/etc/openstack-dashboard/local_settings.py')
+                    cat << 'EOF' >> "$config_file"
+
+#murano-git-install-block-start
+OPENSTACK_SSL_NO_VERIFY = True
+OPENSTACK_KEYSTONE_URL = "https://%s:5000/v2.0" % OPENSTACK_HOST
+OPENSTACK_KEYSTONE_ADMIN_URL = "https://%s:35357/v2.0" % OPENSTACK_HOST
+QUANTUM_URL = "https://%s" % OPENSTACK_HOST
+#murano-git-install-block-end
+EOF
+                ;;
             esac
         fi
     done
