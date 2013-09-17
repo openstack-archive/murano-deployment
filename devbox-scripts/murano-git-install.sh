@@ -112,8 +112,6 @@ function get_distro_name()
         dist_name=$(head -1 /etc/release | sed 's/ *\([[^0-9]]*\) [0-9].*/\1/')
     elif [[ -r '/etc/arch-release' ]]; then
         dist_name="ArchLinux"
-    elif [[ -r '/etc/debian_version' ]]; then
-        dist_name='Debian'
     elif [[ -r '/etc/gentoo-release' ]]; then
         dist_name='Gentoo'
     elif [[ -r '/etc/fedora-release' ]]; then
