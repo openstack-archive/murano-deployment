@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Approved+1: Timur <tnurlygayanov@mirantis.com>
+Code-Review+2: Timur <tnurlygayanov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 17 Sep 2013 16:39:56 +0000
+Reviewed-on: https://review.openstack.org/46961
+Project: stackforge/murano-deployment
+Branch: refs/heads/master
