@@ -1,0 +1,11 @@
+#!/bin/bash
+
+source /etc/murano-deployment/lab-binding.rc
+
+RABBITMQ_NODE_LIST=''
+
+COMPUTE_NODE_LIST=''
+
+METADATA_NODE_LIST=''
+
+PUPPET_HOST=''
