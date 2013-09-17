@@ -104,6 +104,33 @@ function generate_sample_certificate {
 
     cd $old_pwd
 }
+
+function get_distro_name()
+{
+    local dist_name
+    if [[ -r '/etc/release' ]]; then
+        dist_name=$(head -1 /etc/release | sed 's/ *\([[^0-9]]*\) [0-9].*/\1/')
+    elif [[ -r '/etc/arch-release' ]]; then
+        dist_name="ArchLinux"
+    elif [[ -r '/etc/debian_version' ]]; then
+        dist_name='Debian'
+    elif [[ -r '/etc/gentoo-release' ]]; then
+        dist_name='Gentoo'
+    elif [[ -r '/etc/fedora-release' ]]; then
+        dist_name='Fedora'
+    elif [[ -r '/etc/centos-release' ]]; then
+        dist_name='CentOS'
+    elif [[ -r '/etc/redhat-release' ]]; then
+        dist_name='Redhat'
+    elif [[ -r '/etc/SuSE-release' ]]; then
+        dist_name='SuSE'
+    elif [[ -r '/etc/lsb-release' ]]; then
+        . /etc/lsb-release
+        [[ "$DISTRIB_ID" ]] && dist_name="$DISTRIB_ID"
+    fi
+    echo "$dist_name"
+}
+
 #-------------------------------------------------
 
 
@@ -125,7 +152,7 @@ function install_prerequisites {
             #ln -s /usr/local/bin/pip /usr/bin/pip
 
             log "** Installing OpenStack dashboard ..."
-            yum install make gcc python-netaddr.noarch python-keystoneclient.noarch python-django-horizon.noarch python-django-openstack-auth.noarch  httpd.x86_64 mod_wsgi.x86_64 openstack-dashboard.noarch --assumeyes
+            yum install make gcc yum install make gcc memcached python-memcached mod_wsgi openstack-dashboard python-netaddr.noarch --assumeyes
 
             log "** Disabling firewall ..."
             service iptables stop
@@ -449,13 +476,7 @@ fi
 
 mkdir -p $git_clone_root
 
-if [ -f /etc/redhat-release ] ; then
-    os_version=$(cat /etc/redhat-release | cut -d ' ' -f 1)
-fi
-
-if [ -f /etc/lsb-release ] ; then
-    os_version=$(cat /etc/lsb-release | grep DISTRIB_ID | cut -d '=' -f 2)
-fi
+os_version=$(get_distro_name)
 
 if [ -z $os_version ] ; then
     die "Unable to determine OS version. Exiting."
@@ -470,6 +491,9 @@ case $os_version in
     ;;
     'Ubuntu')
         murano_config_files="$murano_config_files /etc/openstack-dashboard/local_settings.py"
+    ;;
+    *)
+    die "Sorry your OS version is not supported yet. Try Centos or Ubuntu."
     ;;
 esac
 
