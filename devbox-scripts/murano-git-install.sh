@@ -125,7 +125,7 @@ function install_prerequisites {
             #ln -s /usr/local/bin/pip /usr/bin/pip
 
             log "** Installing OpenStack dashboard ..."
-            yum install make gcc python-netaddr.noarch python-keystoneclient.noarch python-django-horizon.noarch python-django-openstack-auth.noarch  httpd.x86_64 mod_wsgi.x86_64 openstack-dashboard.noarch --assumeyes
+            yum install make gcc yum install make gcc memcached python-memcached mod_wsgi openstack-dashboard python-netaddr.noarch --assumeyes
 
             log "** Disabling firewall ..."
             service iptables stop
@@ -449,13 +449,7 @@ fi
 
 mkdir -p $git_clone_root
 
-if [ -f /etc/redhat-release ] ; then
-    os_version=$(cat /etc/redhat-release | cut -d ' ' -f 1)
-fi
-
-if [ -f /etc/lsb-release ] ; then
-    os_version=$(cat /etc/lsb-release | grep DISTRIB_ID | cut -d '=' -f 2)
-fi
+ios_version=$(lsb_release -a | grep "Distributor ID" | cut -f 2)
 
 if [ -z $os_version ] ; then
     die "Unable to determine OS version. Exiting."
