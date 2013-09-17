@@ -532,7 +532,7 @@ RABBITMQ_VHOST=''
 
 #FILE_SHARE_HOST=''
 
-BRANCH_NAME='release-0.2'
+BRANCH_NAME='master'
 
 # Only 'true' or 'false' values are allowed!
 SSL_ENABLED='false'
