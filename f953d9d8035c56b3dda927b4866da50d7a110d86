@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Approved+1: Stan Lagun <slagun@mirantis.com>
+Code-Review+2: Stan Lagun <slagun@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 17 Sep 2013 11:03:13 +0000
+Reviewed-on: https://review.openstack.org/46925
+Project: stackforge/murano-deployment
+Branch: refs/heads/release-0.2
