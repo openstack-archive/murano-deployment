@@ -44,22 +44,24 @@ if [ -n "$PUPPET_HOST" ] ; then
     [ -f /opt/openstack/openrc ] || \
       die "Image '/opt/openstack/openrc' not found."
 
-    source /opt/openstack/openrc set
+    if [ "$UPLOAD_IMAGE_INTO_GLANCE" = 'true' ] ; then
+        source /opt/openstack/openrc set
 
-    title "Getting List of Images From Glance"
-    glance --insecure image-list
+        title "Getting List of Images From Glance"
+        glance --insecure image-list
 
-    title "Removing Windows Image"
-    glance --insecure image-delete ws-2012-std | true
-    echo 'Done.'
+        title "Removing Windows Image"
+        glance --insecure image-delete ws-2012-std | true
+        echo 'Done.'
 
-    title "Adding New Image Into Glance"
-    echo 'This might take a few minutes ...'
-    glance --insecure image-create \
-      --name ws-2012-std \
-      --disk-format qcow2 \
-      --container-format bare \
-      --file /opt/openstack/ws-2012-std.qcow2 \
-      --is-public true \
-      --property murano_image_info='{"type":"ws-2012-std","title":"Windows Server 2012 Standard"}'
+        title "Adding New Image Into Glance"
+        echo 'This might take a few minutes ...'
+        glance --insecure image-create \
+          --name ws-2012-std \
+          --disk-format qcow2 \
+          --container-format bare \
+          --file /opt/openstack/ws-2012-std.qcow2 \
+          --is-public true \
+          --property murano_image_info='{"type":"ws-2012-std","title":"Windows Server 2012 Standard"}'
+    fi
 fi

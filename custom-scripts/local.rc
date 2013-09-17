@@ -9,3 +9,6 @@ COMPUTE_NODE_LIST=''
 METADATA_NODE_LIST=''
 
 PUPPET_HOST=''
+
+# 'true' or 'false'
+UPLOAD_IMAGE_INTO_GLANCE='false'
