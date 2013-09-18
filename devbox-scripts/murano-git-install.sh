@@ -139,7 +139,7 @@ function install_prerequisites {
         'CentOS')
             log "** Installing additional software sources ..."
             yum install -y 'http://rdo.fedorapeople.org/openstack/openstack-grizzly/rdo-release-grizzly.rpm'
-            yum install -y 'http://mirror.yandex.ru/epel/6/x86_64/epel-release-6-8.noarch.rpm'
+            yum install -y 'http://mirror.us.leaseweb.net/epel/6/x86_64/epel-release-6-8.noarch.rpm'
 
             log "** Updating system ..."
             yum update -y
@@ -150,7 +150,7 @@ function install_prerequisites {
             #ln -s /usr/local/bin/pip /usr/bin/pip
 
             log "** Installing OpenStack dashboard ..."
-            yum install make gcc yum install make gcc memcached python-memcached mod_wsgi openstack-dashboard python-netaddr.noarch --assumeyes
+            yum install make gcc memcached python-memcached mod_wsgi openstack-dashboard python-netaddr.noarch --assumeyes
 
             log "** Disabling firewall ..."
             service iptables stop
