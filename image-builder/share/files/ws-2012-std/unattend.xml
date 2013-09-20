@@ -30,7 +30,7 @@
             <FirstLogonCommands>
                 <SynchronousCommand wcm:action="add">
                     <RequiresUserInput>true</RequiresUserInput>
-                    <CommandLine>powershell.exe Get-Date</CommandLine>
+                    <CommandLine>powershell.exe -File C:\Murano\Scripts\ws-2012-std\Start-AtFirstBoot.ps1 -ExecutionPolicy Unrestricted</CommandLine>
                     <Order>1</Order>
                 </SynchronousCommand>
             </FirstLogonCommands>
