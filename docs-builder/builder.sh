@@ -23,26 +23,32 @@ git clone git@github.com:murano-docs/murano-docs.github.io.git murano-docs
 cd murano-docs
 ls -A1 | grep -v -e '\.git' | xargs git rm -rf
 
-for version in "0.1" "0.2" "latest"
+for version in "0.1" "0.2" "0.2.11" "latest"
 do
     cd "${TEMP}"
 
     if [ ${version} = "latest" ]; then
         guides="developers-guide administrators-guide user-guide getting-started"
-        branch="master"
+    elif [ ${version} = "0.2.11" ]; then
+        guides="developers-guide administrators-guide user-guide getting-started"
+
     elif [ ${version} = "0.2" ]; then
         guides="developers-guide administrators-guide user-guide getting-started"
-        branch="release-${version}"
     elif [ ${version} = "0.1" ]; then
         guides="murano-manual murano-deployment-guide"
-        branch="release-${version}"
     else
         guides="developers-guide murano-deployment-guide"
-        branch="release-${version}"
     fi
 
-    git clone -b ${branch} git@github.com:stackforge/murano-docs.git docs-${version}
-    cd docs-${version} && git pull && cd ..
+    git clone git@github.com:stackforge/murano-docs.git docs-${version}
+
+    cd docs-${version}
+
+    if [ ${version} != "latest" ]; then
+     git checkout ${version}
+    fi
+
+    cd ..
 
     for guide in ${guides}
     do
