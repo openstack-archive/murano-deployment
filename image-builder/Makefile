@@ -95,10 +95,12 @@ clean-all : clean
 	${MAKE} -C ${ps_modules_dir} clean
 
 
-build-root : ${dirs}
+build-root : ${dirs} prerequisites
 	cp -r * ${build_root}
 	rm ${build_root}/Makefile
 
+prerequisites : ${dirs}
+	./wget-prerequisites.sh
 
 ${dirs} :
 	mkdir -p $@
