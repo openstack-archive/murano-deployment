@@ -1,0 +1,23 @@
+# Line format:
+#File Name <TAB> Target Dir <TAB> Download URL
+#
+# File Name could be an optional string (to rename the file) or . (dot) to keep the original name.
+
+# Windows Server 2012 Evluation
+#ws-2012-eval.iso	$BUILD_ROOT/libvirt/images	http://technet.microsoft.com/en-us/evalcenter/hh670538.aspx
+# Windows Server 2008 R2 Evaluation
+#ws-2008r2-eval.iso	$BUILD_ROOT/libvirt/images	http://www.microsoft.com/en-us/download/details.aspx?id=11093
+.			$BUILD_ROOT/libvirt/images	http://alt.fedoraproject.org/pub/alt/virtio-win/stable/virtio-win-0.1-52.iso
+.			$BUILD_ROOT/share/files		http://www.cloudbase.it/downloads/CloudbaseInitSetup_Beta.msi
+.			$BUILD_ROOT/share/files		http://www.farmanager.com/files/Far30b3525.x64.20130717.msi
+.			$BUILD_ROOT/share/files		https://msysgit.googlecode.com/files/Git-1.8.3-preview20130601.exe
+.			$BUILD_ROOT/share/files		http://download.sysinternals.com/files/SysinternalsSuite.zip
+.			$BUILD_ROOT/share/files		https://www.dropbox.com/sh/zthldcxnp6r4flm/W-lgLFo7Fz/unzip.exe
+# PowerShell V3
+#.			$BUILD_ROOT/share/files		http://www.microsoft.com/en-us/download/confirmation.aspx?id=34595
+# .NET 4.0
+#.			$BUILD_ROOT/share/files		http://www.microsoft.com/en-us/download/confirmation.aspx?id=17718
+# .NET 4.5
+#.			$BUILD_ROOT/share/files		http://www.microsoft.com/en-us/download/confirmation.aspx?id=30653
+.			$BUILD_ROOT/share/files		https://www.dropbox.com/sh/zthldcxnp6r4flm/COFiuwTi5d/MuranoAgent.zip
+
