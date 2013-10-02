@@ -33,7 +33,7 @@ do
         guides="developers-guide administrators-guide user-guide getting-started"
 
     elif [ ${version} = "0.2" ]; then
-        guides="developers-guide administrators-guide user-guide getting-started"
+        guides="developers-guide administrators-guide user-guide"
     elif [ ${version} = "0.1" ]; then
         guides="murano-manual murano-deployment-guide"
     else
