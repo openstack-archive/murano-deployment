@@ -26,20 +26,20 @@ dirs += ${shared_images_dir}
 
 # Static files == files that are not changed from one build to another
 # Typically it's binary prerequisite files
-static_files := ${libvirt_images_dir}/ws-2012-eval.iso
-static_files += ${libvirt_images_dir}/ws-2008r2-eval.iso
-static_files += ${libvirt_images_dir}/virtio-win-0.1-52.iso
-static_files += ${shared_files_dir}/CloudbaseInitSetup_Beta.msi
-static_files += ${shared_files_dir}/Far30b3367.x64.20130426.msi
-static_files += ${shared_files_dir}/Git-1.8.1.2-preview20130201.exe
-static_files += ${shared_files_dir}/SysinternalsSuite.zip
-static_files += ${shared_files_dir}/unzip.exe
-static_files += ${shared_files_dir}/userdata.py
-static_files += ${shared_files_dir}/Windows6.1-KB2506143-x64.msu
-static_files += ${shared_files_dir}/dotNetFx40_Full_x86_x64.exe
-static_files += ${shared_files_dir}/dotNetFx45_Full_setup.exe
+#static_files := ${libvirt_images_dir}/ws-2012-eval.iso
+#static_files += ${libvirt_images_dir}/ws-2008r2-eval.iso
+#static_files += ${libvirt_images_dir}/virtio-win-0.1-52.iso
+#static_files += ${shared_files_dir}/CloudbaseInitSetup_Beta.msi
+#static_files += ${shared_files_dir}/Far30b3367.x64.20130426.msi
+#static_files += ${shared_files_dir}/Git-1.8.1.2-preview20130201.exe
+#static_files += ${shared_files_dir}/SysinternalsSuite.zip
+#static_files += ${shared_files_dir}/unzip.exe
+#static_files += ${shared_files_dir}/userdata.py
+#static_files += ${shared_files_dir}/Windows6.1-KB2506143-x64.msu
+#static_files += ${shared_files_dir}/dotNetFx40_Full_x86_x64.exe
+#static_files += ${shared_files_dir}/dotNetFx45_Full_setup.exe
 # TODO: move the following files to the 'dynamic files' as they are 'version dependent'
-static_files += ${shared_files_dir}/MuranoAgent.zip
+#static_files += ${shared_files_dir}/MuranoAgent.zip
 
 
 # Dynamic files == files that might be updated from repository during the build.
@@ -95,21 +95,27 @@ clean-all : clean
 	${MAKE} -C ${ps_modules_dir} clean
 
 
-build-root : ${dirs}
+build-root : ${dirs} prerequisites
 	cp -r * ${build_root}
 	rm ${build_root}/Makefile
+
+
+prerequisites : ${dirs}
+	./depmgr.sh download dependency.list
 
 
 ${dirs} :
 	mkdir -p $@
 
 
-test-build-files : ${build_files} ${static_files} ${dynamic_files}
+#test-build-files : ${build_files} ${static_files} ${dynamic_files}
 
+test-build-files : ${build_files} ${dynamic_files}
+	./depmgr.sh test dependency.list
 
 # Rule to check if all 'static files' are in place
-${static_files} :
-	@[ -f $@ ] || echo "STOP: File not found '$@'"; exit 1
+#${static_files} :
+#	@[ -f $@ ] || echo "STOP: File not found '$@'"; exit 1
 
 
 # Rule to copy updated 'build files'
