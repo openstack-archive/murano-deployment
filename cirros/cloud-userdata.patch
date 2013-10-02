@@ -1,0 +1,17 @@
+--- cloud-userdata.orig	2013-10-01 04:06:29.000000000 -0700
++++ cloud-userdata	2013-10-01 04:07:03.000000000 -0700
+@@ -22,13 +22,7 @@
+ 	wget -q -O - "${UDURL}" > "${udf}" ||
+ 		{ msg "failed to read user data url: ${UDURL}"; return 1; }
+ 
+-	shebang="#!"
+-	read a < "${udf}"
+-	[ "${a#${shebang}}" = "${a}" ] &&
+-		{ msg "user data not a script"; return 0; }
+-
+-	chmod 755 "${udf}"
+-	exec "${udf}"
++	exec_userdata "${udf}"
+ }
+ 
+ case "$1" in
