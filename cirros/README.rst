@@ -19,6 +19,13 @@ Launching CirrOS in KVM
 	># wget https://launchpad.net/cirros/trunk/0.3.0/+download/cirros-0.3.0-x86_64-disk.img -O cirros.qcow2
 ..
 
+* Add 169.254.169.254 to virbr0
+
+::
+
+	># ip addr add 169.254.169.254/32 dev virbr0
+..
+
 * Start CirrOS
 
 ::
@@ -43,7 +50,7 @@ http://alexeytorkhov.blogspot.ru/2009/09/mounting-raw-and-qcow2-vm-disk-images.h
 ::
 
 	>$ cd /tmp
-	>$ git clone https://github.com/dmitry-teselkin/cirros.git
+	>$ git clone https://github.com/stackforge/murano-deployment.git
 ..
 
 * Convert Cirros image into RAW format (skip arch which you don't need):
