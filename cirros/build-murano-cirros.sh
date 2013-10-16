@@ -60,7 +60,7 @@ chown root:root /mnt/image/usr/sbin/murano-agent
 cp ./murano-agent.init /mnt/image/etc/init.d/murano-agent
 chmod 755 /mnt/image/etc/init.d/murano-agent
 chown root:root /mnt/image/etc/init.d/murano-agent
-cd /mnt/image/etc/rc3.d && ln -s ../init.d/murano-agent S99-murano-agent
+cd /mnt/image/etc/rc3.d && ln -s ../init.d/murano-agent S47-murano-agent
 
 cd $IBR
 sleep 5
