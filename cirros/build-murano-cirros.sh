@@ -7,6 +7,7 @@ arch=${1:-i386}
 # Image Builder Root
 IBR=${IBR:-/tmp/murano-cirros/$arch}
 LOOP_DEV=${LOOP_DEV:-loop0}
+DEBUG='false'
 
 
 die() {
@@ -25,11 +26,19 @@ mkdir -p $IBR |:
 case $arch in
   i386)
 	wget -O $IBR/cirros.img https://launchpad.net/cirros/trunk/0.3.0/+download/cirros-0.3.0-i386-disk.img
-	wget -O $IBR/murano-agent https://www.dropbox.com/sh/zthldcxnp6r4flm/Os1Q9W5ZIx/murano-agent-i386
+	if [ "$DEBUG" = 'true' ] ; then
+		wget -O $IBR/murano-agent https://www.dropbox.com/sh/zthldcxnp6r4flm/Os1Q9W5ZIx/murano-agent-i386
+	else
+		wget -O $IBR/murano-agent https://www.dropbox.com/sh/zthldcxnp6r4flm/Os1Q9W5ZIx/murano-agent-i386
+	fi
   ;;
   x86_64)
 	wget -O $IBR/cirros.img https://launchpad.net/cirros/trunk/0.3.0/+download/cirros-0.3.0-x86_64-disk.img
-	wget -O $IBR/murano-agent https://www.dropbox.com/sh/zthldcxnp6r4flm/7dsz0mMg1_/murano-agent-x86_64
+	if [ "$DEBUG" = 'true' ] ; then
+		wget -O $IBR/murano-agent https://www.dropbox.com/sh/zthldcxnp6r4flm/CAEdNRkJAD/murano-agent-x86_64-debug
+	else
+		wget -O $IBR/murano-agent https://www.dropbox.com/sh/zthldcxnp6r4flm/7dsz0mMg1_/murano-agent-x86_64
+	fi
   ;;
   *)
 	die "Unsupported arch '$arch'"
