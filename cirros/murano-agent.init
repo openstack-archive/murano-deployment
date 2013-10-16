@@ -18,7 +18,7 @@ start() {
 	echo -n "Starting murano-agent: "
 	umask 077
 	echo "$(/bin/date) starting /usr/sbin/murano-agent $AGENT_CONFIG $AGENT_LOG" > $AGENT_LOG
-	start-stop-daemon -S -u root -q -b -x /usr/sbin/murano-agent -- $AGENT_CONIFG $AGENT_LOG
+	start-stop-daemon -S -u root -q -b -x /usr/sbin/murano-agent -- $AGENT_CONFIG $AGENT_LOG
 	echo "OK"
 }
 
