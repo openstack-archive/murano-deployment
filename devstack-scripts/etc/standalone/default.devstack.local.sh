@@ -121,7 +121,9 @@ EXTENDED_UNAUTHORIZED_EXCEPTIONS = tuple(exceptions.UNAUTHORIZED + UNAUTHORIZED_
 HORIZON_CONFIG['exceptions']['recoverable'] = EXTENDED_RECOVERABLE_EXCEPTIONS
 HORIZON_CONFIG['exceptions']['not_found'] = EXTENDED_NOT_FOUND_EXCEPTIONS
 HORIZON_CONFIG['exceptions']['unauthorized'] = EXTENDED_UNAUTHORIZED_EXCEPTIONS
-HORIZON_CONFIG['customization_module'] = 'muranodashboard.panel.overrides'
+HORIZON_CONFIG['dashboards'] += ('murano',)
+HORIZON_CONFIG['default_dashboard'] = 'murano'
+HORIZON_CONFIG['user_home'] = 'muranodashboard.views.get_user_home'
 INSTALLED_APPS += ('muranodashboard',)
 #END_MURANO_DASHBOARD
 EOF
