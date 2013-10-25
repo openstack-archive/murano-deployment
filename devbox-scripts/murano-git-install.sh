@@ -6,14 +6,15 @@ mode=${1:-'help'}
 
 curr_dir=$(cd $(dirname "$0") && pwd)
 
-murano_components='murano-api murano-conductor murano-dashboard'
+murano_components='murano-api murano-conductor murano-dashboard murano-repository'
 
-murano_services='murano-api murano-conductor'
+murano_services='murano-api murano-conductor murano-repository'
 
 murano_config_files='/etc/murano-api/murano-api.conf
  /etc/murano-api/murano-api-paste.ini
  /etc/murano-conductor/conductor.conf
  /etc/murano-conductor/conductor-paste.ini
+ /etc/murano-repository/murano-repository.conf
  /etc/murano-conductor/data/init.ps1
  /etc/murano-conductor/data/templates/agent-config/Default.template
  /usr/share/openstack-dashboard/openstack_dashboard/settings.py'
@@ -217,6 +218,9 @@ function fetch_murano_apps {
             'murano-dashboard')
                 REMOTE_BRANCH=${BRANCH_MURANO_DASHBOARD:-$BRANCH_NAME}
             ;;
+            'murano-repository')
+                REMOTE_BRANCH=${BRANCH_MURANO_REPOSITORY:-$BRANCH_NAME}
+            ;;
             *)
                 REMOTE_BRANCH=$BRANCH_NAME
             ;;
@@ -333,6 +337,9 @@ function uninstall_murano_apps {
             'murano-conductor')
                 rm -rf /etc/$app_name
             ;;
+            'murano-repository')
+                rm -rf /etc/$app_name
+            ;;
         esac
     done
 }
@@ -362,6 +369,12 @@ function configure_murano {
                 iniset 'filter:authtoken' 'auth_host' "$LAB_HOST" "$config_file"
                 iniset 'filter:authtoken' 'admin_user' "$ADMIN_USER" "$config_file"
                 iniset 'filter:authtoken' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
+            ;;
+            '/etc/murano-api/murano-repository.conf')
+                iniset 'DEFAULT' 'log_file' '/var/log/murano-repository.log' "$config_file"
+                iniset 'keystone' 'auth_host' "$LAB_HOST" "$config_file"
+                iniset 'keystone' 'admin_user' "$ADMIN_USER" "$config_file"
+                iniset 'keystone' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
             ;;
             '/etc/murano-conductor/conductor.conf')
                 iniset 'DEFAULT' 'log_file' '/var/log/murano-conductor.log' "$config_file"
@@ -551,6 +564,7 @@ SSL_KEY_FILE=''
 #BRANCH_MURANO_DASHBOARD=''
 #BRANCH_MURANO_CLIENT=''
 #BRANCH_MURANO_CONDUCTOR=''
+#BRANCH_MURANO_REPOSITORY=''
 
 #-------------------------------------------------------------------------------
 
