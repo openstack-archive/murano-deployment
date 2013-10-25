@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Approved+1: Anastasia Kuznetsova <akuznetsova@mirantis.com>
+Code-Review+2: Anastasia Kuznetsova <akuznetsova@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Fri, 25 Oct 2013 08:22:37 +0000
+Reviewed-on: https://review.openstack.org/53794
+Project: stackforge/murano-deployment
+Branch: refs/heads/release-0.3
