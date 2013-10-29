@@ -356,12 +356,9 @@ function configure_murano {
                 iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
                 iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
                 iniset 'rabbitmq' 'ssl' "False" "$config_file"
-            ;;
-            '/etc/murano-api/murano-api-paste.ini')
-                sed -i -e "s/^\(\[pipeline:\)api.py/\1murano-api/" "$config_file" # Ugly workaround
-                iniset 'filter:authtoken' 'auth_host' "$LAB_HOST" "$config_file"
-                iniset 'filter:authtoken' 'admin_user' "$ADMIN_USER" "$config_file"
-                iniset 'filter:authtoken' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
+                iniset 'keystone_authtoken' 'auth_host' "$LAB_HOST" "$config_file"
+                iniset 'keystone_authtoken' 'admin_user' "$ADMIN_USER" "$config_file"
+                iniset 'keystone_authtoken' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
             ;;
             '/etc/murano-conductor/conductor.conf')
                 iniset 'DEFAULT' 'log_file' '/var/log/murano-conductor.log' "$config_file"
@@ -395,9 +392,7 @@ function configure_murano {
                     iniset 'ssl' 'cert_file' '/etc/murano-api/server.crt' "$config_file"
                     iniset 'ssl' 'key_file' '/etc/murano-api/server.key' "$config_file"
                     iniset 'rabbitmq' 'ssl' "True" "$config_file"
-                ;;
-                '/etc/murano-api/murano-api-paste.ini')
-                    iniset 'filter:authtoken' 'auth_protocol' 'https' "$config_file"
+                    iniset 'keystone_authtoken' 'auth_protocol' 'https' "$config_file"
                 ;;
                 '/etc/murano-conductor/conductor.conf')
                     local ssl_insecure='True'
