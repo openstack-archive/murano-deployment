@@ -1,0 +1,141 @@
+From c7337544c977cf44278303ca33824c74a7e7bb22 Mon Sep 17 00:00:00 2001
+From: Serg Melikyan <smelikyan@mirantis.com>
+Date: Wed, 30 Oct 2013 08:40:22 +0400
+Subject: [PATCH] Adds ability to configure SSL params for clients used by the
+ Heat
+
+Change-Id: I90a1741138998e0044b266c130a91ea62fe27bd9
+---
+ heat/common/config.py              |   22 +++++++++++++++++++++-
+ heat/common/heat_keystoneclient.py |   10 ++++++++++
+ heat/engine/clients.py             |   16 ++++++++++++++++
+ 3 files changed, 47 insertions(+), 1 deletion(-)
+
+diff --git a/heat/common/config.py b/heat/common/config.py
+index cd23d8d..87d89b3 100644
+--- a/heat/common/config.py
++++ b/heat/common/config.py
+@@ -1,4 +1,3 @@
+-
+ # vim: tabstop=4 shiftwidth=4 softtabstop=4
+ 
+ #
+@@ -115,11 +114,25 @@ rpc_opts = [
+                default='engine',
+                help='the topic engine nodes listen on')]
+ 
++clients_opts = [
++    cfg.StrOpt('ca_file',
++               help='Optional CA cert file to use in SSL connections'),
++    cfg.StrOpt('cert_file',
++               help='Optional PEM-formatted certificate chain file'),
++    cfg.StrOpt('key_file',
++               help='Optional PEM-formatted file that contains the '
++                    'private key'),
++    cfg.BoolOpt('insecure',
++                default=False,
++                help="If set then the server's certificate will not"
++                     "be verified")]
++
+ 
+ def register_api_opts():
+     cfg.CONF.register_opts(bind_opts)
+     cfg.CONF.register_opts(rpc_opts)
+     rpc.set_defaults(control_exchange='heat')
++    register_clients_opts()
+ 
+ 
+ def register_db_opts():
+@@ -131,6 +144,13 @@ def register_engine_opts():
+     cfg.CONF.register_opts(service_opts)
+     cfg.CONF.register_opts(rpc_opts)
+     rpc.set_defaults(control_exchange='heat')
++    register_clients_opts()
++
++
++def register_clients_opts():
++    cfg.CONF.register_opts(clients_opts, group='clients')
++    for client in ('nova', 'swift', 'quantum', 'cinder', 'keystone'):
++        cfg.CONF.register_opts(clients_opts, group='clients_' + client)
+ 
+ 
+ def _register_paste_deploy_opts():
+diff --git a/heat/common/heat_keystoneclient.py b/heat/common/heat_keystoneclient.py
+index f90b341..f059524 100644
+--- a/heat/common/heat_keystoneclient.py
++++ b/heat/common/heat_keystoneclient.py
+@@ -49,9 +49,19 @@ class KeystoneClient(object):
+             logger.error("Keystone connection failed, no password or " +
+                          "auth_token!")
+             return
++
++        kwargs['cacert'] = self._get_client_option('ca_file')
++        kwargs['insecure'] = self._get_client_option('insecure')
++        kwargs['cert'] = self._get_client_option('cert_file')
++        kwargs['key'] = self._get_client_option('key_file')
++
+         self.client = kc.Client(**kwargs)
+         self.client.authenticate()
+ 
++    def _get_client_option(self, option):
++        return getattr(getattr(cfg.CONF, 'clients_keystone'), option) or \
++            getattr(cfg.CONF.clients, option)
++
+     def create_stack_user(self, username, password=''):
+         """
+         Create a user defined as part of a stack, either via template
+diff --git a/heat/engine/clients.py b/heat/engine/clients.py
+index e2ac073..081ed20 100644
+--- a/heat/engine/clients.py
++++ b/heat/engine/clients.py
+@@ -95,6 +95,9 @@ class OpenStackClients(object):
+             logger.error("Nova connection failed, no password or auth_token!")
+             return None
+ 
++        args['cacert'] = self._get_client_option('nova', 'ca_file')
++        args['insecure'] = self._get_client_option('nova', 'insecure')
++
+         client = None
+         try:
+             # Workaround for issues with python-keyring, need no_cache=True
+@@ -148,6 +151,9 @@ class OpenStackClients(object):
+                          "auth_token!")
+             return None
+ 
++        args['cacert'] = self._get_client_option('swift', 'ca_file')
++        args['insecure'] = self._get_client_option('swift', 'insecure')
++
+         self._swift = swiftclient.Connection(**args)
+         return self._swift
+ 
+@@ -179,6 +185,9 @@ class OpenStackClients(object):
+             return None
+         logger.debug('quantum args %s', args)
+ 
++        args['ca_cert'] = self._get_client_option('quantum', 'ca_file')
++        args['insecure'] = self._get_client_option('quantum', 'insecure')
++
+         self._quantum = quantumclient.Client(**args)
+ 
+         return self._quantum
+@@ -211,10 +220,17 @@ class OpenStackClients(object):
+             return None
+         logger.debug('cinder args %s', args)
+ 
++        args['cacert'] = self._get_client_option('cinder', 'ca_file')
++        args['insecure'] = self._get_client_option('cinder', 'insecure')
++
+         self._cinder = cinderclient.Client(**args)
+ 
+         return self._cinder
+ 
++    def _get_client_option(self, client, option):
++        return getattr(getattr(cfg.CONF, 'clients_' + client), option) or \
++            getattr(cfg.CONF.clients, option)
++
+     def attach_volume_to_instance(self, server_id, volume_id, device_id):
+         logger.warn('Attaching InstanceId %s VolumeId %s Device %s' %
+                     (server_id, volume_id, device_id))
+-- 
+1.7.9.5
+
