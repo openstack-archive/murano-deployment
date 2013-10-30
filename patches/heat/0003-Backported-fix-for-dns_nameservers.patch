@@ -1,0 +1,27 @@
+From b04a22c1c409e4886eef8cca8989bd8070772e8b Mon Sep 17 00:00:00 2001
+From: Serg Melikyan <smelikyan@mirantis.com>
+Date: Wed, 30 Oct 2013 08:26:54 +0400
+Subject: [PATCH] Backported  fix for dns_nameservers
+
+Heat will now pass dns_nameservers list to quantum, thus allowing to specify DNS servers for a subnet
+
+Change-Id: I9b6651771807efe4a2f3d800a76c3030619ec066
+---
+ heat/engine/resources/quantum/subnet.py |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/heat/engine/resources/quantum/subnet.py b/heat/engine/resources/quantum/subnet.py
+index 59c591d..40445b1 100644
+--- a/heat/engine/resources/quantum/subnet.py
++++ b/heat/engine/resources/quantum/subnet.py
+@@ -38,6 +38,7 @@ class Subnet(quantum.QuantumResource):
+                                         'AllowedValues': [4, 6],
+                                         'Default': 4},
+                          'gateway_ip': {'Type': 'String'},
++                         'dns_nameservers': {'Type': 'List'},
+                          'allocation_pools': {'Type': 'List',
+                                               'Schema': {
+                                               'Type': 'Map',
+--
+1.7.9.5
+

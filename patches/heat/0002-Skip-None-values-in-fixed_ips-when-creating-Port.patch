@@ -1,0 +1,44 @@
+From a30f285cbc46f1e11290bbc16b9bf434a799f049 Mon Sep 17 00:00:00 2001
+From: Serg Melikyan <smelikyan@mirantis.com>
+Date: Wed, 30 Oct 2013 08:24:33 +0400
+Subject: [PATCH] Skip None values in fixed_ips when creating Port
+
+Neutron create port doesn't like when a None value is passed for
+fixed_ips data, the value needing to be skipped instead. This patch
+handles that problem for ip_address and subnet_id, as testing showed
+that subnet_id wasn't mandatory.
+
+Change-Id: I29c87cdffb745c5762d3d8420aa3bde66abfbed7
+Closes-Bug: #1224472
+---
+ heat/engine/resources/quantum/port.py |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/heat/engine/resources/quantum/port.py b/heat/engine/resources/quantum/port.py
+index 467e8ff..735bd92 100644
+--- a/heat/engine/resources/quantum/port.py
++++ b/heat/engine/resources/quantum/port.py
+@@ -29,7 +29,7 @@ class Port(quantum.QuantumResource):
+         'fixed_ips': {
+             'Type': 'List',
+             'Schema': {'Type': 'Map', 'Schema': {
+-                'subnet_id': {'Type': 'String', 'Required': True},
++                'subnet_id': {'Type': 'String'},
+                 'ip_address': {'Type': 'String'}
+             }}
+         },
+@@ -57,6 +57,11 @@ class Port(quantum.QuantumResource):
+             if 'mac_address' in pair and pair['mac_address'] is None:
+                 del pair['mac_address']
+
++        for fixed_ip in props['fixed_ips']:
++            for key, value in fixed_ip.items():
++                if value is None:
++                    fixed_ip.pop(key)
++
+         port = self.quantum().create_port({'port': props})['port']
+         self.resource_id_set(port['id'])
+
+--
+1.7.9.5
+

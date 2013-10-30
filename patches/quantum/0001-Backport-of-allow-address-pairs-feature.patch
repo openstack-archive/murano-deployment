@@ -1,0 +1,2160 @@
+From 3fc9efeead71d22bb2ed48a23e0fafc94fdddb60 Mon Sep 17 00:00:00 2001
+From: Serg Melikyan <smelikyan@mirantis.com>
+Date: Tue, 17 Sep 2013 17:11:18 +0400
+Subject: [PATCH] Backport of allow-address-pairs feature
+
+The following patch adds the concept of allowed address pairs.
+This allows one to add additional ip/mac address pairs on a port to
+allow traffic that matches those specified values. This is useful in order
+to leverage dataplane failover mechanisms like vrrp. This patch adds support
+for the NVP plugin and the OVS plugin.
+ 
+Original change: Ie73b3886c5be8e1fc4ade86a0cfb854267f345ac
+
+Also this patch includes backport of I40b22281d45ff4f4bf8149211883799a9051c1a0
+---
+ quantum/agent/linux/iptables_firewall.py           |   76 ++++--
+ quantum/api/v2/attributes.py                       |   24 +-
+ quantum/db/allowedaddresspairs_db.py               |  122 +++++++++
+ quantum/db/db_base_plugin_v2.py                    |   36 ++-
+ .../versions/1efb85914233_allowedaddresspairs.py   |   62 +++++
+ quantum/db/securitygroups_db.py                    |   50 ++--
+ quantum/db/securitygroups_rpc_base.py              |   22 +-
+ quantum/extensions/allowedaddresspairs.py          |  122 +++++++++
+ quantum/plugins/brocade/QuantumPlugin.py           |    7 +-
+ quantum/plugins/linuxbridge/lb_quantum_plugin.py   |    5 +-
+ quantum/plugins/midonet/plugin.py                  |    6 +-
+ quantum/plugins/nec/nec_plugin.py                  |    8 +-
+ .../nicira/nicira_nvp_plugin/QuantumPlugin.py      |   66 ++++-
+ quantum/plugins/nicira/nicira_nvp_plugin/nvplib.py |   17 +-
+ quantum/plugins/openvswitch/ovs_quantum_plugin.py  |   30 ++-
+ quantum/plugins/ryu/ryu_quantum_plugin.py          |    6 +-
+ quantum/tests/unit/nicira/test_nicira_plugin.py    |    6 +
+ .../unit/openvswitch/test_ovs_security_group.py    |   12 +
+ .../unit/test_extension_allowedaddresspairs.py     |  268 ++++++++++++++++++++
+ quantum/tests/unit/test_extension_portsecurity.py  |   14 +-
+ .../tests/unit/test_extension_security_group.py    |   20 +-
+ quantum/tests/unit/test_iptables_firewall.py       |  102 ++++++--
+ quantum/tests/unit/test_security_groups_rpc.py     |  131 ++++++++--
+ 23 files changed, 1039 insertions(+), 173 deletions(-)
+ create mode 100644 quantum/db/allowedaddresspairs_db.py
+ create mode 100644 quantum/db/migration/alembic_migrations/versions/1efb85914233_allowedaddresspairs.py
+ create mode 100644 quantum/extensions/allowedaddresspairs.py
+ create mode 100644 quantum/tests/unit/test_extension_allowedaddresspairs.py
+
+diff --git a/quantum/agent/linux/iptables_firewall.py b/quantum/agent/linux/iptables_firewall.py
+index c8ef8da..87cc1d6 100644
+--- a/quantum/agent/linux/iptables_firewall.py
++++ b/quantum/agent/linux/iptables_firewall.py
+@@ -28,10 +28,10 @@ LOG = logging.getLogger(__name__)
+ SG_CHAIN = 'sg-chain'
+ INGRESS_DIRECTION = 'ingress'
+ EGRESS_DIRECTION = 'egress'
+-IP_SPOOF_FILTER = 'ip-spoof-filter'
++SPOOF_FILTER = 'spoof-filter'
+ CHAIN_NAME_PREFIX = {INGRESS_DIRECTION: 'i',
+                      EGRESS_DIRECTION: 'o',
+-                     IP_SPOOF_FILTER: 's'}
++                     SPOOF_FILTER: 's'}
+ LINUX_DEV_LEN = 14
+
+
+@@ -106,7 +106,7 @@ class IptablesFirewallDriver(firewall.FirewallDriver):
+         for port in ports.values():
+             self._remove_chain(port, INGRESS_DIRECTION)
+             self._remove_chain(port, EGRESS_DIRECTION)
+-            self._remove_chain(port, IP_SPOOF_FILTER)
++            self._remove_chain(port, SPOOF_FILTER)
+         self._remove_chain_by_name_v4v6(SG_CHAIN)
+
+     def _setup_chain(self, port, DIRECTION):
+@@ -186,34 +186,58 @@ class IptablesFirewallDriver(firewall.FirewallDriver):
+                 if rule['direction'] == direction]
+
+     def _arp_spoofing_rule(self, port):
+-        return ['-m mac ! --mac-source %s -j DROP' % port['mac_address']]
++        return '-m mac ! --mac-source %s -j DROP' % port['mac_address']
+
+-    def _setup_ip_spoof_filter_chain(self, port, table, addresses, rules):
+-        if len(addresses) == 1:
+-            rules.append('! -s %s -j DROP' % addresses[0])
+-        elif addresses:
+-            chain_name = self._port_chain_name(port, IP_SPOOF_FILTER)
++    def _setup_spoof_filter_chain(self, port, table, mac_ip_pairs, rules):
++        if mac_ip_pairs:
++            chain_name = self._port_chain_name(port, SPOOF_FILTER)
+             table.add_chain(chain_name)
+-            for ip in addresses:
+-                table.add_rule(chain_name, '-s %s -j RETURN' % ip)
++            for mac, ip in mac_ip_pairs:
++                if ip is None:
++                    # If fixed_ips is [] this rule will be added to the end
++                    # of the list after the allowed_address_pair rules.
++                    table.add_rule(chain_name,
++                                   '-m mac --mac-source %s -j RETURN'
++                                   % mac)
++                else:
++                    table.add_rule(chain_name,
++                                   '-m mac --mac-source %s -s %s -j RETURN'
++                                   % (mac, ip))
+             table.add_rule(chain_name, '-j DROP')
+             rules.append('-j $%s' % chain_name)
+
+-    def _ip_spoofing_rule(self, port, ipv4_rules, ipv6_rules):
++    def _build_ipv4v6_mac_ip_list(self, mac, ip_address, mac_ipv4_pairs,
++                                  mac_ipv6_pairs):
++        if netaddr.IPNetwork(ip_address).version == 4:
++            mac_ipv4_pairs.append((mac, ip_address))
++        else:
++            mac_ipv6_pairs.append((mac, ip_address))
++
++    def _spoofing_rule(self, port, ipv4_rules, ipv6_rules):
+         #Note(nati) allow dhcp or RA packet
+         ipv4_rules += ['-p udp --sport 68 --dport 67 -j RETURN']
+         ipv6_rules += ['-p icmpv6 -j RETURN']
+-        ipv4_addresses = []
+-        ipv6_addresses = []
++        mac_ipv4_pairs = []
++        mac_ipv6_pairs = []
++
++        if isinstance(port.get('allowed_address_pairs'), list):
++            for address_pair in port['allowed_address_pairs']:
++                self._build_ipv4v6_mac_ip_list(address_pair['mac_address'],
++                                               address_pair['ip_address'],
++                                               mac_ipv4_pairs,
++                                               mac_ipv6_pairs)
++
+         for ip in port['fixed_ips']:
+-            if netaddr.IPAddress(ip).version == 4:
+-                ipv4_addresses.append(ip)
+-            else:
+-                ipv6_addresses.append(ip)
+-        self._setup_ip_spoof_filter_chain(port, self.iptables.ipv4['filter'],
+-                                          ipv4_addresses, ipv4_rules)
+-        self._setup_ip_spoof_filter_chain(port, self.iptables.ipv6['filter'],
+-                                          ipv6_addresses, ipv6_rules)
++            self._build_ipv4v6_mac_ip_list(port['mac_address'], ip,
++                                           mac_ipv4_pairs, mac_ipv6_pairs)
++        if not port['fixed_ips']:
++            mac_ipv4_pairs.append((port['mac_address'], None))
++            mac_ipv6_pairs.append((port['mac_address'], None))
++
++        self._setup_spoof_filter_chain(port, self.iptables.ipv4['filter'],
++                                       mac_ipv4_pairs, ipv4_rules)
++        self._setup_spoof_filter_chain(port, self.iptables.ipv6['filter'],
++                                       mac_ipv6_pairs, ipv6_rules)
+
+     def _drop_dhcp_rule(self):
+         #Note(nati) Drop dhcp packet from VM
+@@ -231,11 +255,9 @@ class IptablesFirewallDriver(firewall.FirewallDriver):
+         ipv4_iptables_rule = []
+         ipv6_iptables_rule = []
+         if direction == EGRESS_DIRECTION:
+-            ipv4_iptables_rule += self._arp_spoofing_rule(port)
+-            ipv6_iptables_rule += self._arp_spoofing_rule(port)
+-            self._ip_spoofing_rule(port,
+-                                   ipv4_iptables_rule,
+-                                   ipv6_iptables_rule)
++            self._spoofing_rule(port,
++                                ipv4_iptables_rule,
++                                ipv6_iptables_rule)
+             ipv4_iptables_rule += self._drop_dhcp_rule()
+         ipv4_iptables_rule += self._convert_sgr_to_iptables_rules(
+             ipv4_sg_rules)
+diff --git a/quantum/api/v2/attributes.py b/quantum/api/v2/attributes.py
+index 9b2c72a..92fc3f7 100644
+--- a/quantum/api/v2/attributes.py
++++ b/quantum/api/v2/attributes.py
+@@ -458,6 +458,14 @@ validators = {'type:dict': _validate_dict,
+               'type:uuid_list': _validate_uuid_list,
+               'type:values': _validate_values}
+
++# Define constants for base resource name
++NETWORK = 'network'
++NETWORKS = '%ss' % NETWORK
++PORT = 'port'
++PORTS = '%ss' % PORT
++SUBNET = 'subnet'
++SUBNETS = '%ss' % SUBNET
++
+ # Note: a default of ATTR_NOT_SPECIFIED indicates that an
+ # attribute is not required, but will be generated by the plugin
+ # if it is not specified.  Particularly, a value of ATTR_NOT_SPECIFIED
+@@ -482,7 +490,7 @@ validators = {'type:dict': _validate_dict,
+ # mechanism, ie: there might be rules which refer to this attribute.
+
+ RESOURCE_ATTRIBUTE_MAP = {
+-    'networks': {
++    NETWORKS: {
+         'id': {'allow_post': False, 'allow_put': False,
+                'validate': {'type:uuid': None},
+                'is_visible': True,
+@@ -511,7 +519,7 @@ RESOURCE_ATTRIBUTE_MAP = {
+                  'required_by_policy': True,
+                  'enforce_policy': True},
+     },
+-    'ports': {
++    PORTS: {
+         'id': {'allow_post': False, 'allow_put': False,
+                'validate': {'type:uuid': None},
+                'is_visible': True,
+@@ -553,7 +561,7 @@ RESOURCE_ATTRIBUTE_MAP = {
+         'status': {'allow_post': False, 'allow_put': False,
+                    'is_visible': True},
+     },
+-    'subnets': {
++    SUBNETS: {
+         'id': {'allow_post': False, 'allow_put': False,
+                'validate': {'type:uuid': None},
+                'is_visible': True,
+@@ -613,13 +621,13 @@ RESOURCE_ATTRIBUTE_MAP = {
+ # Resources without parents, such as networks, are not in this list
+
+ RESOURCE_HIERARCHY_MAP = {
+-    'ports': {'parent': 'networks', 'identified_by': 'network_id'},
+-    'subnets': {'parent': 'networks', 'identified_by': 'network_id'}
++    PORTS: {'parent': NETWORKS, 'identified_by': 'network_id'},
++    SUBNETS: {'parent': NETWORKS, 'identified_by': 'network_id'}
+ }
+
+-PLURALS = {'networks': 'network',
+-           'ports': 'port',
+-           'subnets': 'subnet',
++PLURALS = {NETWORKS: NETWORK,
++           PORTS: PORT,
++           SUBNETS: SUBNET,
+            'dns_nameservers': 'dns_nameserver',
+            'host_routes': 'host_route',
+            'allocation_pools': 'allocation_pool',
+diff --git a/quantum/db/allowedaddresspairs_db.py b/quantum/db/allowedaddresspairs_db.py
+new file mode 100644
+index 0000000..cf2df0d
+--- /dev/null
++++ b/quantum/db/allowedaddresspairs_db.py
+@@ -0,0 +1,122 @@
++# vim: tabstop=4 shiftwidth=4 softtabstop=4
++#
++# Copyright 2013 Nicira Networks, Inc.  All rights reserved.
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++#
++# @author: Aaron Rosen, Nicira, Inc
++
++import sqlalchemy as sa
++from sqlalchemy import orm
++
++from quantum.api.v2 import attributes as attr
++from quantum.db import db_base_plugin_v2
++from quantum.db import model_base
++from quantum.db import models_v2
++from quantum.extensions import allowedaddresspairs as addr_pair
++
++
++class AllowedAddressPair(model_base.BASEV2):
++    print "models imported as", __name__
++    port_id = sa.Column(sa.String(36),
++                        sa.ForeignKey('ports.id', ondelete="CASCADE"),
++                        primary_key=True)
++    mac_address = sa.Column(sa.String(32), nullable=False, primary_key=True)
++    ip_address = sa.Column(sa.String(64), nullable=False, primary_key=True)
++
++    port = orm.relationship(
++        models_v2.Port,
++        backref=orm.backref("allowed_address_pairs",
++                            lazy="joined", cascade="delete"))
++
++
++class AllowedAddressPairsMixin(object):
++    """Mixin class for allowed address pairs."""
++
++    def _process_create_allowed_address_pairs(self, context, port,
++                                              allowed_address_pairs):
++        if not attr.is_attr_set(allowed_address_pairs):
++            return []
++        with context.session.begin(subtransactions=True):
++            for address_pair in allowed_address_pairs:
++                # use port.mac_address if no mac address in address pair
++                if 'mac_address' not in address_pair:
++                    address_pair['mac_address'] = port['mac_address']
++                for fixed_ip in port['fixed_ips']:
++                    if ((fixed_ip['ip_address'] == address_pair['ip_address'])
++                        and (port['mac_address'] ==
++                             address_pair['mac_address'])):
++                        #TODO(arosen) - need to query for address pairs
++                        # to check for same condition if fixed_ips change to
++                        # be an address pair.
++                        raise addr_pair.AddressPairMatchesPortFixedIPAndMac()
++                db_pair = AllowedAddressPair(
++                    port_id=port['id'],
++                    mac_address=address_pair['mac_address'],
++                    ip_address=address_pair['ip_address'])
++                context.session.add(db_pair)
++
++        return allowed_address_pairs
++
++    def get_allowed_address_pairs(self, context, port_id):
++        pairs = (context.session.query(AllowedAddressPair).
++                 filter_by(port_id=port_id))
++        return [self._make_allowed_address_pairs_dict(pair)
++                for pair in pairs]
++
++    def _extend_port_dict_allowed_address_pairs(self, port_res, port_db):
++        # If port_db is provided, allowed address pairs will be accessed via
++        # sqlalchemy models. As they're loaded together with ports this
++        # will not cause an extra query.
++        allowed_address_pairs = [
++            self._make_allowed_address_pairs_dict(address_pair) for
++            address_pair in port_db.allowed_address_pairs]
++        port_res[addr_pair.ADDRESS_PAIRS] = allowed_address_pairs
++        return port_res
++
++    # Register dict extend functions for ports
++    db_base_plugin_v2.QuantumDbPluginV2.register_dict_extend_funcs(
++        attr.PORTS, [_extend_port_dict_allowed_address_pairs])
++
++    def _delete_allowed_address_pairs(self, context, id):
++        query = self._model_query(context, AllowedAddressPair)
++        with context.session.begin(subtransactions=True):
++            query.filter(AllowedAddressPair.port_id == id).delete()
++
++    def _make_allowed_address_pairs_dict(self, allowed_address_pairs,
++                                         fields=None):
++        res = {'mac_address': allowed_address_pairs['mac_address'],
++               'ip_address': allowed_address_pairs['ip_address']}
++        return self._fields(res, fields)
++
++    def _has_address_pairs(self, port):
++        return (attr.is_attr_set(port['port'][addr_pair.ADDRESS_PAIRS])
++                and port['port'][addr_pair.ADDRESS_PAIRS] != [])
++
++    def _check_update_has_allowed_address_pairs(self, port):
++        """Determine if request has an allowed address pair.
++
++        Return True if the port parameter has a non-empty
++        'allowed_address_pairs' attribute. Otherwise returns False.
++        """
++        return (addr_pair.ADDRESS_PAIRS in port['port'] and
++                self._has_address_pairs(port))
++
++    def _check_update_deletes_allowed_address_pairs(self, port):
++        """Determine if request deletes address pair.
++
++        Return True if port has as a allowed address pair and its value
++        is either [] or not is_attr_set, otherwise return False
++        """
++        return (addr_pair.ADDRESS_PAIRS in port['port'] and
++                not self._has_address_pairs(port))
+diff --git a/quantum/db/db_base_plugin_v2.py b/quantum/db/db_base_plugin_v2.py
+index aacc62d..a983442 100644
+--- a/quantum/db/db_base_plugin_v2.py
++++ b/quantum/db/db_base_plugin_v2.py
+@@ -70,6 +70,10 @@ class QuantumDbPluginV2(quantum_plugin_base_v2.QuantumPluginBaseV2):
+     # To this aim, the register_model_query_hook and unregister_query_hook
+     # from this class should be invoked
+     _model_query_hooks = {}
++    # This dictionary will store methods for extending attributes of
++    # api resources. Mixins can use this dict for adding their own methods
++    # TODO(salvatore-orlando): Avoid using class-level variables
++    _dict_extend_functions = {}
+
+     def __init__(self):
+         # NOTE(jkoelker) This is an incomlete implementation. Subclasses
+@@ -118,6 +122,12 @@ class QuantumDbPluginV2(quantum_plugin_base_v2.QuantumPluginBaseV2):
+         return query
+
+     @classmethod
++    def register_dict_extend_funcs(cls, resource, funcs):
++        cur_funcs = cls._dict_extend_functions.get(resource, [])
++        cur_funcs.extend(funcs)
++        cls._dict_extend_functions[resource] = cur_funcs
++
++    @classmethod
+     def register_model_query_hook(cls, model, name, query_hook, filter_hook,
+                                   result_filters=None):
+         """ register an hook to be invoked when a query is executed.
+@@ -142,6 +152,14 @@ class QuantumDbPluginV2(quantum_plugin_base_v2.QuantumPluginBaseV2):
+         model_hooks[name] = {'query': query_hook, 'filter': filter_hook,
+                              'result_filters': result_filters}
+
++    def _filter_non_model_columns(self, data, model):
++        """Remove all the attributes from data which are not columns of
++        the model passed as second parameter.
++        """
++        columns = [c.name for c in model.__table__.columns]
++        return dict((k, v) for (k, v) in
++                    data.iteritems() if k in columns)
++
+     def _get_by_id(self, context, model, id):
+         query = self._model_query(context, model)
+         return query.filter(model.id == id).one()
+@@ -907,7 +925,8 @@ class QuantumDbPluginV2(quantum_plugin_base_v2.QuantumPluginBaseV2):
+                }
+         return self._fields(res, fields)
+
+-    def _make_port_dict(self, port, fields=None):
++    def _make_port_dict(self, port, fields=None,
++                        process_extensions=True):
+         res = {"id": port["id"],
+                'name': port['name'],
+                "network_id": port["network_id"],
+@@ -920,6 +939,11 @@ class QuantumDbPluginV2(quantum_plugin_base_v2.QuantumPluginBaseV2):
+                              for ip in port["fixed_ips"]],
+                "device_id": port["device_id"],
+                "device_owner": port["device_owner"]}
++        # Call auxiliary extend functions, if any
++        if process_extensions:
++            for func in self._dict_extend_functions.get(attributes.PORTS,
++                                                        []):
++                func(self, res, port)
+         return self._fields(res, fields)
+
+     def _create_bulk(self, resource, context, request_items):
+@@ -1322,7 +1346,7 @@ class QuantumDbPluginV2(quantum_plugin_base_v2.QuantumPluginBaseV2):
+                     )
+                     context.session.add(allocated)
+
+-        return self._make_port_dict(port)
++        return self._make_port_dict(port, process_extensions=False)
+
+     def update_port(self, context, id, port):
+         p = port['port']
+@@ -1333,14 +1357,12 @@ class QuantumDbPluginV2(quantum_plugin_base_v2.QuantumPluginBaseV2):
+             if 'fixed_ips' in p:
+                 self._recycle_expired_ip_allocations(context,
+                                                      port['network_id'])
+-                original = self._make_port_dict(port)
++                original = self._make_port_dict(port, process_extensions=False)
+                 ips = self._update_ips_for_port(context,
+                                                 port["network_id"],
+                                                 id,
+                                                 original["fixed_ips"],
+                                                 p['fixed_ips'])
+-                # 'fixed_ip's not part of DB so it is deleted
+-                del p['fixed_ips']
+
+                 # Update ips if necessary
+                 for ip in ips:
+@@ -1350,7 +1372,9 @@ class QuantumDbPluginV2(quantum_plugin_base_v2.QuantumPluginBaseV2):
+                         expiration=self._default_allocation_expiration())
+                     context.session.add(allocated)
+
+-            port.update(p)
++        # Remove all attributes in p which are not in the port DB model
++        # and then update the port
++        port.update(self._filter_non_model_columns(p, models_v2.Port))
+
+         return self._make_port_dict(port)
+
+diff --git a/quantum/db/migration/alembic_migrations/versions/1efb85914233_allowedaddresspairs.py b/quantum/db/migration/alembic_migrations/versions/1efb85914233_allowedaddresspairs.py
+new file mode 100644
+index 0000000..bb91447
+--- /dev/null
++++ b/quantum/db/migration/alembic_migrations/versions/1efb85914233_allowedaddresspairs.py
+@@ -0,0 +1,62 @@
++# vim: tabstop=4 shiftwidth=4 softtabstop=4
++#
++# Copyright 2013 OpenStack Foundation
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++#
++
++"""allowedaddresspairs
++
++Revision ID: 1efb85914233
++Revises: 49332180ca96
++Create Date: 2013-07-23 12:56:00.402855
++
++"""
++
++# revision identifiers, used by Alembic.
++revision = '1efb85914233'
++down_revision = '49332180ca96'
++
++# Change to ['*'] if this migration applies to all plugins
++
++migration_for_plugins = [
++    'neutron.plugins.nicira.nicira_nvp_plugin.QuantumPlugin.NvpPluginV2',
++    'neutron.plugins.openvswitch.ovs_quantum_plugin.OVSQuantumPluginV2',
++    'neutron.plugins.cisco.network_plugin.PluginV2'
++]
++
++from alembic import op
++import sqlalchemy as sa
++
++from quantum.db import migration
++
++
++def upgrade(active_plugins=None, options=None):
++    if not migration.should_run(active_plugins, migration_for_plugins):
++        return
++
++    op.create_table(
++        'allowedaddresspairs',
++        sa.Column('port_id', sa.String(length=36), nullable=False),
++        sa.Column('mac_address', sa.String(length=32), nullable=False),
++        sa.Column('ip_address', sa.String(length=64), nullable=False),
++        sa.ForeignKeyConstraint(['port_id'], ['ports.id'], ondelete='CASCADE'),
++        sa.PrimaryKeyConstraint('port_id', 'mac_address', 'ip_address'),
++    )
++
++
++def downgrade(active_plugins=None, options=None):
++    if not migration.should_run(active_plugins, migration_for_plugins):
++        return
++
++    op.drop_table('allowedaddresspairs')
+diff --git a/quantum/db/securitygroups_db.py b/quantum/db/securitygroups_db.py
+index 2048143..ad74297 100644
+--- a/quantum/db/securitygroups_db.py
++++ b/quantum/db/securitygroups_db.py
+@@ -22,6 +22,7 @@ from sqlalchemy.orm import exc
+ from sqlalchemy.orm import scoped_session
+
+ from quantum.api.v2 import attributes as attr
++from quantum.db import db_base_plugin_v2
+ from quantum.db import model_base
+ from quantum.db import models_v2
+ from quantum.extensions import securitygroup as ext_sg
+@@ -44,6 +45,13 @@ class SecurityGroupPortBinding(model_base.BASEV2):
+                                   sa.ForeignKey("securitygroups.id"),
+                                   primary_key=True)
+
++    # Add a relationship to the Port model in order to instruct SQLAlchemy to
++    # eagerly load security group bindings
++    ports = orm.relationship(
++        models_v2.Port,
++        backref=orm.backref("security_groups",
++                            lazy='joined', cascade='delete'))
++
+
+ class SecurityGroupRule(model_base.BASEV2, models_v2.HasId,
+                         models_v2.HasTenant):
+@@ -386,25 +394,29 @@ class SecurityGroupDbMixin(ext_sg.SecurityGroupPluginBase):
+             rule = self._get_security_group_rule(context, id)
+             context.session.delete(rule)
+
+-    def _extend_port_dict_security_group(self, context, port):
+-        filters = {'port_id': [port['id']]}
+-        fields = {'security_group_id': None}
+-        security_group_id = self._get_port_security_group_bindings(
+-            context, filters, fields)
+-
+-        port[ext_sg.SECURITYGROUPS] = []
+-        for security_group_id in security_group_id:
+-            port[ext_sg.SECURITYGROUPS].append(
+-                security_group_id['security_group_id'])
+-        return port
+-
+-    def _process_port_create_security_group(self, context, port_id,
+-                                            security_group_id):
+-        if not attr.is_attr_set(security_group_id):
+-            return
+-        for security_group_id in security_group_id:
+-            self._create_port_security_group_binding(context, port_id,
+-                                                     security_group_id)
++    def _extend_port_dict_security_group(self, port_res, port_db):
++        # If port_db is provided, security groups will be accessed via
++        # sqlalchemy models. As they're loaded together with ports this
++        # will not cause an extra query.
++        security_group_ids = [sec_group_mapping['security_group_id'] for
++                              sec_group_mapping in port_db.security_groups]
++        port_res[ext_sg.SECURITYGROUPS] = security_group_ids
++        return port_res
++
++    # Register dict extend functions for ports
++    db_base_plugin_v2.QuantumDbPluginV2.register_dict_extend_funcs(
++        attr.PORTS, [_extend_port_dict_security_group])
++
++    def _process_port_create_security_group(self, context, port,
++                                            security_group_ids):
++        if attr.is_attr_set(security_group_ids):
++            for security_group_id in security_group_ids:
++                self._create_port_security_group_binding(context, port['id'],
++                                                         security_group_id)
++        # Convert to list as a set might be passed here and
++        # this has to be serialized
++        port[ext_sg.SECURITYGROUPS] = (security_group_ids and
++                                       list(security_group_ids) or [])
+
+     def _ensure_default_security_group(self, context, tenant_id):
+         """Create a default security group if one doesn't exist.
+diff --git a/quantum/db/securitygroups_rpc_base.py b/quantum/db/securitygroups_rpc_base.py
+index 78a4c7e..9de1ed5 100644
+--- a/quantum/db/securitygroups_rpc_base.py
++++ b/quantum/db/securitygroups_rpc_base.py
+@@ -77,10 +77,12 @@ class SecurityGroupServerRpcMixin(sg_db.SecurityGroupDbMixin):
+             self._delete_port_security_group_bindings(context, id)
+             self._process_port_create_security_group(
+                 context,
+-                id,
++                updated_port,
+                 port['port'][ext_sg.SECURITYGROUPS])
+             need_notify = True
+-        self._extend_port_dict_security_group(context, updated_port)
++        else:
++            updated_port[ext_sg.SECURITYGROUPS] = (
++                original_port[ext_sg.SECURITYGROUPS])
+         return need_notify
+
+     def is_security_group_member_updated(self, context,
+@@ -173,13 +175,21 @@ class SecurityGroupServerRpcCallbackMixin(object):
+         sg_binding_sgid = sg_db.SecurityGroupPortBinding.security_group_id
+
+         query = context.session.query(sg_binding_sgid,
++                                      models_v2.Port,
+                                       models_v2.IPAllocation.ip_address)
+         query = query.join(models_v2.IPAllocation,
+                            ip_port == sg_binding_port)
++        query = query.join(models_v2.Port,
++                           ip_port == models_v2.Port.id)
+         query = query.filter(sg_binding_sgid.in_(remote_group_ids))
+         ip_in_db = query.all()
+-        for security_group_id, ip_address in ip_in_db:
++        for security_group_id, port, ip_address in ip_in_db:
+             ips_by_group[security_group_id].append(ip_address)
++            # if there are allowed_address_pairs add them
++            if getattr(port, 'allowed_address_pairs', None):
++                for address_pair in port.allowed_address_pairs:
++                    ips_by_group[security_group_id].append(
++                        address_pair['ip_address'])
+         return ips_by_group
+
+     def _select_remote_group_ids(self, ports):
+@@ -231,12 +241,12 @@ class SecurityGroupServerRpcCallbackMixin(object):
+                     if ip in port.get('fixed_ips', []):
+                         continue
+                     ip_rule = base_rule.copy()
+-                    version = netaddr.IPAddress(ip).version
++                    version = netaddr.IPNetwork(ip).version
+                     ethertype = 'IPv%s' % version
+                     if base_rule['ethertype'] != ethertype:
+                         continue
+-                    ip_rule[direction_ip_prefix] = "%s/%s" % (
+-                        ip, IP_MASK[ethertype])
++                    ip_rule[direction_ip_prefix] = str(
++                        netaddr.IPNetwork(ip).cidr)
+                     updated_rule.append(ip_rule)
+             port['security_group_rules'] = updated_rule
+         return ports
+diff --git a/quantum/extensions/allowedaddresspairs.py b/quantum/extensions/allowedaddresspairs.py
+new file mode 100644
+index 0000000..687baf9
+--- /dev/null
++++ b/quantum/extensions/allowedaddresspairs.py
+@@ -0,0 +1,122 @@
++# vim: tabstop=4 shiftwidth=4 softtabstop=4
++#
++# Copyright 2013 Nicira Networks, Inc.  All rights reserved.
++#
++#    Licensed under the Apache License, Version 2.0 (the "License"); you may
++#    not use this file except in compliance with the License. You may obtain
++#    a copy of the License at
++#
++#         http://www.apache.org/licenses/LICENSE-2.0
++#
++#    Unless required by applicable law or agreed to in writing, software
++#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
++#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
++#    License for the specific language governing permissions and limitations
++#    under the License.
++#
++# @author: Aaron Rosen, Nicira, Inc
++
++import webob.exc
++
++from quantum.api.v2 import attributes as attr
++from quantum.common import exceptions as nexception
++
++
++class AllowedAddressPairsMissingIP(nexception.InvalidInput):
++    message = _("AllowedAddressPair must contain ip_address")
++
++
++class AddressPairAndPortSecurityRequired(nexception.Conflict):
++    message = _("Port Security must be enabled in order to have allowed "
++                "address pairs on a port.")
++
++
++class DuplicateAddressPairInRequest(nexception.InvalidInput):
++    message = _("Request contains duplicate address pair: "
++                "mac_address %(mac_address)s ip_address %(ip_address)s.")
++
++
++class AddressPairMatchesPortFixedIPAndMac(nexception.InvalidInput):
++    message = _("Port's Fixed IP and Mac Address match an address pair entry.")
++
++
++def _validate_allowed_address_pairs(address_pairs, valid_values=None):
++    unique_check = {}
++    for address_pair in address_pairs:
++        # mac_address is optional, if not set we use the mac on the port
++        if 'mac_address' in address_pair:
++            msg = attr._validate_mac_address(address_pair['mac_address'])
++            if msg:
++                raise webob.exc.HTTPBadRequest(msg)
++        if 'ip_address' not in address_pair:
++            raise AllowedAddressPairsMissingIP()
++
++        mac = address_pair.get('mac_address')
++        ip_address = address_pair['ip_address']
++        if (mac, ip_address) not in unique_check:
++            unique_check[(mac, ip_address)] = None
++        else:
++            raise DuplicateAddressPairInRequest(mac_address=mac,
++                                                ip_address=ip_address)
++
++        invalid_attrs = set(address_pair.keys()) - set(['mac_address',
++                                                        'ip_address'])
++        if invalid_attrs:
++            msg = (_("Unrecognized attribute(s) '%s'") %
++                   ', '.join(set(address_pair.keys()) -
++                             set(['mac_address', 'ip_address'])))
++            raise webob.exc.HTTPBadRequest(msg)
++
++        if '/' in ip_address:
++            msg = attr._validate_subnet(ip_address)
++        else:
++            msg = attr._validate_ip_address(ip_address)
++        if msg:
++            raise webob.exc.HTTPBadRequest(msg)
++
++attr.validators['type:validate_allowed_address_pairs'] = (
++    _validate_allowed_address_pairs)
++
++ADDRESS_PAIRS = 'allowed_address_pairs'
++EXTENDED_ATTRIBUTES_2_0 = {
++    'ports': {
++        ADDRESS_PAIRS: {'allow_post': True, 'allow_put': True,
++                        'convert_list_to':
++                        attr.convert_kvp_list_to_dict,
++                        'validate': {'type:validate_allowed_address_pairs':
++                                     None},
++                        'enforce_policy': True,
++                        'default': attr.ATTR_NOT_SPECIFIED,
++                        'is_visible': True},
++    }
++}
++
++
++class Allowedaddresspairs(object):
++    """Extension class supporting allowed address pairs."""
++
++    @classmethod
++    def get_name(cls):
++        return "Allowed Address Pairs"
++
++    @classmethod
++    def get_alias(cls):
++        return "allowed-address-pairs"
++
++    @classmethod
++    def get_description(cls):
++        return "Provides allowed address pairs"
++
++    @classmethod
++    def get_namespace(cls):
++        return "http://docs.openstack.org/ext/allowedaddresspairs/api/v2.0"
++
++    @classmethod
++    def get_updated(cls):
++        return "2013-07-23T10:00:00-00:00"
++
++    def get_extended_resources(self, version):
++        if version == "2.0":
++            return EXTENDED_ATTRIBUTES_2_0
++        else:
++            return {}
+diff --git a/quantum/plugins/brocade/QuantumPlugin.py b/quantum/plugins/brocade/QuantumPlugin.py
+index 30bf61f..f68a703 100644
+--- a/quantum/plugins/brocade/QuantumPlugin.py
++++ b/quantum/plugins/brocade/QuantumPlugin.py
+@@ -416,15 +416,16 @@ class BrocadePluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+                 port['port'][ext_sg.SECURITYGROUPS] = (
+                     self._get_security_groups_on_port(context, port))
+                 self._delete_port_security_group_bindings(context, port_id)
++                # process_port_create_security_group also needs port id
++                port['port']['id'] = port_id
+                 self._process_port_create_security_group(
+                     context,
+-                    port_id,
++                    port['port'],
+                     port['port'][ext_sg.SECURITYGROUPS])
+                 port_updated = True
+
+             port = super(BrocadePluginV2, self).update_port(
+                 context, port_id, port)
+-            self._extend_port_dict_security_group(context, port)
+
+         if original_port['admin_state_up'] != port['admin_state_up']:
+             port_updated = True
+@@ -445,7 +446,6 @@ class BrocadePluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+         with context.session.begin(subtransactions=True):
+             port = super(BrocadePluginV2, self).get_port(
+                 context, port_id, fields)
+-            self._extend_port_dict_security_group(context, port)
+             self._extend_port_dict_binding(context, port)
+
+         return self._fields(port, fields)
+@@ -457,7 +457,6 @@ class BrocadePluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+                                                            filters,
+                                                            fields)
+             for port in ports:
+-                self._extend_port_dict_security_group(context, port)
+                 self._extend_port_dict_binding(context, port)
+                 res_ports.append(self._fields(port, fields))
+
+diff --git a/quantum/plugins/linuxbridge/lb_quantum_plugin.py b/quantum/plugins/linuxbridge/lb_quantum_plugin.py
+index 8b18c51..fbd27da 100644
+--- a/quantum/plugins/linuxbridge/lb_quantum_plugin.py
++++ b/quantum/plugins/linuxbridge/lb_quantum_plugin.py
+@@ -483,7 +483,6 @@ class LinuxBridgePluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+             port = super(LinuxBridgePluginV2, self).get_port(context,
+                                                              id,
+                                                              fields)
+-            self._extend_port_dict_security_group(context, port)
+         self._extend_port_dict_binding(context, port),
+         return self._fields(port, fields)
+
+@@ -496,7 +495,6 @@ class LinuxBridgePluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+                                           limit, marker, page_reverse)
+             #TODO(nati) filter by security group
+             for port in ports:
+-                self._extend_port_dict_security_group(context, port)
+                 self._extend_port_dict_binding(context, port)
+                 res_ports.append(self._fields(port, fields))
+         return res_ports
+@@ -512,8 +510,7 @@ class LinuxBridgePluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+             port = super(LinuxBridgePluginV2,
+                          self).create_port(context, port)
+             self._process_port_create_security_group(
+-                context, port['id'], sgids)
+-            self._extend_port_dict_security_group(context, port)
++                context, port, sgids)
+         self.notify_security_groups_member_updated(context, port)
+         return self._extend_port_dict_binding(context, port)
+
+diff --git a/quantum/plugins/midonet/plugin.py b/quantum/plugins/midonet/plugin.py
+index 1a36356..f856d63 100644
+--- a/quantum/plugins/midonet/plugin.py
++++ b/quantum/plugins/midonet/plugin.py
+@@ -423,7 +423,9 @@ class MidonetPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+         with session.begin(subtransactions=True):
+             port_db_entry = super(MidonetPluginV2,
+                                   self).create_port(context, port)
+-            self._extend_port_dict_security_group(context, port_db_entry)
++            # Caveat: port_db_entry is not a db model instance
++            sg_ids = self._get_security_groups_on_port(context, port)
++            self._process_port_create_security_group(context, port, sg_ids)
+             if is_compute_interface:
+                 # Create a DHCP entry if needed.
+                 if 'ip_address' in (port_db_entry['fixed_ips'] or [{}])[0]:
+@@ -454,7 +456,6 @@ class MidonetPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+         # get the quantum port from DB.
+         port_db_entry = super(MidonetPluginV2, self).get_port(context,
+                                                               id, fields)
+-        self._extend_port_dict_security_group(context, port_db_entry)
+
+         # verify that corresponding port exists in MidoNet.
+         try:
+@@ -478,7 +479,6 @@ class MidonetPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+             try:
+                 for port in ports_db_entry:
+                     self.mido_api.get_port(port['id'])
+-                    self._extend_port_dict_security_group(context, port)
+             except w_exc.HTTPNotFound:
+                 raise MidonetResourceNotFound(resource_type='Port',
+                                               id=port['id'])
+diff --git a/quantum/plugins/nec/nec_plugin.py b/quantum/plugins/nec/nec_plugin.py
+index a697c4b..04e6cf8 100644
+--- a/quantum/plugins/nec/nec_plugin.py
++++ b/quantum/plugins/nec/nec_plugin.py
+@@ -398,8 +398,7 @@ class NECPluginV2(nec_plugin_base.NECPluginV2Base,
+             sgids = self._get_security_groups_on_port(context, port)
+             port = super(NECPluginV2, self).create_port(context, port)
+             self._process_port_create_security_group(
+-                context, port['id'], sgids)
+-            self._extend_port_dict_security_group(context, port)
++                context, port, sgids)
+         self.notify_security_groups_member_updated(context, port)
+         self._update_resource_status(context, "port", port['id'],
+                                      OperationalStatus.BUILD)
+@@ -434,9 +433,6 @@ class NECPluginV2(nec_plugin_base.NECPluginV2Base,
+             else:
+                 self.deactivate_port(context, old_port)
+
+-        # NOTE: _extend_port_dict_security_group() is called in
+-        # update_security_group_on_port() above, so we don't need to
+-        # call it here.
+         return self._extend_port_dict_binding(context, new_port)
+
+     def delete_port(self, context, id, l3_port_check=True):
+@@ -470,7 +466,6 @@ class NECPluginV2(nec_plugin_base.NECPluginV2Base,
+     def get_port(self, context, id, fields=None):
+         with context.session.begin(subtransactions=True):
+             port = super(NECPluginV2, self).get_port(context, id, fields)
+-            self._extend_port_dict_security_group(context, port)
+             self._extend_port_dict_binding(context, port)
+         return self._fields(port, fields)
+
+@@ -480,7 +475,6 @@ class NECPluginV2(nec_plugin_base.NECPluginV2Base,
+                                                        fields)
+             # TODO(amotoki) filter by security group
+             for port in ports:
+-                self._extend_port_dict_security_group(context, port)
+                 self._extend_port_dict_binding(context, port)
+         return [self._fields(port, fields) for port in ports]
+
+diff --git a/quantum/plugins/nicira/nicira_nvp_plugin/QuantumPlugin.py b/quantum/plugins/nicira/nicira_nvp_plugin/QuantumPlugin.py
+index 17761cf..2ecb223 100644
+--- a/quantum/plugins/nicira/nicira_nvp_plugin/QuantumPlugin.py
++++ b/quantum/plugins/nicira/nicira_nvp_plugin/QuantumPlugin.py
+@@ -1,4 +1,4 @@
+-# vim: tabstop=4 shiftwidth=4 softtabstop=4
++3# vim: tabstop=4 shiftwidth=4 softtabstop=4
+
+ # Copyright 2012 Nicira, Inc.
+ # All Rights Reserved
+@@ -37,6 +37,7 @@ from quantum.common import rpc as q_rpc
+ from quantum.common import topics
+ from quantum.db import agents_db
+ from quantum.db import agentschedulers_db
++from quantum.db import allowedaddresspairs_db as addr_pair_db
+ from quantum.db import api as db
+ from quantum.db import db_base_plugin_v2
+ from quantum.db import dhcp_rpc_base
+@@ -46,6 +47,7 @@ from quantum.db import portsecurity_db
+ # NOTE: quota_db cannot be removed, it is for db model
+ from quantum.db import quota_db
+ from quantum.db import securitygroups_db
++from quantum.extensions import allowedaddresspairs as addr_pair
+ from quantum.extensions import l3
+ from quantum.extensions import portsecurity as psec
+ from quantum.extensions import providernet as pnet
+@@ -202,7 +204,8 @@ class NVPRpcCallbacks(dhcp_rpc_base.DhcpRpcCallbackMixin):
+                                           agents_db.AgentExtRpcCallback()])
+
+
+-class NvpPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
++class NvpPluginV2(addr_pair_db.AllowedAddressPairsMixin,
++                  db_base_plugin_v2.QuantumDbPluginV2,
+                   l3_db.L3_NAT_db_mixin,
+                   portsecurity_db.PortSecurityDbMixin,
+                   securitygroups_db.SecurityGroupDbMixin,
+@@ -216,8 +219,9 @@ class NvpPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+     functionality using NVP.
+     """
+
+-    supported_extension_aliases = ["provider", "quotas", "port-security",
+-                                   "router", "security-group", "nvp-qos",
++    supported_extension_aliases = ["allowed-address-pairs", "provider",
++                                   "quotas", "port-security", "router",
++                                   "security-group", "nvp-qos",
+                                    "network-gateway"]
+
+     __native_bulk_support = True
+@@ -446,7 +450,8 @@ class NvpPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+                                    port_data['fixed_ips'],
+                                    port_data[psec.PORTSECURITY],
+                                    port_data[ext_sg.SECURITYGROUPS],
+-                                   port_data[ext_qos.QUEUE])
++                                   port_data[ext_qos.QUEUE],
++                                   port_data.get(addr_pair.ADDRESS_PAIRS))
+
+     def _nvp_create_port(self, context, port_data):
+         """ Driver for creating a logical switch port on NVP platform """
+@@ -1207,7 +1212,6 @@ class NvpPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+                 context, filters)
+             for quantum_lport in quantum_lports:
+                 self._extend_port_port_security_dict(context, quantum_lport)
+-                self._extend_port_dict_security_group(context, quantum_lport)
+         if (filters.get('network_id') and len(filters.get('network_id')) and
+             self._network_is_external(context, filters['network_id'][0])):
+             # Do not perform check on NVP platform
+@@ -1336,7 +1340,18 @@ class NvpPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+             port_data[ext_sg.SECURITYGROUPS] = (
+                 self._get_security_groups_on_port(context, port))
+             self._process_port_create_security_group(
+-                context, quantum_db['id'], port_data[ext_sg.SECURITYGROUPS])
++                context, port_data, port_data[ext_sg.SECURITYGROUPS])
++            # allowed address pair checks
++            if attr.is_attr_set(port_data.get(addr_pair.ADDRESS_PAIRS)):
++                if not port_security:
++                    raise addr_pair.AddressPairAndPortSecurityRequired()
++                else:
++                    self._process_create_allowed_address_pairs(
++                        context, quantum_db,
++                        port_data[addr_pair.ADDRESS_PAIRS])
++            else:
++                # remove ATTR_NOT_SPECIFIED
++                port_data[addr_pair.ADDRESS_PAIRS] = None
+             # QoS extension checks
+             port_data[ext_qos.QUEUE] = self._check_for_queue_and_create(
+                 context, port_data)
+@@ -1364,7 +1379,6 @@ class NvpPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+             # remove since it will be added in extend based on policy
+             del port_data[ext_qos.QUEUE]
+             self._extend_port_port_security_dict(context, port_data)
+-            self._extend_port_dict_security_group(context, port_data)
+             self._extend_port_qos_queue(context, port_data)
+         net = self.get_network(context, port_data['network_id'])
+         self.schedule_network(context, net)
+@@ -1377,11 +1391,16 @@ class NvpPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+         delete_security_groups = self._check_update_deletes_security_groups(
+             port)
+         has_security_groups = self._check_update_has_security_groups(port)
++        delete_addr_pairs = self._check_update_deletes_allowed_address_pairs(
++            port)
++        has_addr_pairs = self._check_update_has_allowed_address_pairs(port)
+
+         with context.session.begin(subtransactions=True):
+             ret_port = super(NvpPluginV2, self).update_port(
+                 context, id, port)
+-            # copy values over
++            # copy values over - except fixed_ips as
++            # they've alreaby been processed
++            port['port'].pop('fixed_ips', None)
+             ret_port.update(port['port'])
+             tenant_id = self._get_tenant_id_for_create(context, ret_port)
+             # populate port_security setting
+@@ -1390,6 +1409,25 @@ class NvpPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+                     context, id)
+
+             has_ip = self._ip_on_port(ret_port)
++
++            # validate port security and allowed address pairs
++            if not ret_port[psec.PORTSECURITY]:
++                #  has address pairs in request
++                if has_addr_pairs:
++                    raise addr_pair.AddressPairAndPortSecurityRequired()
++                elif not delete_addr_pairs:
++                    # check if address pairs are in db
++                    ret_port[addr_pair.ADDRESS_PAIRS] = (
++                        self.get_allowed_address_pairs(context, id))
++                    if ret_port[addr_pair.ADDRESS_PAIRS]:
++                        raise addr_pair.AddressPairAndPortSecurityRequired()
++
++            if delete_addr_pairs or has_addr_pairs:
++                # delete address pairs and read them in
++                self._delete_allowed_address_pairs(context, id)
++                self._process_create_allowed_address_pairs(
++                    context, ret_port, ret_port[addr_pair.ADDRESS_PAIRS])
++
+             # checks if security groups were updated adding/modifying
+             # security groups, port security is set and port has ip
+             if not (has_ip and ret_port[psec.PORTSECURITY]):
+@@ -1409,7 +1447,8 @@ class NvpPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+                 # delete the port binding and read it with the new rules.
+                 self._delete_port_security_group_bindings(context, id)
+                 sgids = self._get_security_groups_on_port(context, port)
+-                self._process_port_create_security_group(context, id, sgids)
++                self._process_port_create_security_group(context, ret_port,
++                                                         sgids)
+
+             if psec.PORTSECURITY in port['port']:
+                 self._update_port_security_binding(
+@@ -1420,8 +1459,7 @@ class NvpPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+             self._delete_port_queue_mapping(context, ret_port['id'])
+             self._process_port_queue_mapping(context, ret_port)
+             self._extend_port_port_security_dict(context, ret_port)
+-            self._extend_port_dict_security_group(context, ret_port)
+-            LOG.debug(_("Update port request: %s"), port)
++            LOG.warn(_("Update port request: %s"), port)
+             nvp_port_id = self._nvp_get_port_id(
+                 context, self.default_cluster, ret_port)
+             if nvp_port_id:
+@@ -1435,7 +1473,8 @@ class NvpPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+                                        ret_port['fixed_ips'],
+                                        ret_port[psec.PORTSECURITY],
+                                        ret_port[ext_sg.SECURITYGROUPS],
+-                                       ret_port[ext_qos.QUEUE])
++                                       ret_port[ext_qos.QUEUE],
++                                       ret_port.get(addr_pair.ADDRESS_PAIRS))
+
+                     # Update the port status from nvp. If we fail here hide it
+                     # since the port was successfully updated but we were not
+@@ -1502,7 +1541,6 @@ class NvpPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+             quantum_db_port = super(NvpPluginV2, self).get_port(context,
+                                                                 id, fields)
+             self._extend_port_port_security_dict(context, quantum_db_port)
+-            self._extend_port_dict_security_group(context, quantum_db_port)
+             self._extend_port_qos_queue(context, quantum_db_port)
+
+             if self._network_is_external(context,
+diff --git a/quantum/plugins/nicira/nicira_nvp_plugin/nvplib.py b/quantum/plugins/nicira/nicira_nvp_plugin/nvplib.py
+index 0ea666d..474751b 100644
+--- a/quantum/plugins/nicira/nicira_nvp_plugin/nvplib.py
++++ b/quantum/plugins/nicira/nicira_nvp_plugin/nvplib.py
+@@ -708,7 +708,8 @@ def get_port(cluster, network, port, relations=None):
+
+
+ def _configure_extensions(lport_obj, mac_address, fixed_ips,
+-                          port_security_enabled, security_profiles, queue_id):
++                          port_security_enabled, security_profiles, queue_id,
++                          allowed_address_pairs):
+     lport_obj['allowed_address_pairs'] = []
+     if port_security_enabled:
+         for fixed_ip in fixed_ips:
+@@ -723,12 +724,17 @@ def _configure_extensions(lport_obj, mac_address, fixed_ips,
+              "ip_address": "0.0.0.0"})
+     lport_obj['security_profiles'] = list(security_profiles or [])
+     lport_obj['queue_uuid'] = queue_id
++    for address_pair in list(allowed_address_pairs or []):
++        lport_obj['allowed_address_pairs'].append(
++            {'mac_address': address_pair['mac_address'],
++             'ip_address': address_pair['ip_address']})
+
+
+ def update_port(cluster, lswitch_uuid, lport_uuid, quantum_port_id, tenant_id,
+                 display_name, device_id, admin_status_enabled,
+                 mac_address=None, fixed_ips=None, port_security_enabled=None,
+-                security_profiles=None, queue_id=None):
++                security_profiles=None, queue_id=None,
++                allowed_address_pairs=None):
+     # device_id can be longer than 40 so we rehash it
+     hashed_device_id = hashlib.sha1(device_id).hexdigest()
+     lport_obj = dict(
+@@ -739,7 +745,7 @@ def update_port(cluster, lswitch_uuid, lport_uuid, quantum_port_id, tenant_id,
+               dict(scope='vm_id', tag=hashed_device_id)])
+     _configure_extensions(lport_obj, mac_address, fixed_ips,
+                           port_security_enabled, security_profiles,
+-                          queue_id)
++                          queue_id, allowed_address_pairs)
+
+     path = "/ws.v1/lswitch/" + lswitch_uuid + "/lport/" + lport_uuid
+     try:
+@@ -759,7 +765,8 @@ def update_port(cluster, lswitch_uuid, lport_uuid, quantum_port_id, tenant_id,
+ def create_lport(cluster, lswitch_uuid, tenant_id, quantum_port_id,
+                  display_name, device_id, admin_status_enabled,
+                  mac_address=None, fixed_ips=None, port_security_enabled=None,
+-                 security_profiles=None, queue_id=None):
++                 security_profiles=None, queue_id=None,
++                 allowed_address_pairs=None):
+     """ Creates a logical port on the assigned logical switch """
+     # device_id can be longer than 40 so we rehash it
+     hashed_device_id = hashlib.sha1(device_id).hexdigest()
+@@ -774,7 +781,7 @@ def create_lport(cluster, lswitch_uuid, tenant_id, quantum_port_id,
+
+     _configure_extensions(lport_obj, mac_address, fixed_ips,
+                           port_security_enabled, security_profiles,
+-                          queue_id)
++                          queue_id, allowed_address_pairs)
+
+     path = _build_uri_path(LSWITCHPORT_RESOURCE,
+                            parent_resource_id=lswitch_uuid)
+diff --git a/quantum/plugins/openvswitch/ovs_quantum_plugin.py b/quantum/plugins/openvswitch/ovs_quantum_plugin.py
+index 7fe9364..61df7f6 100644
+--- a/quantum/plugins/openvswitch/ovs_quantum_plugin.py
++++ b/quantum/plugins/openvswitch/ovs_quantum_plugin.py
+@@ -34,6 +34,7 @@ from quantum.common import rpc as q_rpc
+ from quantum.common import topics
+ from quantum.db import agents_db
+ from quantum.db import agentschedulers_db
++from quantum.db import allowedaddresspairs_db as addr_pair_db
+ from quantum.db import db_base_plugin_v2
+ from quantum.db import dhcp_rpc_base
+ from quantum.db import extraroute_db
+@@ -41,6 +42,7 @@ from quantum.db import l3_rpc_base
+ # NOTE: quota_db cannot be removed, it is for db model
+ from quantum.db import quota_db
+ from quantum.db import securitygroups_rpc_base as sg_db_rpc
++from quantum.extensions import allowedaddresspairs as addr_pair
+ from quantum.extensions import portbindings
+ from quantum.extensions import providernet as provider
+ from quantum.extensions import securitygroup as ext_sg
+@@ -215,7 +217,8 @@ class AgentNotifierApi(proxy.RpcProxy,
+ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+                          extraroute_db.ExtraRoute_db_mixin,
+                          sg_db_rpc.SecurityGroupServerRpcMixin,
+-                         agentschedulers_db.AgentSchedulerDbMixin):
++                         agentschedulers_db.AgentSchedulerDbMixin,
++                         addr_pair_db.AllowedAddressPairsMixin):
+
+     """Implement the Quantum abstractions using Open vSwitch.
+
+@@ -243,7 +246,8 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+
+     _supported_extension_aliases = ["provider", "router",
+                                     "binding", "quotas", "security-group",
+-                                    "agent", "extraroute", "agent_scheduler"]
++                                    "agent", "extraroute", "agent_scheduler",
++                                    "allowed-address-pairs"]
+
+     @property
+     def supported_extension_aliases(self):
+@@ -574,9 +578,13 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+             self._ensure_default_security_group_on_port(context, port)
+             sgids = self._get_security_groups_on_port(context, port)
+             port = super(OVSQuantumPluginV2, self).create_port(context, port)
+-            self._process_port_create_security_group(
+-                context, port['id'], sgids)
+-            self._extend_port_dict_security_group(context, port)
++            self._process_port_create_security_group(context, port, sgids)
++
++        port[addr_pair.ADDRESS_PAIRS] = (
++            self._process_create_allowed_address_pairs(
++                context, port,
++                port.get(addr_pair.ADDRESS_PAIRS)))
++
+         self.notify_security_groups_member_updated(context, port)
+         return self._extend_port_dict_binding(context, port)
+
+@@ -584,7 +592,6 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+         with context.session.begin(subtransactions=True):
+             port = super(OVSQuantumPluginV2, self).get_port(context,
+                                                             id, fields)
+-            self._extend_port_dict_security_group(context, port)
+             self._extend_port_dict_binding(context, port)
+         return self._fields(port, fields)
+
+@@ -597,7 +604,6 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+                 page_reverse)
+             #TODO(nati) filter by security group
+             for port in ports:
+-                self._extend_port_dict_security_group(context, port)
+                 self._extend_port_dict_binding(context, port)
+         return [self._fields(port, fields) for port in ports]
+
+@@ -610,7 +616,15 @@ class OVSQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+                 context, id)
+             updated_port = super(OVSQuantumPluginV2, self).update_port(
+                 context, id, port)
+-            need_port_update_notify = self.update_security_group_on_port(
++
++            if addr_pair.ADDRESS_PAIRS in port['port']:
++                self._delete_allowed_address_pairs(context, id)
++                self._process_create_allowed_address_pairs(
++                    context, updated_port,
++                    port['port'][addr_pair.ADDRESS_PAIRS])
++                need_port_update_notify = True
++
++            need_port_update_notify |= self.update_security_group_on_port(
+                 context, id, port, original_port, updated_port)
+
+         need_port_update_notify |= self.is_security_group_member_updated(
+diff --git a/quantum/plugins/ryu/ryu_quantum_plugin.py b/quantum/plugins/ryu/ryu_quantum_plugin.py
+index 2bedf3e..73e7f8c 100644
+--- a/quantum/plugins/ryu/ryu_quantum_plugin.py
++++ b/quantum/plugins/ryu/ryu_quantum_plugin.py
+@@ -204,8 +204,7 @@ class RyuQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+             sgids = self._get_security_groups_on_port(context, port)
+             port = super(RyuQuantumPluginV2, self).create_port(context, port)
+             self._process_port_create_security_group(
+-                context, port['id'], sgids)
+-            self._extend_port_dict_security_group(context, port)
++                context, port, sgids)
+         self.notify_security_groups_member_updated(context, port)
+         self.iface_client.create_network_id(port['id'], port['network_id'])
+         return port
+@@ -254,13 +253,10 @@ class RyuQuantumPluginV2(db_base_plugin_v2.QuantumDbPluginV2,
+         with context.session.begin(subtransactions=True):
+             port = super(RyuQuantumPluginV2, self).get_port(context, id,
+                                                             fields)
+-            self._extend_port_dict_security_group(context, port)
+         return self._fields(port, fields)
+
+     def get_ports(self, context, filters=None, fields=None):
+         with context.session.begin(subtransactions=True):
+             ports = super(RyuQuantumPluginV2, self).get_ports(
+                 context, filters, fields)
+-            for port in ports:
+-                self._extend_port_dict_security_group(context, port)
+         return [self._fields(port, fields) for port in ports]
+diff --git a/quantum/tests/unit/nicira/test_nicira_plugin.py b/quantum/tests/unit/nicira/test_nicira_plugin.py
+index 4103d5b..e13d0c7 100644
+--- a/quantum/tests/unit/nicira/test_nicira_plugin.py
++++ b/quantum/tests/unit/nicira/test_nicira_plugin.py
+@@ -38,6 +38,7 @@ from quantum.plugins.nicira.nicira_nvp_plugin import QuantumPlugin
+ from quantum.tests.unit.nicira import fake_nvpapiclient
+ import quantum.tests.unit.nicira.test_networkgw as test_l2_gw
+ import quantum.tests.unit.test_db_plugin as test_plugin
++import quantum.tests.unit.test_extension_allowedaddresspairs as test_addr_pair
+ import quantum.tests.unit.test_extension_portsecurity as psec
+ import quantum.tests.unit.test_extension_security_group as ext_sg
+ from quantum.tests.unit import test_extensions
+@@ -269,6 +270,11 @@ class TestNiciraPortSecurity(psec.TestPortSecurity,
+         pass
+
+
++class TestNiciraAllowedAddressPairs(test_addr_pair.TestAllowedAddressPairs,
++                                    NiciraPluginV2TestCase):
++        pass
++
++
+ class NiciraSecurityGroupsTestCase(ext_sg.SecurityGroupDBTestCase):
+
+     _plugin_name = ('%s.QuantumPlugin.NvpPluginV2' % NICIRA_PKG_PATH)
+diff --git a/quantum/tests/unit/openvswitch/test_ovs_security_group.py b/quantum/tests/unit/openvswitch/test_ovs_security_group.py
+index c58a2bc..ad53f28 100644
+--- a/quantum/tests/unit/openvswitch/test_ovs_security_group.py
++++ b/quantum/tests/unit/openvswitch/test_ovs_security_group.py
+@@ -53,6 +53,18 @@ class OpenvswitchSecurityGroupsTestCase(test_sg.SecurityGroupDBTestCase):
+         attributes.RESOURCE_ATTRIBUTE_MAP = self._attribute_map_bk_
+
+
++class TestOpenvswitchSGServerRpcCallBack(
++    OpenvswitchSecurityGroupsTestCase,
++    test_sg_rpc.SGServerRpcCallBackMixinTestCase):
++    pass
++
++
++class TestOpenvswitchSGServerRpcCallBackXML(
++    OpenvswitchSecurityGroupsTestCase,
++    test_sg_rpc.SGServerRpcCallBackMixinTestCaseXML):
++    pass
++
++
+ class TestOpenvswitchSecurityGroups(OpenvswitchSecurityGroupsTestCase,
+                                     test_sg.TestSecurityGroups,
+                                     test_sg_rpc.SGNotificationTestMixin):
+diff --git a/quantum/tests/unit/test_extension_allowedaddresspairs.py b/quantum/tests/unit/test_extension_allowedaddresspairs.py
+new file mode 100644
+index 0000000..d769553
+--- /dev/null
++++ b/quantum/tests/unit/test_extension_allowedaddresspairs.py
+@@ -0,0 +1,268 @@
++# Copyright (c) 2013 OpenStack Foundation.
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#    http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
++# implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++
++from quantum.api.v2 import attributes as attr
++from quantum.common.test_lib import test_config
++from quantum.db import allowedaddresspairs_db as addr_pair_db
++from quantum.db import db_base_plugin_v2
++from quantum.db import portsecurity_db
++from quantum.extensions import allowedaddresspairs as addr_pair
++from quantum.extensions import portsecurity as psec
++from quantum.manager import QuantumManager
++from quantum.tests.unit import test_db_plugin
++
++DB_PLUGIN_KLASS = ('quantum.tests.unit.test_extension_allowedaddresspairs.'
++                   'AllowedAddressPairTestPlugin')
++
++
++class AllowedAddressPairTestCase(test_db_plugin.QuantumDbPluginV2TestCase):
++    def setUp(self, plugin=None):
++        super(AllowedAddressPairTestCase, self).setUp()
++
++        # Check if a plugin supports security groups
++        plugin_obj = QuantumManager.get_plugin()
++        self._skip_port_security = ('port-security' not in
++                                    plugin_obj.supported_extension_aliases)
++
++
++class AllowedAddressPairTestPlugin(portsecurity_db.PortSecurityDbMixin,
++                                   db_base_plugin_v2.QuantumDbPluginV2,
++                                   addr_pair_db.AllowedAddressPairsMixin):
++
++    """Test plugin that implements necessary calls on create/delete port for
++    associating ports with port security and allowed address pairs.
++    """
++
++    supported_extension_aliases = ["allowed-address-pairs"]
++
++    def create_port(self, context, port):
++        p = port['port']
++        with context.session.begin(subtransactions=True):
++            neutron_db = super(AllowedAddressPairTestPlugin, self).create_port(
++                context, port)
++            p.update(neutron_db)
++            if attr.is_attr_set(p.get(addr_pair.ADDRESS_PAIRS)):
++                self._process_create_allowed_address_pairs(
++                    context, p,
++                    p[addr_pair.ADDRESS_PAIRS])
++            else:
++                p[addr_pair.ADDRESS_PAIRS] = None
++
++        return port['port']
++
++    def update_port(self, context, id, port):
++        delete_addr_pairs = self._check_update_deletes_allowed_address_pairs(
++            port)
++        has_addr_pairs = self._check_update_has_allowed_address_pairs(port)
++
++        with context.session.begin(subtransactions=True):
++            ret_port = super(AllowedAddressPairTestPlugin, self).update_port(
++                context, id, port)
++            # copy values over - but not fixed_ips
++            port['port'].pop('fixed_ips', None)
++            ret_port.update(port['port'])
++
++            if (delete_addr_pairs or has_addr_pairs):
++                # delete address pairds and readd them
++                self._delete_allowed_address_pairs(context, id)
++                self._process_create_allowed_address_pairs(
++                    context, ret_port,
++                    ret_port[addr_pair.ADDRESS_PAIRS])
++
++        return ret_port
++
++
++class AllowedAddressPairDBTestCase(AllowedAddressPairTestCase):
++    def setUp(self, plugin=None):
++        test_config['plugin_name_v2'] = DB_PLUGIN_KLASS
++        super(AllowedAddressPairDBTestCase, self).setUp()
++
++    def tearDown(self):
++        del test_config['plugin_name_v2']
++        super(AllowedAddressPairDBTestCase, self).tearDown()
++
++
++class AllowedAddressPairDBTestCaseXML(AllowedAddressPairDBTestCase):
++    fmt = 'xml'
++
++
++class TestAllowedAddressPairs(AllowedAddressPairDBTestCase):
++
++    def test_create_port_allowed_address_pairs(self):
++        with self.network() as net:
++            address_pairs = [{'mac_address': '00:00:00:00:00:01',
++                              'ip_address': '10.0.0.1'}]
++            res = self._create_port(self.fmt, net['network']['id'],
++                                    arg_list=(addr_pair.ADDRESS_PAIRS,),
++                                    allowed_address_pairs=address_pairs)
++            port = self.deserialize(self.fmt, res)
++            self.assertEqual(port['port'][addr_pair.ADDRESS_PAIRS],
++                             address_pairs)
++            self._delete('ports', port['port']['id'])
++
++    def test_create_port_security_true_allowed_address_pairs(self):
++        if self._skip_port_security:
++            self.skipTest("Plugin does not implement port-security extension")
++
++        with self.network() as net:
++            address_pairs = [{'mac_address': '00:00:00:00:00:01',
++                              'ip_address': '10.0.0.1'}]
++            res = self._create_port(self.fmt, net['network']['id'],
++                                    arg_list=('port_security_enabled',
++                                              addr_pair.ADDRESS_PAIRS,),
++                                    port_security_enabled=True,
++                                    allowed_address_pairs=address_pairs)
++            port = self.deserialize(self.fmt, res)
++            self.assertEqual(port['port'][psec.PORTSECURITY], True)
++            self.assertEqual(port['port'][addr_pair.ADDRESS_PAIRS],
++                             address_pairs)
++            self._delete('ports', port['port']['id'])
++
++    def test_create_port_security_false_allowed_address_pairs(self):
++        if self._skip_port_security:
++            self.skipTest("Plugin does not implement port-security extension")
++
++        with self.network() as net:
++            address_pairs = [{'mac_address': '00:00:00:00:00:01',
++                              'ip_address': '10.0.0.1'}]
++            res = self._create_port(self.fmt, net['network']['id'],
++                                    arg_list=('port_security_enabled',
++                                              addr_pair.ADDRESS_PAIRS,),
++                                    port_security_enabled=False,
++                                    allowed_address_pairs=address_pairs)
++            self.deserialize(self.fmt, res)
++            self.assertEqual(res.status_int, 409)
++
++    def test_create_port_bad_mac(self):
++        address_pairs = [{'mac_address': 'invalid_mac',
++                          'ip_address': '10.0.0.1'}]
++        self._create_port_with_address_pairs(address_pairs, 400)
++
++    def test_create_port_bad_ip(self):
++        address_pairs = [{'mac_address': '00:00:00:00:00:01',
++                          'ip_address': '10.0.0.1222'}]
++        self._create_port_with_address_pairs(address_pairs, 400)
++
++    def test_create_missing_ip_field(self):
++        address_pairs = [{'mac_address': '00:00:00:00:00:01'}]
++        self._create_port_with_address_pairs(address_pairs, 400)
++
++    def test_create_duplicate_mac_ip(self):
++        address_pairs = [{'mac_address': '00:00:00:00:00:01',
++                          'ip_address': '10.0.0.1'},
++                         {'mac_address': '00:00:00:00:00:01',
++                          'ip_address': '10.0.0.1'}]
++        self._create_port_with_address_pairs(address_pairs, 400)
++
++    def test_create_port_extra_args(self):
++        address_pairs = [{'mac_address': '00:00:00:00:00:01',
++                          'ip_address': '10.0.0.1',
++                          'icbb': 'agreed'}]
++        self._create_port_with_address_pairs(address_pairs, 400)
++
++    def _create_port_with_address_pairs(self, address_pairs, ret_code):
++        with self.network() as net:
++            res = self._create_port(self.fmt, net['network']['id'],
++                                    arg_list=(addr_pair.ADDRESS_PAIRS,),
++                                    allowed_address_pairs=address_pairs)
++            self.deserialize(self.fmt, res)
++            self.assertEqual(res.status_int, ret_code)
++
++    def test_update_add_address_pairs(self):
++        with self.network() as net:
++            res = self._create_port(self.fmt, net['network']['id'])
++            port = self.deserialize(self.fmt, res)
++            address_pairs = [{'mac_address': '00:00:00:00:00:01',
++                              'ip_address': '10.0.0.1'}]
++            update_port = {'port': {addr_pair.ADDRESS_PAIRS:
++                                    address_pairs}}
++            req = self.new_update_request('ports', update_port,
++                                          port['port']['id'])
++            port = self.deserialize(self.fmt, req.get_response(self.api))
++            self.assertEqual(port['port'][addr_pair.ADDRESS_PAIRS],
++                             address_pairs)
++            self._delete('ports', port['port']['id'])
++
++    def test_create_address_gets_port_mac(self):
++        with self.network() as net:
++            address_pairs = [{'ip_address': '23.23.23.23'}]
++            res = self._create_port(self.fmt, net['network']['id'],
++                                    arg_list=('port_security_enabled',
++                                              addr_pair.ADDRESS_PAIRS,),
++                                    allowed_address_pairs=address_pairs)
++            port = self.deserialize(self.fmt, res)['port']
++            port_addr_mac = port[addr_pair.ADDRESS_PAIRS][0]['mac_address']
++            self.assertEqual(port_addr_mac,
++                             port['mac_address'])
++            self._delete('ports', port['id'])
++
++    def test_update_address_pair_to_match_fixed_ip_and_mac(self):
++        with self.network() as net:
++            with self.subnet(network=net):
++                res = self._create_port(self.fmt, net['network']['id'])
++                port = self.deserialize(self.fmt, res)['port']
++                address_pairs = [{'mac_address': port['mac_address'],
++                                  'ip_address':
++                                  port['fixed_ips'][0]['ip_address']}]
++
++                update_port = {'port': {addr_pair.ADDRESS_PAIRS:
++                                        address_pairs}}
++                req = self.new_update_request('ports', update_port,
++                                              port['id'])
++                res = req.get_response(self.api)
++                self.assertEqual(res.status_int, 400)
++                self._delete('ports', port['id'])
++
++    def test_update_port_security_off_address_pairs(self):
++        if self._skip_port_security:
++            self.skipTest("Plugin does not implement port-security extension")
++        with self.network() as net:
++            with self.subnet(network=net):
++                address_pairs = [{'mac_address': '00:00:00:00:00:01',
++                                  'ip_address': '10.0.0.1'}]
++                res = self._create_port(self.fmt, net['network']['id'],
++                                        arg_list=('port_security_enabled',
++                                                  addr_pair.ADDRESS_PAIRS,),
++                                        port_security_enabled=True,
++                                        allowed_address_pairs=address_pairs)
++                port = self.deserialize(self.fmt, res)
++                print port
++                update_port = {'port': {psec.PORTSECURITY: False}}
++                # If plugin implements security groups we also need to remove
++                # the security group on port.
++                plugin_obj = QuantumManager.get_plugin()
++                if 'security-groups' in plugin_obj.supported_extension_aliases:
++                    update_port['port']['security_groups'] = []
++                req = self.new_update_request('ports', update_port,
++                                              port['port']['id'])
++                res = req.get_response(self.api)
++                self.assertEqual(res.status_int, 409)
++                self._delete('ports', port['port']['id'])
++
++    def test_create_port_remove_allowed_address_pairs(self):
++        with self.network() as net:
++            address_pairs = [{'mac_address': '00:00:00:00:00:01',
++                              'ip_address': '10.0.0.1'}]
++            res = self._create_port(self.fmt, net['network']['id'],
++                                    arg_list=(addr_pair.ADDRESS_PAIRS,),
++                                    allowed_address_pairs=address_pairs)
++            port = self.deserialize(self.fmt, res)
++            update_port = {'port': {addr_pair.ADDRESS_PAIRS: []}}
++            req = self.new_update_request('ports', update_port,
++                                          port['port']['id'])
++            port = self.deserialize(self.fmt, req.get_response(self.api))
++            self.assertEqual(port['port'][addr_pair.ADDRESS_PAIRS], [])
++            self._delete('ports', port['port']['id'])
+diff --git a/quantum/tests/unit/test_extension_portsecurity.py b/quantum/tests/unit/test_extension_portsecurity.py
+index 7a611cc..da34d57 100644
+--- a/quantum/tests/unit/test_extension_portsecurity.py
++++ b/quantum/tests/unit/test_extension_portsecurity.py
+@@ -116,9 +116,8 @@ class PortSecurityTestPlugin(db_base_plugin_v2.QuantumDbPluginV2,
+
+             if (p.get(ext_sg.SECURITYGROUPS) and p[psec.PORTSECURITY]):
+                 self._process_port_create_security_group(
+-                    context, p['id'], p[ext_sg.SECURITYGROUPS])
++                    context, p, p[ext_sg.SECURITYGROUPS])
+
+-            self._extend_port_dict_security_group(context, p)
+             self._extend_port_port_security_dict(context, p)
+
+         return port['port']
+@@ -132,7 +131,8 @@ class PortSecurityTestPlugin(db_base_plugin_v2.QuantumDbPluginV2,
+         with context.session.begin(subtransactions=True):
+             ret_port = super(PortSecurityTestPlugin, self).update_port(
+                 context, id, port)
+-            # copy values over
++            # copy values over - but not fixed_ips
++            port['port'].pop('fixed_ips', None)
+             ret_port.update(port['port'])
+
+             # populate port_security setting
+@@ -164,14 +164,16 @@ class PortSecurityTestPlugin(db_base_plugin_v2.QuantumDbPluginV2,
+                 # delete the port binding and read it with the new rules.
+                 self._delete_port_security_group_bindings(context, id)
+                 sgids = self._get_security_groups_on_port(context, port)
+-                self._process_port_create_security_group(context, id, sgids)
++                # process port create sec groups needs port id
++                port['id'] = id
++                self._process_port_create_security_group(context,
++                                                         ret_port, sgids)
+
+             if psec.PORTSECURITY in port['port']:
+                 self._update_port_security_binding(
+                     context, id, ret_port[psec.PORTSECURITY])
+
+             self._extend_port_port_security_dict(context, ret_port)
+-            self._extend_port_dict_security_group(context, ret_port)
+
+         return ret_port
+
+@@ -307,7 +309,7 @@ class TestPortSecurity(PortSecurityDBTestCase):
+                 self.assertEqual(len(port['port'][ext_sg.SECURITYGROUPS]), 0)
+                 self._delete('ports', port['port']['id'])
+
+-    def test_update_port_remove_port_security_security_group_readd(self):
++    def test_update_port_remove_port_security_security_group_read(self):
+         if self._skip_security_group:
+             self.skipTest("Plugin does not support security groups")
+         with self.network() as net:
+diff --git a/quantum/tests/unit/test_extension_security_group.py b/quantum/tests/unit/test_extension_security_group.py
+index f685d4e..3452d61 100644
+--- a/quantum/tests/unit/test_extension_security_group.py
++++ b/quantum/tests/unit/test_extension_security_group.py
+@@ -193,9 +193,7 @@ class SecurityGroupTestPlugin(db_base_plugin_v2.QuantumDbPluginV2,
+             sgids = self._get_security_groups_on_port(context, port)
+             port = super(SecurityGroupTestPlugin, self).create_port(context,
+                                                                     port)
+-            self._process_port_create_security_group(context, port['id'],
+-                                                     sgids)
+-            self._extend_port_dict_security_group(context, port)
++            self._process_port_create_security_group(context, port, sgids)
+         return port
+
+     def update_port(self, context, id, port):
+@@ -206,11 +204,12 @@ class SecurityGroupTestPlugin(db_base_plugin_v2.QuantumDbPluginV2,
+                     self._get_security_groups_on_port(context, port))
+                 # delete the port binding and read it with the new rules
+                 self._delete_port_security_group_bindings(context, id)
++                port['port']['id'] = id
+                 self._process_port_create_security_group(
+-                    context, id, port['port'].get(ext_sg.SECURITYGROUPS))
++                    context, port['port'],
++                    port['port'].get(ext_sg.SECURITYGROUPS))
+             port = super(SecurityGroupTestPlugin, self).update_port(
+                 context, id, port)
+-            self._extend_port_dict_security_group(context, port)
+         return port
+
+     def create_network(self, context, network):
+@@ -225,8 +224,6 @@ class SecurityGroupTestPlugin(db_base_plugin_v2.QuantumDbPluginV2,
+         quantum_lports = super(SecurityGroupTestPlugin, self).get_ports(
+             context, filters, sorts=sorts, limit=limit, marker=marker,
+             page_reverse=page_reverse)
+-        for quantum_lport in quantum_lports:
+-            self._extend_port_dict_security_group(context, quantum_lport)
+         return quantum_lports
+
+
+@@ -728,11 +725,10 @@ class TestSecurityGroups(SecurityGroupDBTestCase):
+     def test_list_ports_security_group(self):
+         with self.network() as n:
+             with self.subnet(n):
+-                res = self._create_port(self.fmt, n['network']['id'])
+-                self.deserialize(self.fmt, res)
+-                res = self.new_list_request('ports')
+-                ports = self.deserialize(self.fmt,
+-                                         res.get_response(self.api))
++                self._create_port(self.fmt, n['network']['id'])
++                req = self.new_list_request('ports')
++                res = req.get_response(self.api)
++                ports = self.deserialize(self.fmt, res)
+                 port = ports['ports'][0]
+                 self.assertEqual(len(port[ext_sg.SECURITYGROUPS]), 1)
+                 self._delete('ports', port['id'])
+diff --git a/quantum/tests/unit/test_iptables_firewall.py b/quantum/tests/unit/test_iptables_firewall.py
+index f7bf66c..2414a37 100644
+--- a/quantum/tests/unit/test_iptables_firewall.py
++++ b/quantum/tests/unit/test_iptables_firewall.py
+@@ -96,12 +96,15 @@ class IptablesFirewallTestCase(base.BaseTestCase):
+                                '-m physdev --physdev-is-bridged '
+                                '--physdev-in tapfake_dev '
+                                '-j $ofake_dev'),
++                 call.add_chain('sfake_dev'),
+                  call.add_rule(
+-                     'ofake_dev', '-m mac ! --mac-source ff:ff:ff:ff -j DROP'),
++                     'sfake_dev', '-m mac --mac-source ff:ff:ff:ff '
++                     '-s 10.0.0.1 -j RETURN'),
++                 call.add_rule('sfake_dev', '-j DROP'),
+                  call.add_rule(
+                      'ofake_dev',
+                      '-p udp --sport 68 --dport 67 -j RETURN'),
+-                 call.add_rule('ofake_dev', '! -s 10.0.0.1 -j DROP'),
++                 call.add_rule('ofake_dev', '-j $sfake_dev'),
+                  call.add_rule(
+                      'ofake_dev',
+                      '-p udp --sport 67 --dport 68 -j DROP'),
+@@ -750,11 +753,14 @@ class IptablesFirewallTestCase(base.BaseTestCase):
+                                 '-m physdev --physdev-is-bridged '
+                                 '--physdev-in tapfake_dev '
+                                 '-j $ofake_dev'),
++                  call.add_chain('sfake_dev'),
+                   call.add_rule(
+-                      'ofake_dev',
+-                      '-m mac ! --mac-source ff:ff:ff:ff -j DROP'),
++                      'sfake_dev',
++                      '-m mac --mac-source ff:ff:ff:ff -s %s -j RETURN'
++                      % prefix),
++                  call.add_rule('sfake_dev', '-j DROP'),
+                   dhcp_rule,
+-                  call.add_rule('ofake_dev', '! -s %s -j DROP' % prefix)]
++                  call.add_rule('ofake_dev', '-j $sfake_dev')]
+
+         if ethertype == 'IPv4':
+             calls.append(call.add_rule(
+@@ -819,15 +825,16 @@ class IptablesFirewallTestCase(base.BaseTestCase):
+                      'INPUT',
+                      '-m physdev --physdev-is-bridged '
+                      '--physdev-in tapfake_dev -j $ofake_dev'),
++                 call.add_chain('sfake_dev'),
+                  call.add_rule(
+-                     'ofake_dev',
+-                     '-m mac ! --mac-source ff:ff:ff:ff -j DROP'),
++                     'sfake_dev',
++                     '-m mac --mac-source ff:ff:ff:ff -s 10.0.0.1 '
++                     '-j RETURN'),
++                 call.add_rule('sfake_dev', '-j DROP'),
+                  call.add_rule(
+                      'ofake_dev',
+                      '-p udp --sport 68 --dport 67 -j RETURN'),
+-                 call.add_rule(
+-                     'ofake_dev',
+-                     '! -s 10.0.0.1 -j DROP'),
++                 call.add_rule('ofake_dev', '-j $sfake_dev'),
+                  call.add_rule(
+                      'ofake_dev',
+                      '-p udp --sport 67 --dport 68 -j DROP'),
+@@ -872,13 +879,14 @@ class IptablesFirewallTestCase(base.BaseTestCase):
+                      'INPUT',
+                      '-m physdev --physdev-is-bridged '
+                      '--physdev-in tapfake_dev -j $ofake_dev'),
++                 call.add_chain('sfake_dev'),
+                  call.add_rule(
+-                     'ofake_dev',
+-                     '-m mac ! --mac-source ff:ff:ff:ff -j DROP'),
++                     'sfake_dev',
++                     '-m mac --mac-source ff:ff:ff:ff -s 10.0.0.1 -j RETURN'),
++                 call.add_rule('sfake_dev', '-j DROP'),
+                  call.add_rule(
+                      'ofake_dev', '-p udp --sport 68 --dport 67 -j RETURN'),
+-                 call.add_rule(
+-                     'ofake_dev', '! -s 10.0.0.1 -j DROP'),
++                 call.add_rule('ofake_dev', '-j $sfake_dev'),
+                  call.add_rule(
+                      'ofake_dev', '-p udp --sport 67 --dport 68 -j DROP'),
+                  call.add_rule(
+@@ -1020,11 +1028,71 @@ class IptablesFirewallTestCase(base.BaseTestCase):
+                                '--physdev-in tapfake_dev '
+                                '-j $ofake_dev'),
+                  call.add_chain('sfake_dev'),
+-                 call.add_rule('sfake_dev', '-s 10.0.0.1 -j RETURN'),
+-                 call.add_rule('sfake_dev', '-s 10.0.0.2 -j RETURN'),
++                 call.add_rule(
++                     'sfake_dev',
++                     '-m mac --mac-source ff:ff:ff:ff -s 10.0.0.1 -j RETURN'),
++                 call.add_rule(
++                     'sfake_dev',
++                     '-m mac --mac-source ff:ff:ff:ff -s 10.0.0.2 -j RETURN'),
+                  call.add_rule('sfake_dev', '-j DROP'),
+                  call.add_rule(
+-                     'ofake_dev', '-m mac ! --mac-source ff:ff:ff:ff -j DROP'),
++                     'ofake_dev',
++                     '-p udp --sport 68 --dport 67 -j RETURN'),
++                 call.add_rule('ofake_dev', '-j $sfake_dev'),
++                 call.add_rule(
++                     'ofake_dev',
++                     '-p udp --sport 67 --dport 68 -j DROP'),
++                 call.add_rule(
++                     'ofake_dev', '-m state --state INVALID -j DROP'),
++                 call.add_rule(
++                     'ofake_dev',
++                     '-m state --state ESTABLISHED,RELATED -j RETURN'),
++                 call.add_rule('ofake_dev', '-j $sg-fallback'),
++                 call.add_rule('sg-chain', '-j ACCEPT')]
++        self.v4filter_inst.assert_has_calls(calls)
++
++    def test_ip_spoofing_no_fixed_ips(self):
++        port = {'device': 'tapfake_dev',
++                'mac_address': 'ff:ff:ff:ff',
++                'fixed_ips': []}
++        self.firewall.prepare_port_filter(port)
++        calls = [call.add_chain('sg-fallback'),
++                 call.add_rule('sg-fallback', '-j DROP'),
++                 call.ensure_remove_chain('sg-chain'),
++                 call.add_chain('sg-chain'),
++                 call.add_chain('ifake_dev'),
++                 call.add_rule('FORWARD',
++                               '-m physdev --physdev-is-bridged --physdev-out '
++                               'tapfake_dev '
++                               '-j $sg-chain'),
++                 call.add_rule('sg-chain',
++                               '-m physdev --physdev-is-bridged --physdev-out '
++                               'tapfake_dev '
++                               '-j $ifake_dev'),
++                 call.add_rule(
++                     'ifake_dev', '-m state --state INVALID -j DROP'),
++                 call.add_rule(
++                     'ifake_dev',
++                     '-m state --state ESTABLISHED,RELATED -j RETURN'),
++                 call.add_rule('ifake_dev', '-j $sg-fallback'),
++                 call.add_chain('ofake_dev'),
++                 call.add_rule('FORWARD',
++                               '-m physdev --physdev-is-bridged --physdev-in '
++                               'tapfake_dev '
++                               '-j $sg-chain'),
++                 call.add_rule('sg-chain',
++                               '-m physdev --physdev-is-bridged --physdev-in '
++                               'tapfake_dev '
++                               '-j $ofake_dev'),
++                 call.add_rule('INPUT',
++                               '-m physdev --physdev-is-bridged --physdev-in '
++                               'tapfake_dev '
++                               '-j $ofake_dev'),
++                 call.add_chain('sfake_dev'),
++                 call.add_rule(
++                     'sfake_dev',
++                     '-m mac --mac-source ff:ff:ff:ff -j RETURN'),
++                 call.add_rule('sfake_dev', '-j DROP'),
+                  call.add_rule(
+                      'ofake_dev',
+                      '-p udp --sport 68 --dport 67 -j RETURN'),
+diff --git a/quantum/tests/unit/test_security_groups_rpc.py b/quantum/tests/unit/test_security_groups_rpc.py
+index f99d0c5..738d7bb 100644
+--- a/quantum/tests/unit/test_security_groups_rpc.py
++++ b/quantum/tests/unit/test_security_groups_rpc.py
+@@ -28,7 +28,9 @@ from quantum.agent import rpc as agent_rpc
+ from quantum.agent import securitygroups_rpc as sg_rpc
+ from quantum import context
+ from quantum.db import securitygroups_rpc_base as sg_db_rpc
++from quantum.extensions import allowedaddresspairs as addr_pair
+ from quantum.extensions import securitygroup as ext_sg
++from quantum.manager import QuantumManager
+ from quantum.openstack.common.rpc import proxy
+ from quantum.tests import base
+ from quantum.tests.unit import test_extension_security_group as test_sg
+@@ -47,7 +49,7 @@ class FakeSGCallback(sg_db_rpc.SecurityGroupServerRpcCallbackMixin):
+
+
+ class SGServerRpcCallBackMixinTestCase(test_sg.SecurityGroupDBTestCase):
+-    def setUp(self):
++    def setUp(self, plugin=None):
+         super(SGServerRpcCallBackMixinTestCase, self).setUp()
+         self.rpc = FakeSGCallback()
+
+@@ -103,6 +105,69 @@ class SGServerRpcCallBackMixinTestCase(test_sg.SecurityGroupDBTestCase):
+                                  expected)
+                 self._delete('ports', port_id1)
+
++    def test_security_group_rules_for_devices_ipv4_ingress_addr_pair(self):
++        plugin_obj = QuantumManager.get_plugin()
++        if ('allowed-address-pairs'
++            not in plugin_obj.supported_extension_aliases):
++            self.skipTest("Test depeneds on allowed-address-pairs extension")
++        fake_prefix = test_fw.FAKE_PREFIX['IPv4']
++        with self.network() as n:
++            with nested(self.subnet(n),
++                        self.security_group()) as (subnet_v4,
++                                                   sg1):
++                sg1_id = sg1['security_group']['id']
++                rule1 = self._build_security_group_rule(
++                    sg1_id,
++                    'ingress', 'tcp', '22',
++                    '22')
++                rule2 = self._build_security_group_rule(
++                    sg1_id,
++                    'ingress', 'tcp', '23',
++                    '23', fake_prefix)
++                rules = {
++                    'security_group_rules': [rule1['security_group_rule'],
++                                             rule2['security_group_rule']]}
++                res = self._create_security_group_rule(self.fmt, rules)
++                self.deserialize(self.fmt, res)
++                self.assertEqual(res.status_int, 201)
++                address_pairs = [{'mac_address': '00:00:00:00:00:01',
++                                  'ip_address': '10.0.0.0/24'},
++                                 {'mac_address': '00:00:00:00:00:01',
++                                  'ip_address': '11.0.0.1'}]
++                res1 = self._create_port(
++                    self.fmt, n['network']['id'],
++                    security_groups=[sg1_id],
++                    arg_list=(addr_pair.ADDRESS_PAIRS,),
++                    allowed_address_pairs=address_pairs)
++                ports_rest1 = self.deserialize(self.fmt, res1)
++                port_id1 = ports_rest1['port']['id']
++                self.rpc.devices = {port_id1: ports_rest1['port']}
++                devices = [port_id1, 'no_exist_device']
++                ctx = context.get_admin_context()
++                ports_rpc = self.rpc.security_group_rules_for_devices(
++                    ctx, devices=devices)
++                port_rpc = ports_rpc[port_id1]
++                expected = [{'direction': 'egress', 'ethertype': 'IPv4',
++                             'security_group_id': sg1_id},
++                            {'direction': 'egress', 'ethertype': 'IPv6',
++                             'security_group_id': sg1_id},
++                            {'direction': 'ingress',
++                             'protocol': 'tcp', 'ethertype': 'IPv4',
++                             'port_range_max': 22,
++                             'security_group_id': sg1_id,
++                             'port_range_min': 22},
++                            {'direction': 'ingress', 'protocol': 'tcp',
++                             'ethertype': 'IPv4',
++                             'port_range_max': 23, 'security_group_id': sg1_id,
++                             'port_range_min': 23,
++                             'source_ip_prefix': fake_prefix},
++                            ]
++                self.assertEqual(port_rpc['security_group_rules'],
++                                 expected)
++                self.assertEqual(port_rpc['allowed_address_pairs'],
++                                 address_pairs)
++                self._delete('ports', port_id1)
++
+     def test_security_group_rules_for_devices_ipv4_egress(self):
+         fake_prefix = test_fw.FAKE_PREFIX['IPv4']
+         with self.network() as n:
+@@ -595,8 +660,8 @@ IPTABLES_NAT = """:%(bn)s-(%(chains)s) - [0:0]
+ """ % IPTABLES_ARG
+
+ CHAINS_EMPTY = 'FORWARD|INPUT|OUTPUT|local|sg-chain|sg-fallback'
+-CHAINS_1 = CHAINS_EMPTY + '|i_port1|o_port1'
+-CHAINS_2 = CHAINS_1 + '|i_port2|o_port2'
++CHAINS_1 = CHAINS_EMPTY + '|i_port1|o_port1|s_port1'
++CHAINS_2 = CHAINS_1 + '|i_port2|o_port2|s_port2'
+
+ IPTABLES_ARG['chains'] = CHAINS_1
+
+@@ -608,6 +673,7 @@ IPTABLES_FILTER_1 = """:%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
++:%(bn)s-(%(chains)s) - [0:0]
+ :quantum-filter-top - [0:0]
+ -A FORWARD -j quantum-filter-top
+ -A OUTPUT -j quantum-filter-top
+@@ -626,9 +692,11 @@ IPTABLES_FILTER_1 = """:%(bn)s-(%(chains)s) - [0:0]
+ -A %(bn)s-FORWARD %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-sg-chain
+ -A %(bn)s-sg-chain %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-o_port1
+ -A %(bn)s-INPUT %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-o_port1
+--A %(bn)s-o_port1 -m mac ! --mac-source 12:34:56:78:9a:bc -j DROP
++-A %(bn)s-s_port1 -m mac --mac-source 12:34:56:78:9a:bc -s 10.0.0.3 -j \
++RETURN
++-A %(bn)s-s_port1 -j DROP
+ -A %(bn)s-o_port1 -p udp --sport 68 --dport 67 -j RETURN
+--A %(bn)s-o_port1 ! -s 10.0.0.3 -j DROP
++-A %(bn)s-o_port1 -j %(bn)s-s_port1
+ -A %(bn)s-o_port1 -p udp --sport 67 --dport 68 -j DROP
+ -A %(bn)s-o_port1 -m state --state INVALID -j DROP
+ -A %(bn)s-o_port1 -m state --state ESTABLISHED,RELATED -j RETURN
+@@ -645,6 +713,7 @@ IPTABLES_FILTER_1_2 = """:%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
++:%(bn)s-(%(chains)s) - [0:0]
+ :quantum-filter-top - [0:0]
+ -A FORWARD -j quantum-filter-top
+ -A OUTPUT -j quantum-filter-top
+@@ -664,9 +733,11 @@ IPTABLES_FILTER_1_2 = """:%(bn)s-(%(chains)s) - [0:0]
+ -A %(bn)s-FORWARD %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-sg-chain
+ -A %(bn)s-sg-chain %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-o_port1
+ -A %(bn)s-INPUT %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-o_port1
+--A %(bn)s-o_port1 -m mac ! --mac-source 12:34:56:78:9a:bc -j DROP
++-A %(bn)s-s_port1 -m mac --mac-source 12:34:56:78:9a:bc -s 10.0.0.3 -j \
++RETURN
++-A %(bn)s-s_port1 -j DROP
+ -A %(bn)s-o_port1 -p udp --sport 68 --dport 67 -j RETURN
+--A %(bn)s-o_port1 ! -s 10.0.0.3 -j DROP
++-A %(bn)s-o_port1 -j %(bn)s-s_port1
+ -A %(bn)s-o_port1 -p udp --sport 67 --dport 68 -j DROP
+ -A %(bn)s-o_port1 -m state --state INVALID -j DROP
+ -A %(bn)s-o_port1 -m state --state ESTABLISHED,RELATED -j RETURN
+@@ -687,6 +758,8 @@ IPTABLES_FILTER_2 = """:%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
++:%(bn)s-(%(chains)s) - [0:0]
++:%(bn)s-(%(chains)s) - [0:0]
+ :quantum-filter-top - [0:0]
+ -A FORWARD -j quantum-filter-top
+ -A OUTPUT -j quantum-filter-top
+@@ -706,9 +779,11 @@ IPTABLES_FILTER_2 = """:%(bn)s-(%(chains)s) - [0:0]
+ -A %(bn)s-FORWARD %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-sg-chain
+ -A %(bn)s-sg-chain %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-o_port1
+ -A %(bn)s-INPUT %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-o_port1
+--A %(bn)s-o_port1 -m mac ! --mac-source 12:34:56:78:9a:bc -j DROP
++-A %(bn)s-s_port1 -m mac --mac-source 12:34:56:78:9a:bc -s 10.0.0.3 \
++-j RETURN
++-A %(bn)s-s_port1 -j DROP
+ -A %(bn)s-o_port1 -p udp --sport 68 --dport 67 -j RETURN
+--A %(bn)s-o_port1 ! -s 10.0.0.3 -j DROP
++-A %(bn)s-o_port1 -j %(bn)s-s_port1
+ -A %(bn)s-o_port1 -p udp --sport 67 --dport 68 -j DROP
+ -A %(bn)s-o_port1 -m state --state INVALID -j DROP
+ -A %(bn)s-o_port1 -m state --state ESTABLISHED,RELATED -j RETURN
+@@ -725,9 +800,11 @@ IPTABLES_FILTER_2 = """:%(bn)s-(%(chains)s) - [0:0]
+ -A %(bn)s-FORWARD %(physdev)s --physdev-EGRESS tap_port2 -j %(bn)s-sg-chain
+ -A %(bn)s-sg-chain %(physdev)s --physdev-EGRESS tap_port2 -j %(bn)s-o_port2
+ -A %(bn)s-INPUT %(physdev)s --physdev-EGRESS tap_port2 -j %(bn)s-o_port2
+--A %(bn)s-o_port2 -m mac ! --mac-source 12:34:56:78:9a:bd -j DROP
++-A %(bn)s-s_port2 -m mac --mac-source 12:34:56:78:9a:bd -s 10.0.0.4 \
++-j RETURN
++-A %(bn)s-s_port2 -j DROP
+ -A %(bn)s-o_port2 -p udp --sport 68 --dport 67 -j RETURN
+--A %(bn)s-o_port2 ! -s 10.0.0.4 -j DROP
++-A %(bn)s-o_port2 -j %(bn)s-s_port2
+ -A %(bn)s-o_port2 -p udp --sport 67 --dport 68 -j DROP
+ -A %(bn)s-o_port2 -m state --state INVALID -j DROP
+ -A %(bn)s-o_port2 -m state --state ESTABLISHED,RELATED -j RETURN
+@@ -746,6 +823,8 @@ IPTABLES_FILTER_2_2 = """:%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
++:%(bn)s-(%(chains)s) - [0:0]
++:%(bn)s-(%(chains)s) - [0:0]
+ :quantum-filter-top - [0:0]
+ -A FORWARD -j quantum-filter-top
+ -A OUTPUT -j quantum-filter-top
+@@ -764,9 +843,11 @@ IPTABLES_FILTER_2_2 = """:%(bn)s-(%(chains)s) - [0:0]
+ -A %(bn)s-FORWARD %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-sg-chain
+ -A %(bn)s-sg-chain %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-o_port1
+ -A %(bn)s-INPUT %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-o_port1
+--A %(bn)s-o_port1 -m mac ! --mac-source 12:34:56:78:9a:bc -j DROP
++-A %(bn)s-s_port1 -m mac --mac-source 12:34:56:78:9a:bc -s 10.0.0.3 -j \
++RETURN
++-A %(bn)s-s_port1 -j DROP
+ -A %(bn)s-o_port1 -p udp --sport 68 --dport 67 -j RETURN
+--A %(bn)s-o_port1 ! -s 10.0.0.3 -j DROP
++-A %(bn)s-o_port1 -j %(bn)s-s_port1
+ -A %(bn)s-o_port1 -p udp --sport 67 --dport 68 -j DROP
+ -A %(bn)s-o_port1 -m state --state INVALID -j DROP
+ -A %(bn)s-o_port1 -m state --state ESTABLISHED,RELATED -j RETURN
+@@ -783,9 +864,11 @@ IPTABLES_FILTER_2_2 = """:%(bn)s-(%(chains)s) - [0:0]
+ -A %(bn)s-FORWARD %(physdev)s --physdev-EGRESS tap_port2 -j %(bn)s-sg-chain
+ -A %(bn)s-sg-chain %(physdev)s --physdev-EGRESS tap_port2 -j %(bn)s-o_port2
+ -A %(bn)s-INPUT %(physdev)s --physdev-EGRESS tap_port2 -j %(bn)s-o_port2
+--A %(bn)s-o_port2 -m mac ! --mac-source 12:34:56:78:9a:bd -j DROP
++-A %(bn)s-s_port2 -m mac --mac-source 12:34:56:78:9a:bd -s 10.0.0.4 -j \
++RETURN
++-A %(bn)s-s_port2 -j DROP
+ -A %(bn)s-o_port2 -p udp --sport 68 --dport 67 -j RETURN
+--A %(bn)s-o_port2 ! -s 10.0.0.4 -j DROP
++-A %(bn)s-o_port2 -j %(bn)s-s_port2
+ -A %(bn)s-o_port2 -p udp --sport 67 --dport 68 -j DROP
+ -A %(bn)s-o_port2 -m state --state INVALID -j DROP
+ -A %(bn)s-o_port2 -m state --state ESTABLISHED,RELATED -j RETURN
+@@ -804,6 +887,8 @@ IPTABLES_FILTER_2_3 = """:%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
+ :%(bn)s-(%(chains)s) - [0:0]
++:%(bn)s-(%(chains)s) - [0:0]
++:%(bn)s-(%(chains)s) - [0:0]
+ :quantum-filter-top - [0:0]
+ -A FORWARD -j quantum-filter-top
+ -A OUTPUT -j quantum-filter-top
+@@ -824,9 +909,11 @@ IPTABLES_FILTER_2_3 = """:%(bn)s-(%(chains)s) - [0:0]
+ -A %(bn)s-FORWARD %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-sg-chain
+ -A %(bn)s-sg-chain %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-o_port1
+ -A %(bn)s-INPUT %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-o_port1
+--A %(bn)s-o_port1 -m mac ! --mac-source 12:34:56:78:9a:bc -j DROP
++-A %(bn)s-s_port1 -m mac --mac-source 12:34:56:78:9a:bc -s 10.0.0.3 -j \
++RETURN
++-A %(bn)s-s_port1 -j DROP
+ -A %(bn)s-o_port1 -p udp --sport 68 --dport 67 -j RETURN
+--A %(bn)s-o_port1 ! -s 10.0.0.3 -j DROP
++-A %(bn)s-o_port1 -j %(bn)s-s_port1
+ -A %(bn)s-o_port1 -p udp --sport 67 --dport 68 -j DROP
+ -A %(bn)s-o_port1 -m state --state INVALID -j DROP
+ -A %(bn)s-o_port1 -m state --state ESTABLISHED,RELATED -j RETURN
+@@ -844,9 +931,11 @@ IPTABLES_FILTER_2_3 = """:%(bn)s-(%(chains)s) - [0:0]
+ -A %(bn)s-FORWARD %(physdev)s --physdev-EGRESS tap_port2 -j %(bn)s-sg-chain
+ -A %(bn)s-sg-chain %(physdev)s --physdev-EGRESS tap_port2 -j %(bn)s-o_port2
+ -A %(bn)s-INPUT %(physdev)s --physdev-EGRESS tap_port2 -j %(bn)s-o_port2
+--A %(bn)s-o_port2 -m mac ! --mac-source 12:34:56:78:9a:bd -j DROP
++-A %(bn)s-s_port2 -m mac --mac-source 12:34:56:78:9a:bd -s 10.0.0.4 -j \
++RETURN
++-A %(bn)s-s_port2 -j DROP
+ -A %(bn)s-o_port2 -p udp --sport 68 --dport 67 -j RETURN
+--A %(bn)s-o_port2 ! -s 10.0.0.4 -j DROP
++-A %(bn)s-o_port2 -j %(bn)s-s_port2
+ -A %(bn)s-o_port2 -p udp --sport 67 --dport 68 -j DROP
+ -A %(bn)s-o_port2 -m state --state INVALID -j DROP
+ -A %(bn)s-o_port2 -m state --state ESTABLISHED,RELATED -j RETURN
+@@ -897,7 +986,6 @@ IPTABLES_FILTER_V6_1 = """:%(bn)s-(%(chains)s) - [0:0]
+ -A %(bn)s-FORWARD %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-sg-chain
+ -A %(bn)s-sg-chain %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-o_port1
+ -A %(bn)s-INPUT %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-o_port1
+--A %(bn)s-o_port1 -m mac ! --mac-source 12:34:56:78:9a:bc -j DROP
+ -A %(bn)s-o_port1 -p icmpv6 -j RETURN
+ -A %(bn)s-o_port1 -m state --state INVALID -j DROP
+ -A %(bn)s-o_port1 -m state --state ESTABLISHED,RELATED -j RETURN
+@@ -932,7 +1020,6 @@ IPTABLES_FILTER_V6_2 = """:%(bn)s-(%(chains)s) - [0:0]
+ -A %(bn)s-FORWARD %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-sg-chain
+ -A %(bn)s-sg-chain %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-o_port1
+ -A %(bn)s-INPUT %(physdev)s --physdev-EGRESS tap_port1 -j %(bn)s-o_port1
+--A %(bn)s-o_port1 -m mac ! --mac-source 12:34:56:78:9a:bc -j DROP
+ -A %(bn)s-o_port1 -p icmpv6 -j RETURN
+ -A %(bn)s-o_port1 -m state --state INVALID -j DROP
+ -A %(bn)s-o_port1 -m state --state ESTABLISHED,RELATED -j RETURN
+@@ -945,7 +1032,6 @@ IPTABLES_FILTER_V6_2 = """:%(bn)s-(%(chains)s) - [0:0]
+ -A %(bn)s-FORWARD %(physdev)s --physdev-EGRESS tap_port2 -j %(bn)s-sg-chain
+ -A %(bn)s-sg-chain %(physdev)s --physdev-EGRESS tap_port2 -j %(bn)s-o_port2
+ -A %(bn)s-INPUT %(physdev)s --physdev-EGRESS tap_port2 -j %(bn)s-o_port2
+--A %(bn)s-o_port2 -m mac ! --mac-source 12:34:56:78:9a:bd -j DROP
+ -A %(bn)s-o_port2 -p icmpv6 -j RETURN
+ -A %(bn)s-o_port2 -m state --state INVALID -j DROP
+ -A %(bn)s-o_port2 -m state --state ESTABLISHED,RELATED -j RETURN
+@@ -1218,6 +1304,7 @@ class TestSecurityGroupAgentWithOVSIptables(
+         value = value.replace('tap_port', 'taptap_port')
+         value = value.replace('o_port', 'otap_port')
+         value = value.replace('i_port', 'itap_port')
++        value = value.replace('s_port', 'stap_port')
+         return super(
+             TestSecurityGroupAgentWithOVSIptables,
+             self)._regex(value)
+--
+1.7.9.5
+

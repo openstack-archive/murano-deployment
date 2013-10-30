@@ -1,0 +1,110 @@
+From 4eefde9f4f030f73a2b82adbd48728c9d638b29f Mon Sep 17 00:00:00 2001
+From: Serg Melikyan <smelikyan@mirantis.com>
+Date: Wed, 30 Oct 2013 08:32:15 +0400
+Subject: [PATCH] Backported fix for bug/1179481
+
+The security group names are now translated to UUIDs which is required
+when using the python API. The lookup has been improved to find
+existing security groups not part of the stack as well.
+
+Change-Id: I45959352f391d564359713381a355ed530579d5c
+---
+ heat/engine/resources/network_interface.py |    8 ++++++-
+ heat/engine/resources/quantum/port.py      |    5 +++++
+ heat/engine/resources/quantum/quantum.py   |   31 ++++++++++++++++++++++++++++
+ 3 files changed, 43 insertions(+), 1 deletion(-)
+
+diff --git a/heat/engine/resources/network_interface.py b/heat/engine/resources/network_interface.py
+index 60f9b06..2abd63d 100644
+--- a/heat/engine/resources/network_interface.py
++++ b/heat/engine/resources/network_interface.py
+@@ -16,6 +16,8 @@
+ from heat.engine import clients
+ from heat.openstack.common import log as logging
+ from heat.engine import resource
++from heat.engine.resources.quantum import quantum
++
+
+ logger = logging.getLogger(__name__)
+
+@@ -68,7 +70,11 @@ class NetworkInterface(resource.Resource):
+         }
+
+         if self.properties['GroupSet']:
+-            props['security_groups'] = self.properties['GroupSet']
++            sgs = quantum.QuantumResource.get_secgroup_uuids(
++                self.stack, self.properties, 'GroupSet', self.name,
++                self.quantum())
++            props['security_groups'] = sgs
++
+         port = client.create_port({'port': props})['port']
+         self.resource_id_set(port['id'])
+
+diff --git a/heat/engine/resources/quantum/port.py b/heat/engine/resources/quantum/port.py
+index 735bd92..70dc128 100644
+--- a/heat/engine/resources/quantum/port.py
++++ b/heat/engine/resources/quantum/port.py
+@@ -62,6 +62,11 @@ class Port(quantum.QuantumResource):
+                 if value is None:
+                     fixed_ip.pop(key)
+
++        if self.properties['security_groups']:
++            props['security_groups'] = self.get_secgroup_uuids(
++                self.stack, self.properties, 'security_groups', self.name,
++                self.quantum())
++
+         port = self.quantum().create_port({'port': props})['port']
+         self.resource_id_set(port['id'])
+
+diff --git a/heat/engine/resources/quantum/quantum.py b/heat/engine/resources/quantum/quantum.py
+index 72d775f..97272fe 100644
+--- a/heat/engine/resources/quantum/quantum.py
++++ b/heat/engine/resources/quantum/quantum.py
+@@ -12,6 +12,7 @@
+ #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ #    License for the specific language governing permissions and limitations
+ #    under the License.
++from quantumclient.common.exceptions import QuantumClientException
+
+ from heat.common import exception
+ from heat.engine import resource
+@@ -72,6 +73,36 @@ class QuantumResource(resource.Resource):
+         return props
+
+     @staticmethod
++    def get_secgroup_uuids(stack, props, props_name, rsrc_name, client):
++        """
++        Returns security group names in UUID form.
++
++        Args:
++        stack: stack associated with given resource
++        props: properties described in the template
++        props_name: name of security group property
++        rsrc_name: name of the given resource
++        client: reference to quantum client
++        """
++        seclist = []
++        for sg in props.get(props_name):
++            resource = stack.resource_by_refid(sg)
++            if resource is not None:
++                seclist.append(resource.resource_id)
++            else:
++                try:
++                    client.show_security_group(sg)
++                    seclist.append(sg)
++                except QuantumClientException as e:
++                    if e.status_code == 404:
++                        raise exception.InvalidTemplateAttribute(
++                            resource=rsrc_name,
++                            key=props_name)
++                    else:
++                        raise
++        return seclist
++
++    @staticmethod
+     def handle_get_attributes(name, key, attributes):
+         '''
+         Support method for responding to FnGetAtt
+--
+1.7.9.5
+
