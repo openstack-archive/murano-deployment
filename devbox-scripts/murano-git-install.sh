@@ -367,7 +367,7 @@ function configure_murano {
                 iniset 'keystone_authtoken' 'admin_user' "$ADMIN_USER" "$config_file"
                 iniset 'keystone_authtoken' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
             ;;
-            '/etc/murano-api/murano-repository.conf')
+            '/etc/murano-repository/murano-repository.conf')
                 iniset 'DEFAULT' 'log_file' '/var/log/murano-repository.log' "$config_file"
                 iniset 'keystone' 'auth_host' "$LAB_HOST" "$config_file"
                 iniset 'keystone' 'admin_user' "$ADMIN_USER" "$config_file"
