@@ -16,7 +16,8 @@ murano_config_files='/etc/murano-api/murano-api.conf
  /etc/murano-conductor/conductor-paste.ini
  /etc/murano-conductor/data/init.ps1
  /etc/murano-conductor/data/templates/agent-config/Default.template
- /usr/share/openstack-dashboard/openstack_dashboard/settings.py'
+ /usr/share/openstack-dashboard/openstack_dashboard/settings.py
+ /etc/murano-repository/murano-repository.conf'
 
 
 git_prefix="https://github.com/stackforge"
@@ -372,6 +373,10 @@ function configure_murano {
                 iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
                 iniset 'rabbitmq' 'ssl' "False" "$config_file"
             ;;
+	    '/etc/murano-repository/murano-repository.conf')
+		iniset 'DEFAULT' 'log_file' '/var/log/murano-repository.log' "$config_file"
+		iniset 'keystone' 'auth_host' "$LAB_HOST" "$config_file"
+	    ;;
             '/etc/openstack-dashboard/local_settings')
                 iniset '' 'OPENSTACK_HOST' "'$LAB_HOST'" "$config_file"
             ;;
