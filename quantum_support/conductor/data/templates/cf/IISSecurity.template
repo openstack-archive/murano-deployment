@@ -1,0 +1,41 @@
+{
+    "Resources": {
+        "$port-{instanceName}": {
+            "Properties": {
+                "security_groups" : [ {"Ref" : "IISSecurityGroup"} ]
+            }
+        },
+        "IISSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "SecurityGroupIngress": [
+                    {
+                        "ToPort": "8172",
+                        "IpProtocol": "tcp",
+                        "FromPort": "8172",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "ToPort": "80",
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "ToPort": "433",
+                        "IpProtocol": "tcp",
+                        "FromPort": "433",
+                        "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "ToPort": "21",
+                        "IpProtocol": "tcp",
+                        "FromPort": "21",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "GroupDescription": "Enable access to IIS Management Console, HTTP, HTTPS and FTP protocols"
+            }
+        }
+    }
+}
