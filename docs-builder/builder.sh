@@ -23,21 +23,15 @@ git clone git@github.com:murano-docs/murano-docs.github.io.git murano-docs
 cd murano-docs
 ls -A1 | grep -v -e '\.git' -e '\.nojekyll' | xargs git rm -rf
 
-for version in "0.1" "0.2" "0.2.11" "latest"
+for version in "0.1" "release-0.2" "0.2" "0.2.11" "release-0.3" "latest"
 do
     cd "${TEMP}"
 
-    if [ ${version} = "latest" ]; then
-        guides="developers-guide administrators-guide user-guide getting-started"
-    elif [ ${version} = "0.2.11" ]; then
-        guides="developers-guide administrators-guide user-guide getting-started"
-
-    elif [ ${version} = "0.2" ]; then
+    guides="developers-guide administrators-guide user-guide getting-started"
+    if [ ${version} = "0.2" ]; then
         guides="developers-guide administrators-guide user-guide"
     elif [ ${version} = "0.1" ]; then
         guides="murano-manual murano-deployment-guide"
-    else
-        guides="developers-guide murano-deployment-guide"
     fi
 
     git clone git@github.com:stackforge/murano-docs.git docs-${version}
