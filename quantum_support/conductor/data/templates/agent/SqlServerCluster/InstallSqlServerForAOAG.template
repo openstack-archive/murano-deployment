@@ -1,0 +1,27 @@
+{
+  "Scripts": [
+    "/ImportCoreFunctions.ps1",
+    "/OptionParser.ps1",
+    "/SQLServer/SQLServerOptionParsers.ps1",
+    "/SQLServer/SQLServerInstaller.ps1",
+    "SQLServerForAOAG.ps1"
+  ],
+  "Commands": [
+    {
+      "Name": "Disable-Firewall",
+      "Arguments": {}
+    },
+    {
+      "Name": "Install-SQLServerForAOAG",
+      "Arguments": {
+        "SQLServiceUserPassword": "$domainAdminAccountPassword",
+        "SQLServiceUserDomain": "$domainName",
+        "SQLServiceUserName": "$domainAdminAccountName"
+      }
+    },
+    {
+      "Name": "Install-SqlServerPowerShellModule",
+      "Arguments": {}
+    }
+  ]
+}

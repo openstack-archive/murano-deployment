@@ -1,0 +1,15 @@
+{
+  "Scripts": [
+    "ImportCoreFunctions.ps1",
+    "DeployWebApp.ps1"
+  ],
+  "Commands": [
+    {
+      "Name": "Deploy-WebAppFromGit",
+      "Arguments": {
+        "URL": "$repository"
+      }
+    }
+  ],
+  "RebootOnCompletion": 0
+}

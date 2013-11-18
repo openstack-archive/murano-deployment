@@ -1,0 +1,96 @@
+<workflow>
+	<rule match="$.services[?(@.type != 'activeDirectory' and @.availabilityZone)].units[?(@.temp.instanceName and @.state.hostname and not @.domain)]"
+	      desc="Units of Non-AD services with availability zone specified which are deployed and are not part of the domain">
+        <set path="#externalADmap">
+            <map>
+
+
+ <!--  ======================================================================= -->
+ <!--  Specify here parameters of domain controllers at each availability zone -->
+ <!--  ======================================================================= -->
+
+        <mapping name="nova">
+            <map>
+                <mapping name="domain">domain1</mapping>
+                <mapping name="domainUser">Administrator</mapping>
+                <mapping name="domainPassword">password1</mapping>
+                <mapping name="dnsIp">ip1</mapping>
+                <mapping name="ou"></mapping>
+            </map>
+        </mapping>
+
+        <mapping name="AnotherAvailabilityZone">
+            <map>
+                <mapping name="domain">domain2</mapping>
+                <mapping name="domainUser">Administrator</mapping>
+                <mapping name="domainPassword">password2</mapping>
+                <mapping name="dnsIp">ip2</mapping>
+                <mapping name="ou"></mapping>
+            </map>
+        </mapping>
+
+ <!--  ======================================================================= -->
+
+
+            </map>
+        </set>
+		<set path="#ad">
+			<select source="externalADmap">
+                <parameter name="path"><select path="::availabilityZone"/></parameter>
+			</select>
+		</set>
+		<rule>
+			<parameter name="match">$[?(@.state.domain != '<select path="domain" source="ad"/>')]</parameter>
+            <parameter name="desc">Units which are not part of the target domain but need to join</parameter>
+
+			<send-command template="JoinDomain" error="exception">
+				<parameter name="unit">
+					<select path="id"/>
+				</parameter>
+				<parameter name="service">
+					<select path="::id"/>
+				</parameter>
+				<parameter name="mappings">
+					<map>
+						<mapping name="domain">
+							<select path="domain" source="ad"/>
+						</mapping>
+						<mapping name="domainUser">
+							<select path="domainUser" source="ad"/>
+						</mapping>
+						<mapping name="domainPassword">
+							<select path="domainPassword" source="ad"/>
+						</mapping>
+						<mapping name="dnsIp">
+							<select path="dnsIp" source="ad"/>
+						</mapping>
+						<mapping name="ouPath">
+							<select path="ou" source="ad"/>
+						</mapping>
+					</map>
+				</parameter>
+
+				<success>
+					<set path="state.domain">
+						<select path="domain" source="ad"/>
+					</set>
+					<set path="state.domainIp">
+						<select path="dnsIp" source="ad"/>
+					</set>
+					<report entity="unit">
+						<parameter name="id"><select path="id"/></parameter>
+						<parameter name="text">Unit <select path="state.hostname"/> (<select path="name"/>) has joined domain <select path="domain" source="ad"/></parameter>
+					</report>
+				</success>
+				<failure>
+                    <report entity="unit" level="error">
+					    <parameter name="id"><select path="id"/></parameter>
+					    <parameter name="text">Unit <select path="state.hostname"/> (<select path="name"/>) was unable to join the domain due to <format-error error="exception"/></parameter>
+				    </report>
+                    <stop/>
+                </failure>
+			</send-command>
+		</rule>
+	</rule>
+
+ </workflow>

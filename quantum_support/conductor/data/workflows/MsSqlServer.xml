@@ -1,0 +1,148 @@
+<workflow>
+	<rule match="$.services[?(@.type == 'msSqlServer' and @.domain)].units[*]"
+            desc="Units of SQL Server services which are part of the domain">
+		<set path="domain">
+			<select path="::domain"/>
+		</set>
+        <mute/>
+	</rule>
+
+	<rule match="$.services[?(@.type == 'msSqlServer' and @.osImage.name)].units[?(@.state.hostname and not @.temp.instanceName)]"
+            desc="Units of SQL Server services having hostname and image names assigned but without instances">
+		<report entity="unit">
+			<parameter name="id"><select path="id"/></parameter>
+			<parameter name="text">Creating instance <select path="state.hostname"/> (<select path="name"/>)</parameter>
+		</report>
+		<update-cf-stack template="Windows" error="exception">
+			<parameter name="mappings">
+				<map>
+					<mapping name="instanceName"><select path="state.hostname"/></mapping>
+					<mapping name="environmentId"><select path="/id"/></mapping>
+					<mapping name="userData">
+						<prepare-user-data>
+							<parameter name="hostname"><select path="state.hostname"/></parameter>
+							<parameter name="unit"><select path="id"/></parameter>
+							<parameter name="service"><select path="::id"/></parameter>
+						</prepare-user-data>
+					</mapping>
+					<mapping name="instanceType"><select path="::flavor" default="m1.medium"/></mapping>
+					<mapping name="imageName"><select path="::osImage.name"/></mapping>
+					<mapping name="availabilityZone"><select path="::availabilityZone" default="nova"/></mapping>
+				</map>
+			</parameter>
+			<success>
+				<set path="temp.instanceName"><select path="name"/></set>
+				<report entity="unit">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">Instance <select path="state.hostname"/> (<select path="name"/>) created</parameter>
+				</report>
+			</success>
+            <failure>
+                <report entity="unit" level="error">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">Unable to deploy instance <select path="state.hostname"/> (<select path="name"/>) due to <format-error error="exception"/></parameter>
+				</report>
+                <stop/>
+            </failure>
+		</update-cf-stack>
+
+        <report entity="unit">
+			<parameter name="id"><select path="id"/></parameter>
+			<parameter name="text">Opening SQL ports on <select path="state.hostname"/> (<select path="name"/>)</parameter>
+		</report>
+		<update-cf-stack template="SQL-security" error="exception">
+			<parameter name="mappings">
+				<map>
+					<mapping name="instanceName"><select path="state.hostname"/></mapping>
+				</map>
+			</parameter>
+			<success>
+				<report entity="unit">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">SQL ports open on <select path="state.hostname"/> (<select path="name"/>)</parameter>
+				</report>
+			</success>
+            <failure>
+                <report entity="unit" level="error">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">Unable to open SQL ports on instance <select path="state.hostname"/> (<select path="name"/>) due to <format-error error="exception"/></parameter>
+				</report>
+                <stop/>
+            </failure>
+		</update-cf-stack>
+	</rule>
+
+	<rule match="$.services[?(@.type == 'msSqlServer' and @.adminPassword and @.adminPassword != @.state.adminPassword)].units[?(@.temp.instanceName)]"
+            desc="Units of SQL Server services which have got an instance deployed but has not got a correct admin password">
+		<send-command template="SetPassword" error="exception">
+			<parameter name="unit">
+				<select path="id"/>
+			</parameter>
+			<parameter name="service">
+				<select path="::id"/>
+			</parameter>
+			<parameter name="mappings">
+				<map>
+					<mapping name="adminPassword">
+						<select path="::adminPassword"/>
+					</mapping>
+				</map>
+			</parameter>
+			<success>
+				<set path="::state.adminPassword">
+					<select path="::adminPassword"/>
+				</set>
+			</success>
+            <failure>
+                <report entity="unit" level="warning">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">Unable to set admin password on unit <select path="state.hostname"/> (<select path="name"/>) due to <format-error error="exception"/></parameter>
+				</report>
+                <mute/>
+            </failure>
+		</send-command>
+	</rule>
+
+
+	<rule match="$.services[?(@.type == 'msSqlServer')].units[?(@.temp.instanceName and not @.state.msSqlServerInstalled and (not @.domain or @.domain == @.state.domain))]"
+            desc="Units of SQL Server services which have got an instance deployed but have not got an SQL Server installed">
+		<report entity="unit">
+			<parameter name="id"><select path="id"/></parameter>
+			<parameter name="text">Creating MS SQL Server on unit <select path="state.hostname"/> (<select path="name"/>)</parameter>
+		</report>
+		<send-command template="InstallMsSqlServer" error="exception">
+			<parameter name="unit">
+				<select path="id"/>
+			</parameter>
+			<parameter name="service">
+				<select path="::id"/>
+			</parameter>
+            <parameter name="mappings">
+                <map>
+                    <mapping name="saPassword">
+                        <select path="::saPassword"/>
+                    </mapping>
+                    <mapping name="mixedModeAuth">
+                        <select path="::mixedModeAuth"/>
+                    </mapping>
+                </map>
+            </parameter>
+
+			<success>
+				<set path="state.msSqlServerInstalled"><true/></set>
+				<report entity="unit">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">MS SQL Server <select path="state.hostname"/> (<select path="name"/>) has started</parameter>
+				</report>
+			</success>
+            <failure>
+                <report entity="unit" level="error">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">Unable to install MS SQL Server on unit <select path="state.hostname"/> (<select path="name"/>) due to <format-error error="exception"/></parameter>
+				</report>
+                <stop/>
+            </failure>
+		</send-command>
+	</rule>
+
+</workflow>

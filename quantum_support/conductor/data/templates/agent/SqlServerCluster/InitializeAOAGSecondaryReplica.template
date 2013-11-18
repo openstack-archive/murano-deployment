@@ -1,0 +1,23 @@
+{
+  "Scripts": [
+    "/ImportCoreFunctions.ps1",
+    "/OptionParser.ps1",
+    "/SQLServer/SQLServerOptionParsers.ps1",
+    "/SQLServer/SQLServerInstaller.ps1",
+    "/Export-Function.ps1",
+    "/Start-PowerShellProcess.ps1",
+    "SQLServerForAOAG.ps1"
+  ],
+  "Commands": [
+    {
+      "Name": "Initialize-AOAGSecondaryReplica",
+      "Arguments": {
+        "UserName": "$domainAdminAccountName",
+        "UserPassword": "$domainAdminAccountPassword",
+        "NodeList": "$nodeList",
+        "PrimaryNode": "$primaryNode",
+        "DomainName": "$domainName"
+      }
+    }
+  ]
+}

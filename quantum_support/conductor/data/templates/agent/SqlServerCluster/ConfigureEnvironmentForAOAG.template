@@ -1,0 +1,18 @@
+{
+  "Scripts": [
+    "/ImportCoreFunctions.ps1",
+    "SQLServerForAOAG.ps1"
+  ],
+  "Commands": [
+    {
+      "Name": "Enable-TrustedHosts",
+      "Arguments": {}
+    },
+    {
+      "Name": "New-SharedFolderForAOAG",
+      "Arguments": {
+        "PrimaryNode": "$primaryNode"
+      }
+    }
+  ]
+}

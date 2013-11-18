@@ -1,0 +1,108 @@
+<workflow>
+	<rule match="$.services[?(@.type == 'linuxTelnetService')].units[?(@.state.hostname and not @.temp.instanceName)]"
+		desc="Units of Linux Telnet service having hostname and image names assigned but without instances">
+		<report entity="unit">
+			<parameter name="id"><select path="id"/></parameter>
+			<parameter name="text">Creating Linux instance <select path="state.hostname"/> (<select path="name"/>)</parameter>
+		</report>
+		<update-cf-stack template="Linux" error="exception">
+			<parameter name="mappings">
+				<map>
+					<mapping name="instanceName">
+						<select path="state.hostname"/>
+					</mapping>
+					<mapping name="environmentId">
+						<select path="/id"/>
+					</mapping>
+					<mapping name="userData">
+						<prepare-user-data template="Linux" initFile="linux_init.sh">
+							<parameter name="hostname">
+								<select path="state.hostname"/>
+							</parameter>
+							<parameter name="unit">
+								<select path="id"/>
+							</parameter>
+							<parameter name="service">
+								<select path="::id"/>
+							</parameter>
+						</prepare-user-data>
+					</mapping>
+					<mapping name="instanceType">
+						<select path="::flavor" default="m1.medium"/>
+					</mapping>
+					<mapping name="imageName">
+						<select path="::osImage.name"/>
+					</mapping>
+					<mapping name="availabilityZone">
+						<select path="::availabilityZone" default="nova"/>
+					</mapping>
+				</map>
+			</parameter>
+			<success>
+				<set path="temp.instanceName">
+					<select path="name"/>
+				</set>
+				<report entity="unit">
+					<parameter name="id">
+						<select path="id"/>
+					</parameter>
+					<parameter name="text">
+						Linux instance <select path="state.hostname"/> (<select path="name"/>) created
+					</parameter>
+				</report>
+			</success>
+		<failure>
+		<report entity="unit" level="error">
+			<parameter name="id">
+				<select path="id"/>
+			</parameter>
+			<parameter name="text">
+				Unable to deploy Linux instance <select path="state.hostname"/> (<select path="name"/>) due to <format-error error="exception"/>
+			</parameter>
+		</report>
+		<stop/>
+		</failure>
+		</update-cf-stack>
+	</rule>
+	<rule match="$.services[?(@.type == 'linuxTelnetService')].units[?(@.temp.instanceName and not @.state.TelnetInstalled)]"
+		desc="Units of Linux Telnet service which have got an instance deployed but have not got telnet service installed">
+		<report entity="unit">
+			<parameter name="id">
+				<select path="id"/>
+			</parameter>
+			<parameter name="text">
+				yum-ing telnet on unit <select path="state.hostname"/> (<select path="name"/>)
+			</parameter>
+		</report>
+		<send-command template="DeployTelnet" error='exception'>
+			<parameter name="unit">
+				<select path="id"/>
+			</parameter>
+			<parameter name="service">
+				<select path="::id"/>
+			</parameter>
+			<parameter name="mappings">
+				<map>
+				</map>
+			</parameter>
+			<success>
+				<set path="state.TelnetInstalled"><true/></set>
+				<report entity="unit">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">Telnet deployed on <select path="state.hostname"/> (<select path="name"/>)</parameter>
+				</report>
+			</success>
+			<failure>
+				<report entity="unit" level="error">
+					<parameter name="id">
+						<select path="id"/>
+					</parameter>
+					<parameter name="text">
+						Unable to deploy Telnet on <select path="state.hostname"/> (<select path="name"/>) due to <format-error error="exception"/>
+					</parameter>
+				</report>
+				<stop/>
+			</failure>
+		</send-command>
+	</rule>
+</workflow>

@@ -1,0 +1,22 @@
+{
+  "Scripts": [
+    "ImportCoreFunctions.ps1",
+    "CopyPrerequisites.ps1",
+    "InstallIIS.ps1"
+  ],
+  "Commands": [
+    {
+      "Name": "Copy-Prerequisites",
+      "Arguments": {
+        "Destination": "C:\\Prerequisites"
+      }
+    },
+    {
+      "Name": "Install-WebServer",
+      "Arguments": {
+        "PrerequisitesPath": "C:\\Prerequisites"
+      }
+    }
+  ],
+  "RebootOnCompletion": 0
+}

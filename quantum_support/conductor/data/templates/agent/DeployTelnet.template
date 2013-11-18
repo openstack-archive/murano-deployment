@@ -1,0 +1,23 @@
+FormatVersion: 2.0.0
+Version: 1.0.0
+Name: Deploy Telnet
+
+Parameters:
+  appName: $appName
+  
+
+Body: |
+  return telnetDeploy(args.appName).stdout
+
+Scripts:
+  telnetDeploy:
+    Type: Application
+    Version: 1.0.0
+    EntryPoint: Linux/runTelnetDeploy.sh
+    Files:
+      - <Linux/installer.sh>
+      - <Linux/common.sh>
+    Options:
+      captureStdout: true
+      captureStderr: false
+

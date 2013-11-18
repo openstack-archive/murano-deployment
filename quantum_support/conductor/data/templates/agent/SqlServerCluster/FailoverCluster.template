@@ -1,0 +1,21 @@
+{
+  "Scripts": [
+    "/ImportCoreFunctions.ps1",
+    "/Start-PowerShellProcess.ps1",
+    "/Failover-Cluster.ps1"
+  ],
+  "Commands": [
+    {
+      "Name": "New-FailoverCluster",
+      "Arguments": {
+        "UserName": "$domainAdminAccountName",
+        "ClusterNodes": "$clusterNodes",
+        "DomainName": "$domainName",
+        "ClusterName": "$clusterName",
+        "UserPassword": "$domainAdminAccountPassword",
+        "StaticAddress": "$clusterIp"
+      }
+    }
+  ],
+  "RebootOnCompletion": 0
+}

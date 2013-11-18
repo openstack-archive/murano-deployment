@@ -1,0 +1,174 @@
+<workflow>
+	<rule match="$.services[?(@.type in ('webServer', 'aspNetApp') and @.domain)].units[*]"
+          desc='Units of web services with domain'>
+		<set path="domain">
+			<select path="::domain"/>
+		</set>
+        <mute/>
+	</rule>
+
+	<rule match="$.services[?(@.type in ('webServer', 'aspNetApp') and @.osImage.name)].units[?(@.state.hostname and not @.temp.instanceName)]"
+          desc="Units of web services having hostname and image names assigned but without instances">
+		<report entity="unit">
+			<parameter name="id"><select path="id"/></parameter>
+			<parameter name="text">Creating instance <select path="state.hostname"/> (<select path="name"/>)</parameter>
+		</report>
+		<update-cf-stack template="Windows" error="exception">
+			<parameter name="mappings">
+				<map>
+					<mapping name="instanceName"><select path="state.hostname"/></mapping>
+					<mapping name="environmentId"><select path="/id"/></mapping>
+					<mapping name="userData">
+						<prepare-user-data>
+							<parameter name="hostname"><select path="state.hostname"/></parameter>
+							<parameter name="unit"><select path="id"/></parameter>
+							<parameter name="service"><select path="::id"/></parameter>
+						</prepare-user-data>
+					</mapping>
+					<mapping name="instanceType"><select path="::flavor" default="m1.medium"/></mapping>
+					<mapping name="imageName"><select path="::osImage.name"/></mapping>
+					<mapping name="availabilityZone"><select path="::availabilityZone" default="nova"/></mapping>
+				</map>
+			</parameter>
+			<success>
+				<set path="temp.instanceName"><select path="name"/></set>
+				<report entity="unit">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">Instance <select path="state.hostname"/> (<select path="name"/>) created</parameter>
+				</report>
+			</success>
+            <failure>
+                <report entity="unit" level="error">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">Unable to deploy instance <select path="state.hostname"/> (<select path="name"/>) due to <format-error error="exception"/></parameter>
+				</report>
+                <stop/>
+            </failure>
+		</update-cf-stack>
+
+        <report entity="unit">
+			<parameter name="id"><select path="id"/></parameter>
+			<parameter name="text">Configuring security groups on <select path="state.hostname"/> (<select path="name"/>)</parameter>
+		</report>
+		<update-cf-stack template="IISSecurity" error="exception">
+			<parameter name="mappings">
+				<map>
+					<mapping name="instanceName"><select path="state.hostname"/></mapping>
+				</map>
+			</parameter>
+			<success>
+				<report entity="unit">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">Security groups configuration on instance <select path="state.hostname"/> (<select path="name"/>) is successful</parameter>
+				</report>
+			</success>
+            <failure>
+                <report entity="unit" level="error">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">Unable to configure security groups on instance <select path="state.hostname"/> (<select path="name"/>) due to <format-error error="exception"/></parameter>
+				</report>
+                <stop/>
+            </failure>
+		</update-cf-stack>
+	</rule>
+
+	<rule match="$.services[?(@.type in ('webServer', 'aspNetApp') and @.adminPassword and @.adminPassword != @.state.adminPassword)].units[?(@.temp.instanceName)]"
+            desc="Units of web services which have got an instance deployed but has not got a correct admin password ">
+		<send-command template="SetPassword" error='exception'>
+			<parameter name="unit">
+				<select path="id"/>
+			</parameter>
+			<parameter name="service">
+				<select path="::id"/>
+			</parameter>
+			<parameter name="mappings">
+				<map>
+					<mapping name="adminPassword">
+						<select path="::adminPassword"/>
+					</mapping>
+				</map>
+			</parameter>
+			<success>
+				<set path="::state.adminPassword">
+					<select path="::adminPassword"/>
+				</set>
+			</success>
+            <failure>
+                <report entity="unit" level="warning">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">Unable to set admin password on unit <select path="state.hostname"/> (<select path="name"/>) <format-error error="exception"/></parameter>
+				</report>
+                <mute/>
+            </failure>
+		</send-command>
+	</rule>
+
+
+	<rule match="$.services[?(@.type in ('webServer', 'aspNetApp'))].units[?(@.temp.instanceName and not @.state.iisInstalled)]"
+            desc="Units of web services which have got an instance deployed but have not got an IIS installed">
+		<report entity="unit">
+			<parameter name="id"><select path="id"/></parameter>
+			<parameter name="text">Creating IIS Web Server on unit <select path="state.hostname"/> (<select path="name"/>)</parameter>
+		</report>
+		<send-command template="InstallIIS" error='exception'>
+			<parameter name="unit">
+				<select path="id"/>
+			</parameter>
+			<parameter name="service">
+				<select path="::id"/>
+			</parameter>
+			<success>
+				<set path="state.iisInstalled"><true/></set>
+				<report entity="unit">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">IIS <select path="state.hostname"/> (<select path="name"/>) has started</parameter>
+				</report>
+			</success>
+            <failure>
+                <report entity="unit" level="error">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">Unable to install IIS on <select path="state.hostname"/> (<select path="name"/>) <format-error error="exception"/></parameter>
+				</report>
+                <stop/>
+            </failure>
+		</send-command>
+	</rule>
+
+	<rule match="$.services[?(@.type in ('aspNetApp', 'aspNetAppFarm'))].units[?(@.state.iisInstalled and not @.state.webAppDeployed)]"
+            desc="Units of ASP.NET app services which have got IIS installed but not the WebApplication deployed">
+		<report entity="unit">
+			<parameter name="id"><select path="id"/></parameter>
+			<parameter name="text">Deploying WebApp <select path="::name"/> on unit <select path="state.hostname"/> (<select path="name"/>)</parameter>
+		</report>
+		<send-command template="DeployWebApp" error="exception">
+			<parameter name="unit">
+				<select path="id"/>
+			</parameter>
+			<parameter name="service">
+				<select path="::id"/>
+			</parameter>
+            <parameter name="mappings">
+				<map>
+					<mapping name="repository">
+						<select path="::repository"/>
+					</mapping>
+				</map>
+			</parameter>
+			<success>
+				<set path="state.webAppDeployed"><true/></set>
+				<report entity="unit">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">WebApp <select path="::name"/> has been deployed on unit <select path="state.hostname"/> (<select path="name"/>)</parameter>
+				</report>
+			</success>
+            <failure>
+                <report entity="unit" level="error">
+					<parameter name="id"><select path="id"/></parameter>
+					<parameter name="text">Unable to deploy WebApp on <select path="state.hostname"/> (<select path="name"/>) <format-error error="exception"/></parameter>
+				</report>
+                <stop/>
+            </failure>
+		</send-command>
+	</rule>
+
+</workflow>

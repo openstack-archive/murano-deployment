@@ -1,0 +1,28 @@
+{
+  "Scripts": [
+    "/ImportCoreFunctions.ps1",
+    "/Update-ServiceConfig.ps1",
+    "SQLServerForAOAG.ps1",
+    "/Failover-Cluster.ps1"
+  ],
+  "Commands": [
+    {
+      "Name": "Install-FailoverClusterPrerequisites",
+      "Arguments": {}
+    },
+    {
+      "Name": "Enable-TrustedHosts",
+      "Arguments": {}
+    },
+    {
+      "Name": "Update-ServiceConfig",
+      "Arguments": {
+        "Password": "$domainAdminAccountPassword",
+        "Name": "Murano Agent",
+        "RunAsUser": "$domainAdminAccountName",
+        "DomainName": "$domainName"
+      }
+    }
+  ],
+  "RebootOnCompletion": 1
+}
