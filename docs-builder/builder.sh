@@ -19,7 +19,7 @@ mkdir "${TEMP}"
 
 #clone and clean github pages
 cd "${TEMP}"
-git clone git@github.com:murano-docs/murano-docs.github.io.git murano-docs
+git clone https://github.com/murano-docs/murano-docs.github.io.git murano-docs
 cd murano-docs
 ls -A1 | grep -v -e '\.git' -e '\.nojekyll' | xargs git rm -rf
 
