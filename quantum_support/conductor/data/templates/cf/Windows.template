@@ -13,7 +13,6 @@
         "$instanceName": {
             "Type": "AWS::EC2::Instance",
             "Properties": {
-                "BootFromVolume": true,
                 "InstanceType": "$instanceType",
                 "ImageId": "$imageName",
                 "AvailabilityZone": "$availabilityZone",
