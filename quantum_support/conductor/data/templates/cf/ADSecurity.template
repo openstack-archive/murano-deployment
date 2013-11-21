@@ -1,0 +1,107 @@
+{
+    "Resources": {
+        "$port-{instanceName}": {
+            "Properties": {
+                "security_groups" : [ {"Ref" : "ADSecurityGroup"} ]
+            }
+        },
+        "ADSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "udp",
+                        "FromPort" : "123",
+                        "ToPort": "123",
+                        "CidrIp": "10.0.0.0/24"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort" : "135",
+                        "ToPort": "135",
+                        "CidrIp": "10.0.0.0/24"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort" : "464",
+                        "ToPort": "464",
+                        "CidrIp": "10.0.0.0/24"
+                    },
+                    {
+                        "IpProtocol": "udp",
+                        "FromPort" : "464",
+                        "ToPort": "464",
+                        "CidrIp": "10.0.0.0/24"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort" : "49152",
+                        "ToPort": "65535",
+                        "CidrIp": "10.0.0.0/24"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort" : "389",
+                        "ToPort": "389",
+                        "CidrIp": "10.0.0.0/24"
+                    },
+                    {
+                        "IpProtocol": "udp",
+                        "FromPort" : "389",
+                        "ToPort": "389",
+                        "CidrIp": "10.0.0.0/24"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort" : "636",
+                        "ToPort": "636",
+                        "CidrIp": "10.0.0.0/24"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort" : "3268",
+                        "ToPort": "3268",
+                        "CidrIp": "10.0.0.0/24"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort" : "3269",
+                        "ToPort": "3269",
+                        "CidrIp": "10.0.0.0/24"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort" : "53",
+                        "ToPort": "53",
+                        "CidrIp": "10.0.0.0/24"
+                    },
+                    {
+                        "IpProtocol": "udp",
+                        "FromPort" : "53",
+                        "ToPort": "53",
+                        "CidrIp": "10.0.0.0/24"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort" : "88",
+                        "ToPort": "88",
+                        "CidrIp": "10.0.0.0/24"
+                    },
+                    {
+                        "IpProtocol": "udp",
+                        "FromPort" : "88",
+                        "ToPort": "88",
+                        "CidrIp": "10.0.0.0/24"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort" : "445",
+                        "ToPort": "445",
+                        "CidrIp": "10.0.0.0/24"
+                    }
+                ],
+                "GroupDescription": "Enable access for AD/SMB protocols"
+            }
+        }
+    }
+}

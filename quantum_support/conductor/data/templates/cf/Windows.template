@@ -48,27 +48,15 @@
                         "CidrIp": "0.0.0.0/0"
                     },
                     {
-                        "ToPort": "22",
-                        "IpProtocol": "tcp",
-                        "FromPort": "22",
-                        "CidrIp": "0.0.0.0/0"
-                    },
-                    {
                         "ToPort": "-1",
                         "IpProtocol": "icmp",
                         "FromPort": "-1",
                         "CidrIp": "0.0.0.0/0"
                     },
                     {
+                        "FromPort": "5985",
+                        "ToPort": "5986",
                         "IpProtocol": "tcp",
-                        "FromPort" : "1",
-                        "ToPort": "65535",
-                        "CidrIp": "10.0.0.0/24"
-                    },
-                    {
-                        "IpProtocol": "udp",
-                        "FromPort" : "1",
-                        "ToPort": "65535",
                         "CidrIp": "10.0.0.0/24"
                     }
                 ],
