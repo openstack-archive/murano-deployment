@@ -1,0 +1,33 @@
+Source: openstack-murano-virtualenv-murano-common
+Section: Python
+Priority: extra
+Maintainer: root <ashestakov@mirantis.com>
+Build-Depends: debhelper (>= 8.0.0),
+ python-setuptools,
+ python-virtualenv,
+ openstack-murano-virtualenv,
+ openstack-murano-virtualenv-python-d2to1 (>= 0.2.10),
+ openstack-murano-virtualenv-python-d2to1 (<< 0.3),
+ openstack-murano-virtualenv-python-pbr (>= 0.5),
+ openstack-murano-virtualenv-python-pbr (<< 0.6),
+ openstack-murano-virtualenv-python-anyjson,
+ openstack-murano-virtualenv-python-eventlet (>= 0.9.12),
+ openstack-murano-virtualenv-python-puka (>= 1.0.7c)
+Standards-Version: 3.9.2
+Homepage: mirantis.com
+
+Package: openstack-murano-virtualenv-murano-common
+Architecture: all
+Depends: ${misc:Depends}
+ python,
+ python-setuptools,
+ python-virtualenv,
+ openstack-murano-virtualenv,
+ openstack-murano-virtualenv-python-d2to1 (>= 0.2.10),
+ openstack-murano-virtualenv-python-d2to1 (<< 0.3),
+ openstack-murano-virtualenv-python-pbr (>= 0.5),
+ openstack-murano-virtualenv-python-pbr (<< 0.6),
+ openstack-murano-virtualenv-python-anyjson,
+ openstack-murano-virtualenv-python-eventlet (>= 0.9.12),
+ openstack-murano-virtualenv-python-puka (>= 1.0.7c)
+Description: openstack-murano-virtualenv-murano-common installed to virtualenv

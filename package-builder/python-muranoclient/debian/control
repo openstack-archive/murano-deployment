@@ -1,0 +1,41 @@
+Source: python-muranoclient
+Section: Python
+Priority: extra
+Maintainer: root <ashestakov@mirantis.com>
+Build-Depends: debhelper (>= 8.0.0),
+ python-setuptools,
+ python-pip,
+ python-d2to1 (>= 0.2),
+ python-d2to1 (<< 0.3),
+ python-pbr (>= 0.5),
+ python-pbr (<< 0.6),
+ python-prettytable (>= 0.6),
+ python-prettytable (<< 0.7),
+ python-httplib2,
+ python-iso8601 (>= 0.1.4),
+ python-keystoneclient (>= 0.1.2),
+ python-six,
+ python-babel (>= 0.9.6),
+ python-openssl
+Standards-Version: 3.9.2
+Homepage: mirantis.com
+
+Package: python-muranoclient
+Architecture: all
+Depends: ${misc:Depends}
+ python,
+ python-setuptools,
+ python-pip,
+ python-d2to1 (>= 0.2),
+ python-d2to1 (<< 0.3),
+ python-pbr (>= 0.5),
+ python-pbr (<< 0.6),
+ python-prettytable (>= 0.6),
+ python-prettytable (<< 0.7),
+ python-httplib2,
+ python-iso8601 (>= 0.1.4),
+ python-keystoneclient (>= 0.1.2),
+ python-six,
+ python-babel (>= 0.9.6),
+ python-openssl
+Description: python-muranoclient
