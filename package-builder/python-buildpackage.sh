@@ -60,8 +60,11 @@ fi
 
 DEB_BUILD_DEPENDS=${DEB_BUILD_DEPENDS:-'debhelper (>= 8.0.0)'}
 
-export DEBFULLNAME=${DEBFULLNAME:-$pkg_maint_name}
-export DEBEMAIL=${DEBEMAIL:-$pkg_maint_email}
+DEB_FULLNAME=${DEB_FULLNAME:-$pkg_maint_name}
+DEB_EMAIL=${DEB_EMAIL:-$pkg_maint_email}
+
+export DEBFULLNAME=${DEBFULLNAME:-$DEB_FULLNAME}
+export DEBEMAIL=${DEBEMAIL:-$DEB_EMAIL}
 #-------------------------------------------------
 
 

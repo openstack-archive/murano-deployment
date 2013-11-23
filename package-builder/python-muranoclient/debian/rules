@@ -6,9 +6,3 @@
 %:
 	dh $@ --buildsystem python_distutils --with python2
 
-override_dh_auto_install:
-	sed -i "/setup_requires=.*/d" setup.py
-	sed -i "/'.*'/d" setup.py
-	sed -i "/],/d" setup.py
-	dh_auto_install
-

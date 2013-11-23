@@ -3,19 +3,17 @@
 
 # export DH_VERBOSE=1
 
+DESTDIR:=$$(pwd)/debian/murano-conductor
+
 %:
 	dh $@ --buildsystem python_distutils --with python2
 
 override_dh_auto_install:
-	sed -i "/setup_requires=.*/d" setup.py
-	sed -i "/'.*'/d" setup.py
-	sed -i "/],/d" setup.py
-	/opt/openstack-murano-virtualenv/bin/python setup.py install --force --no-compile -O0 --root=debian/openstack-murano-virtualenv-murano-conductor
-	mkdir -p debian/openstack-murano-virtualenv-murano-conductor/etc
-	cp -r etc/ debian/openstack-murano-virtualenv-murano-conductor/etc/murano
-	cp -r data debian/openstack-murano-virtualenv-murano-conductor/etc/murano/
-	cp -r data3 debian/openstack-murano-virtualenv-murano-conductor/etc/murano/
-	cp -r data5 debian/openstack-murano-virtualenv-murano-conductor/etc/murano/
+	mkdir -p $(DESTDIR)/etc
+	cp -r etc   $(DESTDIR)/etc/murano
+	cp -r data  $(DESTDIR)/etc/murano
+	#cp -r data3 $(DESTDIR)/etc/murano
+	#cp -r data5 $(DESTDIR)/etc/murano
 
 override_dh_installinit:
 	dh_installinit --no-start --name openstack-murano-conductor

@@ -6,6 +6,5 @@
 %:
 	dh $@ --buildsystem python_distutils --with python2
 
-override_dh_auto_install:
-	/opt/openstack-murano-virtualenv/bin/python setup.py install --force --no-compile -O0 --root=debian/openstack-murano-virtualenv-murano-common
-
+#override_dh_auto_install:
+#	/opt/openstack-murano-virtualenv/bin/python setup.py install --force --no-compile -O0 --root=debian/openstack-murano-virtualenv-murano-common

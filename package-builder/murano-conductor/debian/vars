@@ -1,5 +1,5 @@
-DEBFULLNAME='Dmitry Teselkin'
-DEBEMAIL='dteselkin@mirantis.com'
+DEB_FULLNAME='Dmitry Teselkin'
+DEB_EMAIL='dteselkin@mirantis.com'
 
 DEB_BUILD_DEPENDS='debhelper (>= 8.0.0),
  python-pbr'
