@@ -4,11 +4,28 @@ This folder contains a set of scripts and files used to automate packaging the M
 
 The main workflow is quite simple now:
 
-1. Clone/Update murano-deployment repo
-2. Change directory to 'package-builder'
-3. Run *build-all.sh*
-4. When building completed - open folder *\~/build_dir/debuild*
-5. Copy content of murano-*.debian.tar.gz to appropriate repos in OBS
+1. Install prerequisites (as root)
+
+```
+apt-get install --yes ubuntu-cloud-keyring
+
+cat << EOF > /etc/apt/sources.list.d/cloud-archive.list
+# The primary updates archive that users should be using
+deb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/havana main
+
+# Public -proposed archive mimicking the SRU process for extended testing.
+# Packages should bake here for at least 7 days.
+deb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-proposed/havana main
+EOF
+
+apt-get install --yes debhelper python-pbr
+```
+
+2. Clone/Update murano-deployment repo
+3. Change directory to 'package-builder'
+4. Run *build-all.sh*
+5. When building completed - open folder *\~/build_dir/debuild*
+6. Copy content of murano-*.debian.tar.gz to appropriate repos in OBS
 
 What the scripts actually do:
 
