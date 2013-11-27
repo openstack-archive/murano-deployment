@@ -10,13 +10,13 @@ murano_components='murano-api murano-conductor murano-dashboard murano-repositor
 
 murano_services='murano-api murano-conductor murano-repository'
 
-murano_config_files='/etc/murano-api/murano-api.conf
- /etc/murano-api/murano-api-paste.ini
- /etc/murano-conductor/conductor.conf
- /etc/murano-conductor/conductor-paste.ini
- /etc/murano-repository/murano-repository.conf
- /etc/murano-conductor/data/init.ps1
- /etc/murano-conductor/data/templates/agent-config/Default.template
+murano_config_files='/etc/murano/murano-api.conf
+ /etc/murano/murano-api-paste.ini
+ /etc/murano/conductor.conf
+ /etc/murano/conductor-paste.ini
+ /etc/murano/murano-repository.conf
+ /etc/murano/init-scripts/init.ps1
+ /etc/murano/agent-config/Default.template
  /usr/share/openstack-dashboard/openstack_dashboard/settings.py'
 
 
@@ -139,7 +139,10 @@ function install_prerequisites {
     case $os_version in
         'CentOS')
             log "** Installing additional software sources ..."
-            yum install -y 'http://rdo.fedorapeople.org/openstack/openstack-grizzly/rdo-release-grizzly.rpm'
+            # GRIZZLY
+            #yum install -y 'http://rdo.fedorapeople.org/openstack/openstack-grizzly/rdo-release-grizzly.rpm'
+            # HAVANA
+            yum install -y 'http://rdo.fedorapeople.org/openstack-havana/rdo-release-havana.rpm'
             yum install -y 'http://mirror.us.leaseweb.net/epel/6/x86_64/epel-release-6-8.noarch.rpm'
 
             log "** Updating system ..."
@@ -151,7 +154,7 @@ function install_prerequisites {
             #ln -s /usr/local/bin/pip /usr/bin/pip
 
             log "** Installing OpenStack dashboard ..."
-            yum install make gcc memcached python-memcached mod_wsgi openstack-dashboard python-netaddr.noarch --assumeyes
+            yum install make gcc memcached httpd python-memcached mod_wsgi openstack-dashboard python-netaddr.noarch --assumeyes
 
             log "** Disabling firewall ..."
             service iptables stop
@@ -163,26 +166,31 @@ function install_prerequisites {
         ;;
         'Ubuntu')
             log "** Installing additional software sources ..."
-            echo 'deb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main' > /etc/apt/sources.list.d/grizzly.list
-            apt-get install -y ubuntu-cloud-keyring
+            # GRIZZLY
+            #echo 'deb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main' > /etc/apt/sources.list.d/grizzly.list
+            #apt-get install -y ubuntu-cloud-keyring
+            # HAVANA
+            apt-get install -y python-software-properties
+            add-apt-repository -y cloud-archive:havana
 
             log "** Updating system ..."
             apt-get update -y
             apt-get upgrade -y
 
             log "** Installing additional packages ..."
-            apt-get install -y node-less python-pip
+            apt-get install -y node-less
+            apt-get install -y python-pip
 
             log "** Upgrading pip ..."
             pip install --upgrade pip
-            rm /usr/bin/pip
-            ln -s /usr/local/bin/pip /usr/bin/pip
+#            rm /usr/bin/pip
+#            ln -s /usr/local/bin/pip /usr/bin/pip
 
             log "** Upgrading pbr ..."
             pip install --upgrade pbr
 
             log "** Installing OpenStack dashboard ..."
-            apt-get install -y memcached libapache2-mod-wsgi openstack-dashboard
+            apt-get install -y memcached apache2 libapache2-mod-wsgi openstack-dashboard
 
             log "** Removing Ubuntu Dashboard Theme ..."
             dpkg --purge openstack-dashboard-ubuntu-theme
@@ -356,9 +364,10 @@ function configure_murano {
         fi
 
         case "$config_file" in
-            '/etc/murano-api/murano-api.conf')
-                iniset 'DEFAULT' 'log_file' '/var/log/murano-api.log' "$config_file"
+            '/etc/murano/murano-api.conf')
+                iniset 'DEFAULT' 'log_file' '/var/log/murano/murano-api.log' "$config_file"
                 iniset 'rabbitmq' 'host' "$RABBITMQ_HOST" "$config_file"
+                iniset 'rabbitmq' 'port' "$RABBITMQ_PORT" "$config_file"
                 iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
                 iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
                 iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
@@ -367,16 +376,17 @@ function configure_murano {
                 iniset 'keystone_authtoken' 'admin_user' "$ADMIN_USER" "$config_file"
                 iniset 'keystone_authtoken' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
             ;;
-            '/etc/murano-repository/murano-repository.conf')
-                iniset 'DEFAULT' 'log_file' '/var/log/murano-repository.log' "$config_file"
+            '/etc/murano/murano-repository.conf')
+                iniset 'DEFAULT' 'log_file' '/var/log/murano/murano-repository.log' "$config_file"
                 iniset 'keystone' 'auth_host' "$LAB_HOST" "$config_file"
                 iniset 'keystone' 'admin_user' "$ADMIN_USER" "$config_file"
                 iniset 'keystone' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
             ;;
-            '/etc/murano-conductor/conductor.conf')
-                iniset 'DEFAULT' 'log_file' '/var/log/murano-conductor.log' "$config_file"
+            '/etc/murano/conductor.conf')
+                iniset 'DEFAULT' 'log_file' '/var/log/murano/murano-conductor.log' "$config_file"
                 iniset 'keystone' 'auth_url' "$AUTH_URL" "$config_file"
                 iniset 'rabbitmq' 'host' "$RABBITMQ_HOST" "$config_file"
+                iniset 'rabbitmq' 'port' "$RABBITMQ_PORT" "$config_file"
                 iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
                 iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
                 iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
@@ -384,15 +394,17 @@ function configure_murano {
             ;;
             '/etc/openstack-dashboard/local_settings')
                 iniset '' 'OPENSTACK_HOST' "'$LAB_HOST'" "$config_file"
+                iniset '' 'ALLOWED_HOSTS' "'*'" "$config_file"
             ;;
             '/etc/openstack-dashboard/local_settings.py')
                 iniset '' 'OPENSTACK_HOST' "'$LAB_HOST'" "$config_file"
+                iniset '' 'ALLOWED_HOSTS' "'*'" "$config_file"
             ;;
-            '/etc/murano-conductor/data/init.ps1')
+            '/etc/murano/init-scripts/init.ps1')
                 [ -n "$FILE_SHARE_HOST" ] && \
                   replace '%MURANO_SERVER_ADDRESS%' "$FILE_SHARE_HOST" "$config_file"
             ;;
-            '/etc/murano-conductor/data/templates/agent-config/Default.template')
+            '/etc/murano/agent-config/Default.template')
                 [ -n "$RABBITMQ_HOST_ALT" ] && \
                   replace '%RABBITMQ_HOST%' "$RABBITMQ_HOST_ALT" "$config_file"
             ;;
@@ -400,14 +412,14 @@ function configure_murano {
 
         if [ "$SSL_ENABLED" = 'true' ] ; then
             case "$config_file" in
-                '/etc/murano-api/murano-api.conf')
-                    generate_sample_certificate '/etc/murano-api' 'server'
-                    iniset 'ssl' 'cert_file' '/etc/murano-api/server.crt' "$config_file"
-                    iniset 'ssl' 'key_file' '/etc/murano-api/server.key' "$config_file"
+                '/etc/murano/murano-api.conf')
+                    generate_sample_certificate '/etc/murano' 'server'
+                    iniset 'ssl' 'cert_file' '/etc/murano/server.crt' "$config_file"
+                    iniset 'ssl' 'key_file' '/etc/murano/server.key' "$config_file"
                     iniset 'rabbitmq' 'ssl' "True" "$config_file"
                     iniset 'keystone_authtoken' 'auth_protocol' 'https' "$config_file"
                 ;;
-                '/etc/murano-conductor/conductor.conf')
+                '/etc/murano/conductor.conf')
                     local ssl_insecure='True'
                     # If any variable is not empty then ssl_insecure = False
                     if [ -n "${SSL_CA_FILE}${SSL_CERT_FILE}${SSL_KEY_FILE}" ] ; then
@@ -426,7 +438,7 @@ function configure_murano {
 
                     iniset 'rabbitmq' 'ssl' "True" "$config_file"
                 ;;
-                '/etc/murano-conductor/data/templates/agent-config/Default.template')
+                '/etc/murano/agent-config/Default.template')
                     replace '%RABBITMQ_SSL%' 'true' "$config_file"
                 ;;
                 '/usr/share/openstack-dashboard/openstack_dashboard/settings.py')
@@ -541,7 +553,7 @@ ADMIN_PASSWORD=''
 RABBITMQ_LOGIN=''
 RABBITMQ_PASSWORD=''
 RABBITMQ_VHOST=''
-
+RABBITMQ_PORT=''
 #RABBITMQ_HOST=''
 #RABBITMQ_HOST_ALT=''
 
