@@ -384,6 +384,8 @@ function configure_murano {
             ;;
             '/etc/murano/conductor.conf')
                 iniset 'DEFAULT' 'log_file' '/var/log/murano/murano-conductor.log' "$config_file"
+		iniset 'DEFAULT' 'init_scripts_dir' '/etc/murano/init-scripts' "$config_file"
+		iniset 'DEFAULT' 'agent_config_dir' '/etc/murano/agent-config' "$config_file"
                 iniset 'keystone' 'auth_url' "$AUTH_URL" "$config_file"
                 iniset 'rabbitmq' 'host' "$RABBITMQ_HOST" "$config_file"
                 iniset 'rabbitmq' 'port' "$RABBITMQ_PORT" "$config_file"
