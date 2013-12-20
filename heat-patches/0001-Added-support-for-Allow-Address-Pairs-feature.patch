@@ -1,0 +1,168 @@
+From 94350f3206d067e7c9012ac5fb4c40555949d95c Mon Sep 17 00:00:00 2001
+From: Timur Sufiev <tsufiev@mirantis.com>
+Date: Thu, 5 Dec 2013 19:43:57 +0400
+Subject: [PATCH] Added support for Allow-Address-Pairs feature
+
+Added support for feature called Allow-Address-Pairs introduced in
+Ie73b3886c5be8e1fc4ade86a0cfb854267f345ac
+
+Implements: blueprint allowed-address-pairs
+Ported from: icehouse.
+---
+ heat/engine/resources/neutron/port.py | 19 +++++++-
+ heat/tests/test_neutron.py            | 84 +++++++++++++++++++++++++++++++++++
+ 2 files changed, 102 insertions(+), 1 deletion(-)
+
+diff --git a/heat/engine/resources/neutron/port.py b/heat/engine/resources/neutron/port.py
+index 06c219a..b12b74a 100644
+--- a/heat/engine/resources/neutron/port.py
++++ b/heat/engine/resources/neutron/port.py
+@@ -29,6 +29,9 @@ class Port(neutron.NeutronResource):
+     fixed_ip_schema = {'subnet_id': {'Type': 'String'},
+                        'ip_address': {'Type': 'String'}}
+ 
++    address_pair_schema = {'mac_address': {'Type': 'String'},
++                           'ip_address': {'Type': 'String', 'Required': True}}
++
+     properties_schema = {'network_id': {'Type': 'String',
+                                         'Required': True},
+                          'name': {'Type': 'String'},
+@@ -41,7 +44,13 @@ class Port(neutron.NeutronResource):
+                                                   'Schema': fixed_ip_schema}},
+                          'mac_address': {'Type': 'String'},
+                          'device_id': {'Type': 'String'},
+-                         'security_groups': {'Type': 'List'}}
++                         'security_groups': {'Type': 'List'},
++                         'allowed_address_pairs': {
++                             'Type': 'List',
++                             'Schema': {'Type': 'Map',
++                                        'Schema': address_pair_schema}}
++                         }
++
+     attributes_schema = {
+         "admin_state_up": _("The administrative state of this port."),
+         "device_id": _("Unique identifier for the device."),
+@@ -53,6 +62,8 @@ class Port(neutron.NeutronResource):
+         "security_groups": _("A list of security groups for the port."),
+         "status": _("The status of the port."),
+         "tenant_id": _("Tenant owning the port"),
++        "allowed_address_pairs": _("Additional mac/ip address pairs allowed "
++                                   "to pass through a port"),
+         "show": _("All attributes."),
+     }
+ 
+@@ -79,6 +90,12 @@ class Port(neutron.NeutronResource):
+                 if value is None:
+                     fixed_ip.pop(key)
+ 
++        # delete empty MAC addresses so that Neutron validation code
++        # wouldn't fail as it not accepts Nones
++        for pair in props.get('allowed_address_pairs', []):
++            if 'mac_address' in pair and pair['mac_address'] is None:
++                del pair['mac_address']
++
+         if self.properties['security_groups']:
+             props['security_groups'] = self.get_secgroup_uuids(
+                 self.stack, self.properties, 'security_groups', self.name,
+diff --git a/heat/tests/test_neutron.py b/heat/tests/test_neutron.py
+index eb5b295..15d9a2d 100644
+--- a/heat/tests/test_neutron.py
++++ b/heat/tests/test_neutron.py
+@@ -171,6 +171,26 @@ neutron_port_template = '''
+ }
+ '''
+ 
++neutron_port_with_address_pair_template = '''
++{
++  "AWSTemplateFormatVersion" : "2010-09-09",
++  "Description" : "Template to test Neutron resources",
++  "Parameters" : {},
++  "Resources" : {
++    "port": {
++      "Type": "OS::Neutron::Port",
++      "Properties": {
++        "network_id": "abcd1234",
++        "allowed_address_pairs": [{
++          "ip_address": "10.0.3.21",
++          "mac_address": "00-B0-D0-86-BB-F7"
++        }]
++      }
++    }
++  }
++}
++'''
++
+ 
+ class NeutronTest(HeatTestCase):
+ 
+@@ -1147,3 +1167,67 @@ class NeutronPortTest(HeatTestCase):
+         port = stack['port']
+         scheduler.TaskRunner(port.create)()
+         self.m.VerifyAll()
++
++    def test_allowed_address_pair(self):
++        clients.OpenStackClients.keystone().AndReturn(
++            fakes.FakeKeystoneClient())
++        neutronclient.Client.create_port({'port': {
++            'network_id': u'abcd1234',
++            'allowed_address_pairs': [{
++                'ip_address': u'10.0.3.21',
++                'mac_address': u'00-B0-D0-86-BB-F7'
++            }],
++            'name': utils.PhysName('test_stack', 'port'),
++            'admin_state_up': True}}
++        ).AndReturn({'port': {
++            "status": "BUILD",
++            "id": "fc68ea2c-b60b-4b4f-bd82-94ec81110766"
++        }})
++        neutronclient.Client.show_port(
++            'fc68ea2c-b60b-4b4f-bd82-94ec81110766'
++        ).AndReturn({'port': {
++            "status": "ACTIVE",
++            "id": "fc68ea2c-b60b-4b4f-bd82-94ec81110766"
++        }})
++
++        self.m.ReplayAll()
++
++        t = template_format.parse(neutron_port_with_address_pair_template)
++        stack = utils.parse_stack(t)
++
++        port = stack['port']
++        scheduler.TaskRunner(port.create)()
++        self.m.VerifyAll()
++
++    def test_missing_mac_address(self):
++        clients.OpenStackClients.keystone().AndReturn(
++            fakes.FakeKeystoneClient())
++        neutronclient.Client.create_port({'port': {
++            'network_id': u'abcd1234',
++            'allowed_address_pairs': [{
++                'ip_address': u'10.0.3.21',
++            }],
++            'name': utils.PhysName('test_stack', 'port'),
++            'admin_state_up': True}}
++        ).AndReturn({'port': {
++            "status": "BUILD",
++            "id": "fc68ea2c-b60b-4b4f-bd82-94ec81110766"
++        }})
++        neutronclient.Client.show_port(
++            'fc68ea2c-b60b-4b4f-bd82-94ec81110766'
++        ).AndReturn({'port': {
++            "status": "ACTIVE",
++            "id": "fc68ea2c-b60b-4b4f-bd82-94ec81110766"
++        }})
++
++        self.m.ReplayAll()
++
++        t = template_format.parse(neutron_port_with_address_pair_template)
++        t['Resources']['port']['Properties']['allowed_address_pairs'][0].pop(
++            'mac_address'
++        )
++        stack = utils.parse_stack(t)
++
++        port = stack['port']
++        scheduler.TaskRunner(port.create)()
++        self.m.VerifyAll()
+-- 
+1.8.3.2
+
