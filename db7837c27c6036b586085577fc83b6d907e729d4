@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Dmitry Teselkin <dteselkin@mirantis.com>
+Approved+1: Igor Yozhikov <iyozhikov@mirantis.com>
+Code-Review+2: Igor Yozhikov <iyozhikov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Mon, 23 Dec 2013 12:29:35 +0000
+Reviewed-on: https://review.openstack.org/63721
+Project: stackforge/murano-deployment
+Branch: refs/heads/release-0.4
