@@ -23,7 +23,7 @@ git clone git@github.com:murano-docs/murano-docs.github.io.git murano-docs
 cd murano-docs
 ls -A1 | grep -v -e '\.git' -e '\.nojekyll' | xargs git rm -rf
 
-for version in "0.1" "release-0.2" "0.2" "0.2.11" "release-0.3" "0.3" "latest"
+for version in "0.1" "release-0.2" "0.2" "0.2.11" "release-0.3" "0.3" "release-0.4" "0.4" "latest"
 do
     cd "${TEMP}"
 
