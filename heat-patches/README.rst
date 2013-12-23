@@ -7,11 +7,11 @@ How to apply Heat patches
 2. Login to the machine with Openstack installation and gain root
    rights.
 
-2. Go to the location where the heat python package is installed:
+3. Go to the location where the heat python package is installed:
    cd /usr/lib/python2.7/dist-package
 
-3. Apply each patch by issuing the following command:
+4. Apply each patch by issuing the following command:
    patch -b -p1 < /path/to/the/patch-file
 
-4. Restart the heat service:
+5. Restart the heat service:
    service heat-engine restart
