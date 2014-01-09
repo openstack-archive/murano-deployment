@@ -1,0 +1,431 @@
+# lib/murano
+
+# Dependencies:
+# ``functions`` file
+# ``DEST``, ``DATA_DIR``, ``STACK_USER`` must be defined
+
+# ``stack.sh`` calls the entry points in this order:
+#
+# install_murano
+# configure_murano
+# start_murano
+# stop_murano
+
+
+# Save trace setting
+XTRACE=$(set +o | grep xtrace)
+set +o xtrace
+
+
+# Defaults
+#===============================================================================
+
+# Configuration defaults
+#-----------------------
+AUTH_HOST=''
+
+ADMIN_USER=''
+ADMIN_PASSWORD=''
+
+RABBITMQ_LOGIN=''
+RABBITMQ_PASSWORD=''
+RABBITMQ_VHOST=''
+RABBITMQ_PORT=''
+#RABBITMQ_HOST=''
+#RABBITMQ_HOST_ALT=''
+
+#FILE_SHARE_HOST=''
+
+BRANCH_NAME='master'
+
+# Only 'true' or 'false' values are allowed!
+SSL_ENABLED='false'
+SSL_CA_FILE=''
+SSL_CERT_FILE=''
+SSL_KEY_FILE=''
+
+#BRANCH_MURANO_API=''
+#BRANCH_MURANO_DASHBOARD=''
+#BRANCH_MURANO_CLIENT=''
+#BRANCH_MURANO_CONDUCTOR=''
+#BRANCH_MURANO_REPOSITORY=''
+#-----------------------
+
+
+# List of config files to be updated for Murano
+#----------------------------------------------
+MURANO_CONFIG_FILES='/etc/murano/murano-api.conf
+ /etc/murano/murano-api-paste.ini
+ /etc/murano/conductor.conf
+ /etc/murano/conductor-paste.ini
+ /etc/murano/murano-repository.conf
+ /etc/murano/init-scripts/init.ps1
+ /etc/murano/agent-config/Default.template
+ /usr/share/openstack-dashboard/openstack_dashboard/settings.py'
+#----------------------------------------------
+
+
+# Set up default repos
+#---------------------
+MURANO_BRANCH=${MURANO_BRANCH:-master}
+
+MURANO_API_REPO=${MURANO_API_REPO:-${GIT_BASE}/stackforge/murano-api.git}
+MURANO_API_BRANCH=${MURANO_API_BRANCH:-$MURANO_BRANCH}
+
+MURANO_CONDUCTOR_REPO=${MURANO_CONDUCTOR_REPO:-${GIT_BASE}/stackforge/murano-conductor.git}
+MURANO_CONDUCTOR_BRANCH=${MURANO_CONDUCTOR_BRANCH:-$MURANO_BRANCH}
+
+MURANO_REPOSITORY_REPO=${MURANO_REPOSITORY_REPO:-${GIT_BASE}/stackforge/murano-repository.git}
+MURANO_REPOSITORY_BRANCH=${MURANO_REPOSITORY_BRANCH:-$MURANO_BRANCH}
+
+MURANO_DASHBOARD_REPO=${MURANO_DASHBOARD_REPO:-${GIT_BASE}/stackforge/murano-dashboard.git}
+MURANO_DASHBOARD_BRANCH=${MURANO_DASHBOARD_BRANCH:-$MURANO_BRANCH}
+
+MURANO_COMMON_REPO=${MURANO_COMMON_REPO:-${GIT_BASE}/stackforge/murano-common.git}
+MURANO_COMMON_BRANCH=${MURANO_COMMON_BRANCH:-$MURANO_BRANCH}
+
+MURANO_METADATACLIENT_REPO=${MURANO_METADATACLIENT_REPO:-${GIT_BASE}/stackforge/murano-metadataclient.git}
+MURANO_METADATACLIENT_BRANCH=${MURANO_METADATACLIENT_BRANCH:-$MURANO_BRANCH}
+
+MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO:-${GIT_BASE}/stackforge/python-muranoclient.git}
+MURANO_PYTHONCLIENT_BRANCH=${MURANO_PYTHONCLIENT_BRANCH:-$MURANO_BRANCH}
+#---------------------
+
+
+# Set up default directories
+#---------------------------
+MURANO_API_DIR=$DEST/murano-api
+MURANO_CONDUCTOR_DIR=$DEST/murano-conductor
+MURANO_REPOSITORY_DIR=$DEST/murano-repository
+MURANO_DASHBOARD_DIR=$DEST/murano-dashboard
+MURANO_COMMON_DIR=$DEST/murano-common
+MURANO_METADATACLIENT_DIR=$DEST/murano-metadataclient
+MURANO_PYTHONCLIENT_DIR=$DEST/python-muranoclient
+
+MURANO_CONF_DIR=${MURANO_CONF_DIR:-/etc/murano}
+MURANO_CONF_FILE=murano.conf
+MURANO_DEBUG=${MURANO_DEBUG:-True}
+
+MURANO_SERVICE_HOST=${MURANO_SERVICE_HOST:-$SERVICE_HOST}
+
+MURANO_API_HOST=${MURANO_API_SERVICE_HOST:-$MURANO_SERVICE_HOST}
+MURANO_CONDUCTOR_HOST=${MURANO_CONDUCTOR_SERVICE_HOST:-$MURANO_SERVICE_HOST}
+MURANO_REPOSITORY_HOST=${MURANO_REPOSITORY_SERVICE_HOST:-$MURANO_SERVICE_HOST}
+
+MURANO_API_SERVICE_PORT=${MURANO_API_SERVICE_PORT:-8386}
+#---------------------------
+
+#SAVANNA_SERVICE_PROTOCOL=${SAVANNA_SERVICE_PROTOCOL:-$SERVICE_PROTOCOL}
+
+# ??? Support entry points installation of console scripts
+#if [[ -d $SAVANNA_DIR/bin ]]; then
+#    SAVANNA_BIN_DIR=$SAVANNA_DIR/bin
+#else
+#    SAVANNA_BIN_DIR=$(get_python_exec_prefix)
+#fi
+
+# Murano dirs
+#------------
+MURANO_API_BIN_DIR=$MURANO_API_DIR/bin
+MURANO_CONDUCTOR_BIN_DIR=$MURANO_CONDUCTOR_DIR/bin
+MURANO_REPOSITORY_BIN_DIR=$MURANO_REPOSITORY_DIR/bin
+
+MURANO_SSL_ENABLED=${MURANO_SSL_ENABLED:-'false'}
+#------------
+#===============================================================================
+
+
+# Functions
+#===============================================================================
+
+#TODO
+# create_savanna_accounts() - Set up common required savanna accounts
+#
+# Tenant      User       Roles
+# ------------------------------
+# service     savanna    admin
+function create_savanna_accounts() {
+
+    SERVICE_TENANT=$(keystone tenant-list | awk "/ $SERVICE_TENANT_NAME / { print \$2 }")
+    ADMIN_ROLE=$(keystone role-list | awk "/ admin / { print \$2 }")
+
+    SAVANNA_USER=$(keystone user-create \
+        --name=savanna \
+        --pass="$SERVICE_PASSWORD" \
+        --tenant_id $SERVICE_TENANT \
+        --email=savanna@example.com \
+        | grep " id " | get_field 2)
+    keystone user-role-add \
+        --tenant-id $SERVICE_TENANT \
+        --user-id $SAVANNA_USER \
+        --role-id $ADMIN_ROLE
+
+    if [[ "$KEYSTONE_CATALOG_BACKEND" = 'sql' ]]; then
+        SAVANNA_SERVICE=$(keystone service-create \
+            --name=savanna \
+            --type=data_processing \
+            --description="Savanna Data Processing" \
+            | grep " id " | get_field 2)
+        keystone endpoint-create \
+            --region RegionOne \
+            --service_id $SAVANNA_SERVICE \
+            --publicurl "$SAVANNA_SERVICE_PROTOCOL://$SAVANNA_SERVICE_HOST:$SAVANNA_SERVICE_PORT/v1.1/\$(tenant_id)s" \
+            --adminurl "$SAVANNA_SERVICE_PROTOCOL://$SAVANNA_SERVICE_HOST:$SAVANNA_SERVICE_PORT/v1.1/\$(tenant_id)s" \
+            --internalurl "$SAVANNA_SERVICE_PROTOCOL://$SAVANNA_SERVICE_HOST:$SAVANNA_SERVICE_PORT/v1.1/\$(tenant_id)s"
+    fi
+}
+
+
+function generate_sample_certificate {
+    local location=$1
+    local cert_name=$2
+
+    local old_pwd=$(pwd)
+    cd $location
+
+    openssl genrsa -des3 -passout pass:x -out "$cert_name.pass.key" 2048
+    openssl rsa -passin pass:x -in "$cert_name.pass.key" -out "$cert_name.key"
+    rm "$cert_name.pass.key"
+
+    openssl req -new \
+     -subj "/C=RU" \
+     -subj "/ST=Center" \
+     -subj "/L=Moscow" \
+     -subj "/O=Mirantis" \
+     -subj "/OU=Murano" \
+     -subj "/CN=murano" \
+     -subj "/emailAddress=murano-all@mirantis.com" \
+     -key "$cert_name.key" -out "$cert_name.csr"
+
+    openssl x509 -req -days 365 \
+      -in "$cert_name.csr" \
+      -signkey "$cert_name.key" \
+      -out "$cert_name.crt"
+
+    cd $old_pwd
+}
+
+
+function install_prerequisites {
+    if [[ "$os_VENDOR" =~ (Debian) ]]; then
+        echo_summary "Installing additional software sources"
+        apt-get install -y python-software-properties
+        add-apt-repository -y cloud-archive:havana
+
+        echo_summary "Installing additional packages"
+        apt-get install -y node-less python-pip
+
+        echo_summary "Upgrading 'pip'"
+        pip install --upgrade pip
+        #rm /usr/bin/pip
+        #ln -s /usr/local/bin/pip /usr/bin/pip
+
+        echo_summary "Upgrading 'pbr'"
+        pip install --upgrade pbr
+    fi
+
+    if is_fedora ; then
+        echo_summary "Upgrading 'pip'"
+        pip install --upgrade pip
+        #rm /usr/bin/pip
+        #ln -s /usr/local/bin/pip /usr/bin/pip
+
+        log "** Disabling firewall ..."
+        service iptables stop
+        chkconfig iptables off
+
+        log "** Disabling SELinux ..."
+        setenforce permissive
+        iniset '' 'SELINUX' 'permissive' '/etc/selinux/config'
+    fi
+}
+
+
+function configure_murano {
+    echo_summary "Configuring Murano"
+
+    for config_file in $MURANO_CONFIG_FILES ; do
+        echo_summary "Configuring file '$config_file'"
+
+        if [ ! -f "$config_file" ] ; then
+            cp "$config_file.sample" "$config_file"
+        fi
+
+        case "$config_file" in
+            '/etc/murano/murano-api.conf')
+                iniset 'DEFAULT' 'log_file' '/var/log/murano/murano-api.log' "$config_file"
+                iniset 'rabbitmq' 'host' "$RABBITMQ_HOST" "$config_file"
+                iniset 'rabbitmq' 'port' "$RABBITMQ_PORT" "$config_file"
+                iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
+                iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
+                iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
+                iniset 'rabbitmq' 'ssl' "False" "$config_file"
+                iniset 'keystone_authtoken' 'auth_host' "$AUTH_HOST" "$config_file"
+                iniset 'keystone_authtoken' 'admin_user' "$ADMIN_USER" "$config_file"
+                iniset 'keystone_authtoken' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
+            ;;
+            '/etc/murano/murano-repository.conf')
+                iniset 'DEFAULT' 'log_file' '/var/log/murano/murano-repository.log' "$config_file"
+                iniset 'keystone' 'auth_host' "$AUTH_HOST" "$config_file"
+                iniset 'keystone' 'admin_user' "$ADMIN_USER" "$config_file"
+                iniset 'keystone' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
+            ;;
+            '/etc/murano/conductor.conf')
+                iniset 'DEFAULT' 'log_file' '/var/log/murano/murano-conductor.log' "$config_file"
+                iniset 'DEFAULT' 'init_scripts_dir' '/etc/murano/init-scripts' "$config_file"
+                iniset 'DEFAULT' 'agent_config_dir' '/etc/murano/agent-config' "$config_file"
+                iniset 'keystone' 'auth_url' "$AUTH_URL" "$config_file"
+                iniset 'rabbitmq' 'host' "$RABBITMQ_HOST" "$config_file"
+                iniset 'rabbitmq' 'port' "$RABBITMQ_PORT" "$config_file"
+                iniset 'rabbitmq' 'login' "$RABBITMQ_LOGIN" "$config_file"
+                iniset 'rabbitmq' 'password' "$RABBITMQ_PASSWORD" "$config_file"
+                iniset 'rabbitmq' 'virtual_host' "$RABBITMQ_VHOST" "$config_file"
+                iniset 'rabbitmq' 'ssl' "False" "$config_file"
+            ;;
+            '/etc/openstack-dashboard/local_settings')
+                iniset '' 'OPENSTACK_HOST' "'$AUTH_HOST'" "$config_file"
+                iniset '' 'ALLOWED_HOSTS' "'*'" "$config_file"
+            ;;
+            '/etc/openstack-dashboard/local_settings.py')
+                iniset '' 'OPENSTACK_HOST' "'$AUTH_HOST'" "$config_file"
+                iniset '' 'ALLOWED_HOSTS' "'*'" "$config_file"
+            ;;
+            '/etc/murano/init-scripts/init.ps1')
+                [ -n "$FILE_SHARE_HOST" ] && \
+                  replace '%MURANO_SERVER_ADDRESS%' "$FILE_SHARE_HOST" "$config_file"
+            ;;
+            '/etc/murano/agent-config/Default.template')
+                [ -n "$RABBITMQ_HOST_ALT" ] && \
+                  replace '%RABBITMQ_HOST%' "$RABBITMQ_HOST_ALT" "$config_file"
+            ;;
+        esac
+
+        if [ "$SSL_ENABLED" = 'true' ] ; then
+            case "$config_file" in
+                '/etc/murano/murano-api.conf')
+                    generate_sample_certificate '/etc/murano' 'server'
+                    iniset 'ssl' 'cert_file' '/etc/murano/server.crt' "$config_file"
+                    iniset 'ssl' 'key_file' '/etc/murano/server.key' "$config_file"
+                    iniset 'rabbitmq' 'ssl' "True" "$config_file"
+                    iniset 'keystone_authtoken' 'auth_protocol' 'https' "$config_file"
+                ;;
+                '/etc/murano/conductor.conf')
+                    local ssl_insecure='True'
+                    # If any variable is not empty then ssl_insecure = False
+                    if [ -n "${SSL_CA_FILE}${SSL_CERT_FILE}${SSL_KEY_FILE}" ] ; then
+                        ssl_insecure='False'
+                    fi
+
+                    iniset 'keystone' 'ca_file' "$SSL_CA_FILE" "$config_file"
+                    iniset 'keystone' 'cert_file' "$SSL_CERT_FILE" "$config_file"
+                    iniset 'keystone' 'key_file' "$SSL_KEY_FILE" "$config_file"
+                    iniset 'keystone' 'insecure' "$ssl_insecure" "$config_file"
+
+                    iniset 'heat' 'ca_file' "$SSL_CA_FILE" "$config_file"
+                    iniset 'heat' 'cert_file' "$SSL_CERT_FILE" "$config_file"
+                    iniset 'heat' 'key_file' "$SSL_KEY_FILE" "$config_file"
+                    iniset 'heat' 'insecure' "$ssl_insecure" "$config_file"
+
+                    iniset 'rabbitmq' 'ssl' "True" "$config_file"
+                ;;
+                '/etc/murano/agent-config/Default.template')
+                    replace '%RABBITMQ_SSL%' 'true' "$config_file"
+                ;;
+                '/usr/share/openstack-dashboard/openstack_dashboard/settings.py')
+                    echo '' >> "$config_file"
+                    echo "MURANO_API_INSECURE = True" >> "$config_file"
+                    echo "MURANO_API_URL = 'https://localhost:8082'" >> "$config_file"
+                ;;
+                '/etc/openstack-dashboard/local_settings'|'/etc/openstack-dashboard/local_settings.py')
+                    cat << 'EOF' >> "$config_file"
+
+#murano-git-install-block-start
+OPENSTACK_SSL_NO_VERIFY = True
+OPENSTACK_KEYSTONE_URL = "https://%s:5000/v2.0" % OPENSTACK_HOST
+OPENSTACK_KEYSTONE_ADMIN_URL = "https://%s:35357/v2.0" % OPENSTACK_HOST
+QUANTUM_URL = "https://%s" % OPENSTACK_HOST
+#murano-git-install-block-end
+EOF
+                ;;
+            esac
+        fi
+    done
+}
+
+
+#TODO
+# configure_savanna() - Set config files, create data dirs, etc
+function configure_savanna() {
+
+    if [[ ! -d $SAVANNA_CONF_DIR ]]; then
+        sudo mkdir -p $SAVANNA_CONF_DIR
+    fi
+    sudo chown $STACK_USER $SAVANNA_CONF_DIR
+
+    # Copy over savanna configuration file and configure common parameters.
+    cp $SAVANNA_DIR/etc/savanna/savanna.conf.sample $SAVANNA_CONF_DIR/$SAVANNA_CONF_FILE
+
+    iniset $SAVANNA_CONF_DIR/$SAVANNA_CONF_FILE DEFAULT os_admin_password $SERVICE_PASSWORD
+    iniset $SAVANNA_CONF_DIR/$SAVANNA_CONF_FILE DEFAULT os_admin_username savanna
+    iniset $SAVANNA_CONF_DIR/$SAVANNA_CONF_FILE DEFAULT os_admin_tenant_name $SERVICE_TENANT_NAME
+    iniset $SAVANNA_CONF_DIR/$SAVANNA_CONF_FILE DEFAULT debug $SAVANNA_DEBUG
+
+    recreate_database savanna utf8
+    iniset $SAVANNA_CONF_DIR/$SAVANNA_CONF_FILE database sql_connection `database_connection_url savanna`
+    inicomment $SAVANNA_CONF_DIR/$SAVANNA_CONF_FILE database connection
+
+    if is_service_enabled neutron; then
+        iniset $SAVANNA_CONF_DIR/$SAVANNA_CONF_FILE DEFAULT use_neutron true
+        iniset $SAVANNA_CONF_DIR/$SAVANNA_CONF_FILE DEFAULT use_floating_ips true
+    fi
+
+    iniset $SAVANNA_CONF_DIR/$SAVANNA_CONF_FILE DEFAULT use_syslog $SYSLOG
+}
+
+# install_murano() - Collect source and prepare
+function install_murano() {
+    git_clone $MURANO_API_REPO $MURANO_API_DIR $MURANO_API_BRANCH
+    setup_develop $MURANO_API_DIR
+
+    git_clone $MURANO_CONDUCTOR_REPO $MURANO_CONDUCTOR_DIR $MURANO_API_BRANCH
+    setup_develop $MURANO_CONDUCTOR_DIR
+
+    git_clone $MURANO_REPOSITORY_REPO $MURANO_REPOSITORY_DIR $MURANO_API_BRANCH
+    setup_develop $MURANO_REPOSITORY_DIR
+
+    git_clone $MURANO_DASHBOARD_REPO $MURANO_DASHBOARD_DIR $MURANO_API_BRANCH
+    setup_develop $MURANO_DASHBOARD_DIR
+
+    git_clone $MURANO_COMMON_REPO $MURANO_COMMON_DIR $MURANO_API_BRANCH
+    setup_develop $MURANO_COMMON_DIR
+
+    git_clone $MURANO_METADATACLIENT_REPO $MURANO_METADATACLIENT_DIR $MURANO_API_BRANCH
+    setup_develop $MURANO_METADATACLIENT_DIR
+
+    git_clone $MURANO_PYTHONCLIENT_REPO $MURANO_PYTHONCLIENT_DIR $MURANO_API_BRANCH
+    setup_develop $MURANO_PYTHONCLIENT_DIR
+}
+
+# start_murano() - Start running processes, including screen
+function start_murano() {
+    screen_it murano-api "cd $MURANO_API_DIR && $MURANO_API_BIN_DIR/murano-api --config-file $MURANO_CONF_DIR/$MURANO_API_CONF_FILE"
+    screen_it murano-conductor "cd $MURANO_CONDUCTOR_DIR && $MURANO_CONDUCTOR_BIN_DIR/murano-conductor --config-file $MURANO_CONF_DIR/$MURANO_CONDUCTOR_CONF_FILE"
+    screen_it murano-repository "cd $MURANO_REPOSITORY_DIR && $MURANO_REPOSITORY_BIN_DIR/murano-repository --config-file $MURANO_CONF_DIR/$MURANO_REPOSITORY_CONF_FILE"
+}
+
+# stop_murano() - Stop running processes
+function stop_murano() {
+    # Kill the Murano screen windows
+    screen -S $SCREEN_NAME -p murano-api -X kill
+    screen -S $SCREEN_NAME -p murano-conductor -X kill
+    screen -S $SCREEN_NAME -p murano-repository -X kill
+}
+#===============================================================================
+
+
+# Restore xtrace
+$XTRACE
+
+# Local variables:
+# mode: shell-script
+# End:
