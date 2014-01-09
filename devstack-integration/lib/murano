@@ -1,0 +1,528 @@
+# lib/murano
+
+# Dependencies:
+# ``functions`` file
+# ``DEST``, ``DATA_DIR``, ``STACK_USER`` must be defined
+
+# ``stack.sh`` calls the entry points in this order:
+#
+# install_murano
+# configure_murano
+# start_murano
+# stop_murano
+
+
+# Save trace setting
+XTRACE=$(set +o | grep xtrace)
+set -o xtrace
+
+
+
+# Defaults
+# --------
+
+# Configuration defaults
+#-----------------------
+ADMIN_USERNAME=${ADMIN_USERNAME:-'admin'}
+
+MURANO_RABBIT_LOGIN=${MURANO_RABBIT_LOGIN:-'guest'}
+MURANO_RABBIT_PASSWORD=${MURANO_RABBIT_PASSWORD:-$RABBIT_PASSWORD}
+MURANO_RABBIT_VHOST=${MURANO_RABBIT_VHOST:-'/'}
+MURANO_RABBIT_PORT=${MURANO_RABBIT_PORT:-5672}
+MURANO_RABBIT_HOST=${MURANO_RABBIT_HOST:-$HOST_IP}
+MURANO_RABBIT_HOST_ALT=${MURANO_RABBIT_HOST_ALT:-''}
+
+MURANO_FILE_SHARE_HOST=${MURANO_FILE_SHARE_HOST:-$HOST_IP}
+
+# Only 'true' or 'false' values are allowed!
+MURANO_SSL_ENABLED=${MURANO_SSL_ENABLED:-'false'}
+MURANO_SSL_CA_FILE=${MURANO_SSL_CA_FILE:-''}
+MURANO_SSL_CERT_FILE=${MURANO_SSL_CERT_FILE:-''}
+MURANO_SSL_KEY_FILE=${MURANO_SSL_KEY_FILE:-''}
+#-----------------------
+
+
+# Set up default repos
+#---------------------
+MURANO_BRANCH=${MURANO_BRANCH:-master}
+
+MURANO_API_REPO=${MURANO_API_REPO:-${GIT_BASE}/stackforge/murano-api.git}
+MURANO_API_BRANCH=${MURANO_API_BRANCH:-$MURANO_BRANCH}
+
+MURANO_CONDUCTOR_REPO=${MURANO_CONDUCTOR_REPO:-${GIT_BASE}/stackforge/murano-conductor.git}
+MURANO_CONDUCTOR_BRANCH=${MURANO_CONDUCTOR_BRANCH:-$MURANO_BRANCH}
+
+MURANO_REPOSITORY_REPO=${MURANO_REPOSITORY_REPO:-${GIT_BASE}/stackforge/murano-repository.git}
+MURANO_REPOSITORY_BRANCH=${MURANO_REPOSITORY_BRANCH:-$MURANO_BRANCH}
+
+MURANO_DASHBOARD_REPO=${MURANO_DASHBOARD_REPO:-${GIT_BASE}/stackforge/murano-dashboard.git}
+MURANO_DASHBOARD_BRANCH=${MURANO_DASHBOARD_BRANCH:-$MURANO_BRANCH}
+
+MURANO_COMMON_REPO=${MURANO_COMMON_REPO:-${GIT_BASE}/stackforge/murano-common.git}
+MURANO_COMMON_BRANCH=${MURANO_COMMON_BRANCH:-$MURANO_BRANCH}
+
+MURANO_METADATACLIENT_REPO=${MURANO_METADATACLIENT_REPO:-${GIT_BASE}/stackforge/murano-metadataclient.git}
+MURANO_METADATACLIENT_BRANCH=${MURANO_METADATACLIENT_BRANCH:-$MURANO_BRANCH}
+
+MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO:-${GIT_BASE}/stackforge/python-muranoclient.git}
+MURANO_PYTHONCLIENT_BRANCH=${MURANO_PYTHONCLIENT_BRANCH:-$MURANO_BRANCH}
+#---------------------
+
+
+# Murano dirs and config files
+#-----------------------------
+MURANO_API_DIR=$DEST/murano-api
+MURANO_CONDUCTOR_DIR=$DEST/murano-conductor
+MURANO_REPOSITORY_DIR=$DEST/murano-repository
+MURANO_DASHBOARD_DIR=$DEST/murano-dashboard
+MURANO_COMMON_DIR=$DEST/murano-common
+MURANO_METADATACLIENT_DIR=$DEST/murano-metadataclient
+MURANO_PYTHONCLIENT_DIR=$DEST/python-muranoclient
+
+MURANO_API_BIN_DIR=$MURANO_API_DIR/bin
+MURANO_CONDUCTOR_BIN_DIR=$MURANO_CONDUCTOR_DIR/bin
+MURANO_REPOSITORY_BIN_DIR=$MURANO_REPOSITORY_DIR/bin
+
+MURANO_CONF_DIR=${MURANO_CONF_DIR:-/etc/murano}
+MURANO_API_CONF=$MURANO_CONF_DIR/murano-api.conf
+MURANO_CONDUCTOR_CONF=$MURANO_CONF_DIR/murano-conductor.conf
+MURANO_REPOSITORY_CONF=$MURANO_CONF_DIR/murano-repository.conf
+#-----------------------------
+
+
+# Other options
+#--------------
+MURANO_DEBUG=${MURANO_DEBUG:-True}
+
+MURANO_SSL_ENABLED=${MURANO_SSL_ENABLED:-'false'}
+
+MURANO_SERVICE_PROTOCOL=${MURANO_SERVICE_PROTOCOL:-$SERVICE_PROTOCOL}
+MURANO_SERVICE_HOST=${MURANO_SERVICE_HOST:-$SERVICE_HOST}
+MURANO_SERVICE_PORT=${MURANO_SERVICE_PORT:-8082}
+
+MURANO_LOG_DIR=/var/log/murano
+
+MURANO_CACHE_DIR=/tmp
+MURANO_CONDUCTOR_CACHE=$MURANO_CACHE_DIR/muranoconductor-cache
+MURANO_REPOSITORY_CACHE=$MURANO_CACHE_DIR/muranorepository-cache
+MURANO_DASHBOARD_CACHE=$MURANO_CACHE_DIR/muranodashboard-cache
+MURANO_API_SIGNING_DIR=$MURANO_CACHE_DIR/keystone-signing-muranoapi
+MURANO_REPOSITORY_SIGNING_DIR=$MURANO_CACHE_DIR/keystone-signing-muranorepository
+
+MURANO_AUTH_HOST=$HOST_IP
+MURANO_AUTH_URL=$KEYSTONE_SERVICE_PROTOCOL://$KEYSTONE_SERVICE_HOST:$KEYSTONE_SERVICE_PORT/v2.0
+#--------------
+
+
+
+# Functions
+# ---------
+
+function replace {
+    sed -i "s/$1/$2/g" "$3"
+}
+
+# create_murano_accounts() - Set up common required murano accounts
+#
+# Tenant      User       Roles
+# ------------------------------
+# service     murano     admin
+function create_murano_accounts() {
+
+    SERVICE_TENANT=$(keystone tenant-list | awk "/ $SERVICE_TENANT_NAME / { print \$2 }")
+    ADMIN_ROLE=$(keystone role-list | awk "/ admin / { print \$2 }")
+
+    MURANO_USER=$(keystone user-create \
+        --name=murano \
+        --pass="$SERVICE_PASSWORD" \
+        --tenant_id $SERVICE_TENANT \
+        --email=murano@example.com \
+        | grep " id " | get_field 2)
+    keystone user-role-add \
+        --tenant-id $SERVICE_TENANT \
+        --user-id $MURANO_USER \
+        --role-id $ADMIN_ROLE
+
+    if [[ "$KEYSTONE_CATALOG_BACKEND" = 'sql' ]]; then
+        MURANO_SERVICE=$(keystone service-create \
+            --name=murano \
+            --type=data_processing \
+            --description="Murano Data Processing" \
+            | grep " id " | get_field 2)
+        keystone endpoint-create \
+            --region RegionOne \
+            --service_id $MURANO_SERVICE \
+            --publicurl "$MURANO_SERVICE_PROTOCOL://$MURANO_SERVICE_HOST:$MURANO_SERVICE_PORT/v1.1/\$(tenant_id)s" \
+            --adminurl "$MURANO_SERVICE_PROTOCOL://$MURANO_SERVICE_HOST:$MURANO_SERVICE_PORT/v1.1/\$(tenant_id)s" \
+            --internalurl "$MURANO_SERVICE_PROTOCOL://$MURANO_SERVICE_HOST:$MURANO_SERVICE_PORT/v1.1/\$(tenant_id)s"
+    fi
+}
+
+
+function generate_sample_certificate {
+    local location=$1
+    local cert_name=$2
+
+    local old_pwd=$(pwd)
+    cd $location
+
+    openssl genrsa -des3 -passout pass:x -out "$cert_name.pass.key" 2048
+    openssl rsa -passin pass:x -in "$cert_name.pass.key" -out "$cert_name.key"
+    rm "$cert_name.pass.key"
+
+    openssl req -new \
+     -subj "/C=RU" \
+     -subj "/ST=Center" \
+     -subj "/L=Moscow" \
+     -subj "/O=Mirantis" \
+     -subj "/OU=Murano" \
+     -subj "/CN=murano" \
+     -subj "/emailAddress=murano-all@mirantis.com" \
+     -key "$cert_name.key" -out "$cert_name.csr"
+
+    openssl x509 -req -days 365 \
+      -in "$cert_name.csr" \
+      -signkey "$cert_name.key" \
+      -out "$cert_name.crt"
+
+    cd $old_pwd
+}
+
+
+function install_prerequisites {
+    if [[ "$os_VENDOR" =~ (Debian) ]]; then
+        echo_summary "Installing additional software sources"
+        apt-get install -y python-software-properties
+        add-apt-repository -y cloud-archive:havana
+
+        echo_summary "Installing additional packages"
+        apt-get install -y node-less python-pip
+
+        echo_summary "Upgrading 'pip'"
+        pip install --upgrade pip
+        #rm /usr/bin/pip
+        #ln -s /usr/local/bin/pip /usr/bin/pip
+
+        echo_summary "Upgrading 'pbr'"
+        pip install --upgrade pbr
+    fi
+
+    if is_fedora ; then
+        echo_summary "Upgrading 'pip'"
+        pip install --upgrade pip
+        #rm /usr/bin/pip
+        #ln -s /usr/local/bin/pip /usr/bin/pip
+
+        echo_summary "Disabling firewall"
+        service iptables stop
+        chkconfig iptables off
+
+        echo_summary "Disabling SELinux"
+        setenforce permissive
+        iniset '' 'SELINUX' 'permissive' '/etc/selinux/config'
+    fi
+}
+
+
+function install_pip_requirements() {
+    local project_dir=$1
+    local exclude_list=$2
+
+    cp "$project_dir/requirements.txt" "$project_dir/requirements.txt.bak"
+    while read expr ; do
+        [[ -z "$expr" ]] && continue
+        sed -ri "s/($expr)/#\1/" "$project_dir/requirements.txt"
+    done <<< "$exclude_list"
+    sudo pip install -r "$project_dir/requirements.txt"
+
+    mv "$project_dir/requirements.txt.bak" "$project_dir/requirements.txt"
+}
+
+
+function install_murano_common_app() {
+    git_clone $MURANO_COMMON_REPO $MURANO_COMMON_DIR $MURANO_COMMON_BRANCH
+
+    install_pip_requirements "$MURANO_COMMON_DIR" ""
+
+    setup_develop $MURANO_COMMON_DIR
+}
+
+
+function install_murano_api_app() {
+    git_clone $MURANO_API_REPO $MURANO_API_DIR $MURANO_API_BRANCH
+
+    install_pip_requirements "$MURANO_API_DIR" "http.*murano-common.*"
+
+    setup_develop $MURANO_API_DIR
+}
+
+
+function install_murano_conductor_app() {
+    git_clone $MURANO_CONDUCTOR_REPO $MURANO_CONDUCTOR_DIR $MURANO_CONDUCTOR_BRANCH
+
+    install_pip_requirements "$MURANO_CONDUCTOR_DIR" "http.*murano-common.*
+http.*murano-metadataclient.*"
+
+    setup_develop $MURANO_CONDUCTOR_DIR
+}
+
+
+function install_murano_repository_app() {
+    git_clone $MURANO_REPOSITORY_REPO $MURANO_REPOSITORY_DIR $MURANO_REPOSITORY_BRANCH
+
+    install_pip_requirements "$MURANO_REPOSITORY_DIR" ""
+
+    setup_develop $MURANO_REPOSITORY_DIR
+}
+
+
+function install_murano_metadataclient_app() {
+    git_clone $MURANO_METADATACLIENT_REPO $MURANO_METADATACLIENT_DIR $MURANO_METADATACLIENT_BRANCH
+
+    $SUDO pip install -r "$MURANO_METADATACLIENT_DIR/requirements.txt"
+
+    setup_develop $MURANO_METADATACLIENT_DIR
+}
+
+
+function rebuild_static() {
+    local horizon_manage_py="$HORIZON_DIR/manage.py"
+
+    rm -rf "$HORIZON_DIR/horizon/static/muranodashboard"
+    rm -rf "$MURANO_DASHBOARD_DIR/muranodashboard/static/muranodashboard"
+
+    python "$horizon_manage_py" collectstatic --noinput
+    python "$horizon_manage_py" syncdb --noinput
+}
+
+
+# Entry points
+# ------------
+
+# cleanup_murano() - Remove residual data files, anything left over from previous
+# runs that a clean run would need to clean up
+function cleanup_murano() {
+    rm -rf "$MURANO_CONF_DIR"
+}
+
+# configure_murano() - Set config files, create data dirs, etc
+function configure_murano {
+    local project_dir
+    local config_file
+    local path
+
+
+    echo_summary "Copying config files"
+
+    if [[ ! -d "$MURANO_CONF_DIR" ]]; then
+        sudo mkdir -p "$MURANO_CONF_DIR"
+    fi
+    sudo chown $STACK_USER "$MURANO_CONF_DIR"
+
+    rm -f "$MURANO_CONF_DIR"/*.conf
+
+    # Copying config files
+    while read project_dir; do
+        [[ -z "$project_dir" ]] && continue
+
+        if [[ -d "$project_dir/etc/murano" ]]; then
+            cp -r "$project_dir/etc/murano"/* "$MURANO_CONF_DIR"
+        else
+            cp -r "$project_dir/etc"/* "$MURANO_CONF_DIR"
+        fi
+    done <<< "$MURANO_API_DIR
+$MURANO_CONDUCTOR_DIR
+$MURANO_REPOSITORY_DIR"
+
+    # Copying .sample -> .conf files (if .sample exist)
+    while read config_file; do
+        [[ -z "$config_file" ]] && continue
+
+        config_file="$MURANO_CONF_DIR/$config_file"
+        if [[ ! -f "$config_file" ]] && [[ -f "$config_file.sample" ]]; then
+            cp "$config_file.sample" "$config_file"
+        fi
+    done <<< 'murano-api.conf
+conductor.conf
+murano-repository.conf'
+
+
+    # Creating various directories for Murano
+    while read path; do
+        [[ -z "$path" ]] && continue
+
+        sudo mkdir -p "$path"
+        sudo chown $STACK_USER -R "$path"
+    done <<< "$MURANO_LOG_DIR
+$MURANO_CONDUCTOR_CACHE
+$MURANO_REPOSITORY_CACHE
+$MURANO_DASHBOARD_CACHE
+$MURANO_API_SIGNING_DIR
+$MURANO_REPOSITORY_SIGNING_DIR"
+
+
+    echo_summary "Configuring Murano"
+
+    # Murano Api Configuration
+    #-------------------------
+    echo_summary "Configuring file '$MURANO_API_CONF'"
+
+    iniset "$MURANO_API_CONF" 'DEFAULT' 'log_file' "$MURANO_LOG_DIR/murano-api.log"
+
+    iniset "$MURANO_API_CONF" 'database' 'connection' "$(database_connection_url murano)"
+
+    iniset "$MURANO_API_CONF" 'rabbitmq' 'host' "$MURANO_RABBIT_HOST"
+    iniset "$MURANO_API_CONF" 'rabbitmq' 'port' "$MURANO_RABBIT_PORT"
+    iniset "$MURANO_API_CONF" 'rabbitmq' 'login' "$MURANO_RABBIT_LOGIN"
+    iniset "$MURANO_API_CONF" 'rabbitmq' 'password' "$MURANO_RABBIT_PASSWORD"
+    iniset "$MURANO_API_CONF" 'rabbitmq' 'virtual_host' "$MURANO_RABBIT_VHOST"
+    iniset "$MURANO_API_CONF" 'rabbitmq' 'ssl' "False"
+
+    iniset "$MURANO_API_CONF" 'keystone_authtoken' 'auth_host' "$MURANO_AUTH_HOST"
+    iniset "$MURANO_API_CONF" 'keystone_authtoken' 'admin_user' "$ADMIN_USERNAME"
+    iniset "$MURANO_API_CONF" 'keystone_authtoken' 'admin_password' "$ADMIN_PASSWORD"
+    iniset "$MURANO_API_CONF" 'keystone_authtoken' 'signing_dir' "$MURANO_API_SIGNING_DIR"
+
+    if [[ "$MURANO_SSL_ENABLED" = 'true' ]]; then
+        generate_sample_certificate "$MURANO_CONF_DIR" 'server'
+
+        iniset "$MURANO_API_CONF" 'ssl' 'cert_file' "$MURANO_CONF_DIR/server.crt"
+        iniset "$MURANO_API_CONF" 'ssl' 'key_file' "$MURANO_CONF_DIR/server.key"
+
+        iniset "$MURANO_API_CONF" 'rabbitmq' 'ssl' "True"
+
+        iniset "$MURANO_API_CONF" 'keystone_authtoken' 'auth_protocol' 'https'
+    fi
+    #-------------------------
+
+
+    # Murano Conductor Configuration
+    #-------------------------------
+    echo_summary "Configuring file '$MURANO_CONDUCTOR_CONF'"
+
+    iniset "$MURANO_CONDUCTOR_CONF" 'DEFAULT' 'log_file' "$MURANO_LOG_DIR/murano-conductor.log"
+    iniset "$MURANO_CONDUCTOR_CONF" 'DEFAULT' 'data_dir' "$MURANO_CONDUCTOR_CACHE"
+    iniset "$MURANO_CONDUCTOR_CONF" 'DEFAULT' 'init_scripts_dir' "$MURANO_CONF_DIR/init-scripts"
+    iniset "$MURANO_CONDUCTOR_CONF" 'DEFAULT' 'agent_config_dir' "$MURANO_CONF_DIR/agent-config"
+
+    iniset "$MURANO_CONDUCTOR_CONF" 'keystone' 'auth_url' "$MURANO_AUTH_URL"
+
+    iniset "$MURANO_CONDUCTOR_CONF" 'rabbitmq' 'host' "$MURANO_RABBIT_HOST"
+    iniset "$MURANO_CONDUCTOR_CONF" 'rabbitmq' 'port' "$MURANO_RABBIT_PORT"
+    iniset "$MURANO_CONDUCTOR_CONF" 'rabbitmq' 'login' "$MURANO_RABBIT_LOGIN"
+    iniset "$MURANO_CONDUCTOR_CONF" 'rabbitmq' 'password' "$MURANO_RABBIT_PASSWORD"
+    iniset "$MURANO_CONDUCTOR_CONF" 'rabbitmq' 'virtual_host' "$MURANO_RABBIT_VHOST"
+
+    iniset "$MURANO_CONDUCTOR_CONF" 'rabbitmq' 'ssl' "False"
+
+    if [[ "$MURANO_SSL_ENABLED" = 'true' ]]; then
+        local ssl_insecure='True'
+        # If any variable is not empty then ssl_insecure = False
+        if [[ -n "${MURANO_SSL_CA_FILE}${MURANO_SSL_CERT_FILE}${MURANO_SSL_KEY_FILE}" ]]; then
+            ssl_insecure='False'
+        fi
+
+        iniset "$MURANO_CONDUCTOR_CONF" 'keystone' 'ca_file' "$MURANO_SSL_CA_FILE"
+        iniset "$MURANO_CONDUCTOR_CONF" 'keystone' 'cert_file' "$MURANO_SSL_CERT_FILE"
+        iniset "$MURANO_CONDUCTOR_CONF" 'keystone' 'key_file' "$MURANO_SSL_KEY_FILE"
+        iniset "$MURANO_CONDUCTOR_CONF" 'keystone' 'insecure' "$ssl_insecure"
+
+        iniset "$MURANO_CONDUCTOR_CONF" 'heat' 'ca_file' "$MURANO_SSL_CA_FILE"
+        iniset "$MURANO_CONDUCTOR_CONF" 'heat' 'cert_file' "$MURANO_SSL_CERT_FILE"
+        iniset "$MURANO_CONDUCTOR_CONF" 'heat' 'key_file' "$MURANO_SSL_KEY_FILE"
+        iniset "$MURANO_CONDUCTOR_CONF" 'heat' 'insecure' "$ssl_insecure"
+
+        iniset "$MURANO_CONDUCTOR_CONF" 'rabbitmq' 'ssl' "True"
+    fi
+    #-------------------------------
+
+
+    # Murano Repository Configuration
+    #--------------------------------
+    echo_summary "Configuring file '$MURANO_REPOSITORY_CONF'"
+
+    iniset "$MURANO_REPOSITORY_CONF" 'DEFAULT' 'log_file' "$MURANO_LOG_DIR/murano-repository.log"
+    iniset "$MURANO_REPOSITORY_CONF" 'DEFAULT' 'data_dir' "$MURANO_REPOSITORY_CACHE"
+    iniset "$MURANO_REPOSITORY_CONF" 'DEFAULT' 'cache_dir' "$MURANO_REPOSITORY_CACHE"
+
+    iniset "$MURANO_REPOSITORY_CONF" 'keystone' 'auth_host' "$MURANO_AUTH_HOST"
+    iniset "$MURANO_REPOSITORY_CONF" 'keystone' 'admin_user' "$ADMIN_USERNAME"
+    iniset "$MURANO_REPOSITORY_CONF" 'keystone' 'admin_password' "$ADMIN_PASSWORD"
+    iniset "$MURANO_REPOSITORY_CONF" 'keystone' 'signing_dir' "$MURANO_REPOSITORY_SIGNING_DIR"
+    #--------------------------------
+
+
+    # PowerShell init script
+    #-----------------------
+    echo_summary "Configuring PowerShell init scripts"
+
+    if [[ -n "$MURANO_FILE_SHARE_HOST" ]]; then
+        replace '%MURANO_SERVER_ADDRESS%' "$MURANO_FILE_SHARE_HOST" "$MURANO_CONF_DIR/init-scripts/init.ps1"
+    fi
+    #-----------------------
+
+
+    # Templates Configuration
+    #------------------------
+    echo_summary "Configuring templates"
+
+    if [[ -n "$MURANO_RABBIT_HOST_ALT" ]]; then
+        replace '%RABBITMQ_HOST%' "$MURANO_RABBIT_HOST_ALT" "$MURANO_CONF_DIR/agent-config/Default.template"
+        replace '%RABBITMQ_HOST%' "$MURANO_RABBIT_HOST_ALT" "$MURANO_CONF_DIR/agent-config/Demo.template"
+        replace '%RABBITMQ_HOST%' "$MURANO_RABBIT_HOST_ALT" "$MURANO_CONF_DIR/agent-config/Linux.template"
+    fi
+
+    if [[ "$MURANO_SSL_ENABLED" = 'true' ]]; then
+        replace '%RABBITMQ_SSL%' 'true' "$MURANO_CONF_DIR/agent-config/Default.template"
+        replace '%RABBITMQ_SSL%' 'true' "$MURANO_CONF_DIR/agent-config/Demo.template"
+        replace '%RABBITMQ_SSL%' 'true' "$MURANO_CONF_DIR/agent-config/Linux.template"
+    fi
+    #------------------------
+
+}
+
+
+# init_murano() - Initialize databases, etc.
+function init_murano() {
+    # clean up from previous (possibly aborted) runs
+    # create required data files
+    recreate_database murano utf8
+    rebuild_static
+    restart_service $APACHE_NAME
+}
+
+
+# install_murano() - Collect source and prepare
+function install_murano() {
+    echo_summary "Install Murano"
+    install_murano_common_app
+    install_murano_api_app
+    install_murano_conductor_app
+    install_murano_repository_app
+    install_murano_metadataclient_app
+}
+
+
+# start_murano() - Start running processes, including screen
+function start_murano() {
+    screen_it murano-api        "cd $MURANO_API_DIR;        python muranoapi/cmd/api.py        --config-file $MURANO_CONF_DIR/murano-api.conf"
+    screen_it murano-conductor  "cd $MURANO_CONDUCTOR_DIR;  python muranoconductor/cmd/run.py  --config-file $MURANO_CONF_DIR/conductor.conf"
+    screen_it murano-repository "cd $MURANO_REPOSITORY_DIR; python muranorepository/cmd/run.py --config-file $MURANO_CONF_DIR/murano-repository.conf"
+}
+
+
+# stop_murano() - Stop running processes
+function stop_murano() {
+    # Kill the Murano screen windows
+    screen -S $SCREEN_NAME -p murano-api -X kill
+    screen -S $SCREEN_NAME -p murano-conductor -X kill
+    screen -S $SCREEN_NAME -p murano-repository -X kill
+}
+
+
+# Restore xtrace
+$XTRACE
+
+# Local variables:
+# mode: shell-script
+# End:
