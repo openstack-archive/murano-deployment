@@ -1,0 +1,206 @@
+# lib/murano-dashboard
+
+# Dependencies:
+#
+# - ``functions`` file
+# - ``DEST``, ``DATA_DIR``, ``STACK_USER`` must be defined
+# - ``SERVICE_HOST``
+
+# ``stack.sh`` calls the entry points in this order:
+#
+# - install_murano_dashboard
+# - configure_murano_dashboard
+# - cleanup_murano_dashboard
+
+# Save trace setting
+XTRACE=$(set +o | grep xtrace)
+set -o xtrace
+
+source $TOP_DIR/lib/horizon
+
+
+
+# Defaults
+# --------
+
+HORIZON_CONFIG=${HORIZON_CONFIG:-$HORIZON_DIR/openstack_dashboard/settings.py}
+HORIZON_LOCAL_CONFIG=${HORIZON_LOCAL_CONFIG:-$HORIZON_DIR/openstack_dashboard/local/local_settings.py}
+
+# Set up default repos
+MURANO_DASHBOARD_REPO=${MURANO_DASHBOARD_REPO:-${GIT_BASE}/stackforge/murano-dashboard.git}
+MURANO_DASHBOARD_BRANCH=${MURANO_DASHBOARD_BRANCH:-master}
+
+MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO:-${GIT_BASE}/stackforge/python-muranoclient.git}
+MURANO_PYTHONCLIENT_BRANCH=${MURANO_PYTHONCLIENT_BRANCH:-master}
+
+# Set up default directories
+MURANO_DASHBOARD_DIR=$DEST/murano-dashboard
+MURANO_PYTHONCLIENT_DIR=$DEST/python-muranoclient
+
+
+
+# Functions
+# ---------
+
+function insert_before_pattern() {
+    local pattern="$1"
+    local insert_file="$2"
+    local target_file="$3"
+
+    sed -ne "/$pattern/r  $insert_file" -e 1x  -e '2,${x;p}' -e '${x;p}' -i $target_file
+}
+
+
+function restore_horizon_config() {
+    local config_file="$1"
+
+    if [[ -f "$config_file" ]]; then
+        sed -e '/^#MURANO_CONFIG_SECTION_BEGIN/,/^#MURANO_CONFIG_SECTION_END/ d' -i "$config_file"
+    fi
+}
+
+
+function install_murano_pythonclient_app() {
+    git_clone $MURANO_PYTHONCLIENT_REPO $MURANO_PYTHONCLIENT_DIR $MURANO_PYTHONCLIENT_BRANCH
+
+    install_pip_requirements "$MURANO_PYTHONCLIENT_DIR" ""
+
+    setup_develop $MURANO_PYTHONCLIENT_DIR
+}
+
+
+function install_murano_dashboard_app() {
+    git_clone $MURANO_DASHBOARD_REPO $MURANO_DASHBOARD_DIR $MURANO_DASHBOARD_BRANCH
+
+    install_pip_requirements "$MURANO_DASHBOARD_DIR" "http.*python-muranoclient.*
+http.*murano-metadataclient.*"
+
+    setup_develop $MURANO_DASHBOARD_DIR
+}
+
+
+# Entry points
+# ------------
+
+# cleanup_murano_dashboard() - Remove residual data files, anything left over from previous
+# runs that a clean run would need to clean up
+function cleanup_murano_dashboard() {
+    echo_summary "Cleanup Murano Dashboard"
+    restore_horizon_config "$HORIZON_CONFIG"
+    restore_horizon_config "$HORIZON_LOCAL_CONFIG"
+}
+
+# configure_murano_dashboard() - Set config files, create data dirs, etc
+function configure_murano_dashboard() {
+    local horizon_config_part
+
+    echo_summary "Configure Murano Dashboard"
+
+    echo_summary "Configure Horizon local settings '$HORIZON_LOCAL_CONFIG'"
+
+    # Murano Configuration Section
+    cat << EOF >> "$HORIZON_LOCAL_CONFIG"
+
+#MURANO_CONFIG_SECTION_BEGIN
+#-------------------------------------------------------------------------------
+
+OPENSTACK_HOST = '$MURANO_AUTH_HOST'
+ALLOWED_HOSTS = '*'
+
+#-------------------------------------------------------------------------------
+#MURANO_CONFIG_SECTION_END
+EOF
+
+
+    echo_summary "Configure Horizon settings '$HORIZON_CONFIG'"
+
+    horizon_config_part=$(mktemp)
+
+    # Opening Murano Configuration Section
+    cat << EOF >> "$horizon_config_part"
+
+#MURANO_CONFIG_SECTION_BEGIN
+#-------------------------------------------------------------------------------
+
+EOF
+
+    if [[ "$MURANO_SSL_ENABLED" = 'true' ]]; then
+        cat << EOF >> "$horizon_config_part"
+MURANO_API_INSECURE = True
+MURANO_API_URL = "https://%s:8082" % OPENSTACK_HOST
+
+OPENSTACK_SSL_NO_VERIFY = True
+OPENSTACK_KEYSTONE_URL = "https://%s:5000/v2.0" % OPENSTACK_HOST
+OPENSTACK_KEYSTONE_ADMIN_URL = "https://%s:35357/v2.0" % OPENSTACK_HOST
+QUANTUM_URL = "https://%s" % OPENSTACK_HOST
+
+EOF
+    fi
+
+    cat << EOF >> "$horizon_config_part"
+#TODO: should remove the next line once https://bugs.launchpad.net/ubuntu/+source/horizon/+bug/1243187 is fixed
+LOGOUT_URL = '/horizon/auth/logout/'
+METADATA_CACHE_DIR = '$MURANO_DASHBOARD_CACHE'
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(METADATA_CACHE_DIR, 'openstack-dashboard.sqlite')
+    }
+}
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+HORIZON_CONFIG['dashboards'] += ('murano',)
+INSTALLED_APPS += ('muranodashboard','floppyforms',)
+MIDDLEWARE_CLASSES += ('muranodashboard.middleware.ExceptionMiddleware',)
+
+verbose_formatter = {'verbose': {'format': '[%(asctime)s] [%(levelname)s] [pid=%(process)d] %(message)s'}}
+if 'formatters' in LOGGING: LOGGING['formatters'].update(verbose_formatter)
+else: LOGGING['formatters'] = verbose_formatter
+
+LOGGING['handlers']['murano-file'] = {'level': 'DEBUG', 'formatter': 'verbose', 'class': 'logging.FileHandler', 'filename': '$MURANO_LOG_DIR/murano-dashboard.log'}
+LOGGING['loggers']['muranodashboard'] = {'handlers': ['murano-file'], 'level': 'DEBUG'}
+LOGGING['loggers']['muranoclient'] = {'handlers': ['murano-file'], 'level': 'ERROR'}
+
+#MURANO_API_URL = "http://localhost:8082"
+#MURANO_METADATA_URL = "http://localhost:8084/v1"
+#if murano-api set up with ssl uncomment next strings
+#MURANO_API_INSECURE = True
+
+ADVANCED_NETWORKING_CONFIG = {'max_environments': 100, 'max_hosts': 250, 'env_ip_template': '10.0.0.0'}
+NETWORK_TOPOLOGY = 'routed'
+
+EOF
+
+    # Closing Murano Configuration Section
+    cat << EOF >> "$horizon_config_part"
+#-------------------------------------------------------------------------------
+#MURANO_CONFIG_SECTION_END
+
+
+EOF
+
+    insert_before_pattern "from openstack_dashboard import policy" "$horizon_config_part" "$HORIZON_CONFIG"
+}
+
+# init_murano_dashboard() - Initialize databases, etc.
+function init_murano_dashboard() {
+    # clean up from previous (possibly aborted) runs
+    # create required data files
+    :
+}
+
+# install_murano_dashboard() - Collect source and prepare
+function install_murano_dashboard() {
+    echo_summary "Install Murano Dashboard"
+    install_murano_pythonclient_app
+    install_murano_dashboard_app
+}
+
+
+
+# Restore xtrace
+$XTRACE
+
+# Local variables:
+# mode: shell-script
+# End:
+
