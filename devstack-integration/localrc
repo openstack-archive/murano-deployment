@@ -1,0 +1,39 @@
+# Sample Devstack's config file
+
+default_password=swordfish
+
+HOST_IP=
+
+#FLAT_INTERFACE=
+
+FIXED_RANGE=10.0.0.0/24
+
+#FLOATING_RANGE=
+
+ADMIN_PASSWORD=$default_password
+MYSQL_PASSWORD=$default_password
+RABBIT_PASSWORD=$default_password
+SERVICE_PASSWORD=$default_password
+
+SERVICE_TOKEN=servicetoken
+
+# Enable HEAT
+#ENABLED_SERVICES+=,heat,h-api,h-api-cfn,h-api-cw,h-eng
+enable_service heat
+enable_service h-api
+enable_service h-api-cfn
+enable_service h-api-cw
+enable_service h-eng
+
+# Enable Murano
+#ENABLED_SERVICES+=murano
+enable_service murano
+
+#IMAGE_URLS+=",http://fedorapeople.org/groups/heat/prebuilt-jeos-images/F17-x86_64-cfntools.qcow2"
+
+SCREEN_LOGDIR=/opt/stack/log/
+LOGFILE=$SCREEN_LOGDIR/stack.sh.log
+
+API_RATE_LIMIT=False
+
+EXTRA_OPTS=(force_config_drive=true libvirt_images_type=qcow2 force_raw_images=false)
