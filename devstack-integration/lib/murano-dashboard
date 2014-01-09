@@ -1,0 +1,78 @@
+# lib/murano-dashboard
+
+# Dependencies:
+#
+# - ``functions`` file
+# - ``DEST``, ``DATA_DIR``, ``STACK_USER`` must be defined
+# - ``SERVICE_HOST``
+
+# ``stack.sh`` calls the entry points in this order:
+#
+# - install_murano_dashboard
+# - configure_murano_dashboard
+# - cleanup_murano_dashboard
+
+# Save trace setting
+XTRACE=$(set +o | grep xtrace)
+set +o xtrace
+
+source $TOP_DIR/lib/horizon
+
+# Defaults
+# --------
+
+# Set up default repos
+MURANO_DASHBOARD_REPO=${MURANO_DASHBOARD_REPO:-${GIT_BASE}/stackforge/murano-dashboard.git}
+MURANO_DASHBOARD_BRANCH=${MURANO_DASHBOARD_BRANCH:-master}
+
+MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO:-${GIT_BASE}/stackforge/python-muranoclient.git}
+MURANO_PYTHONCLIENT_BRANCH=${MURANO_PYTHONCLIENT_BRANCH:-master}
+
+# Set up default directories
+MURANO_DASHBOARD_DIR=$DEST/murano-dashboard
+MURANO_PYTHONCLIENT_DIR=$DEST/python-muranoclient
+
+# Entry points
+# ------------
+
+# cleanup_murano_dashboard() - Remove residual data files, anything left over from previous
+# runs that a clean run would need to clean up
+function cleanup_murano_dashboard() {
+    # This function intentionally left blank
+    :
+}
+
+# configure_murano_dashboard() - Set config files, create data dirs, etc
+function configure_murano_dashboard() {
+    :
+}
+
+# init_murano_dashboard() - Initialize databases, etc.
+function init_murano_dashboard() {
+    # clean up from previous (possibly aborted) runs
+    # create required data files
+    :
+}
+
+# install_murano_dashboard() - Collect source and prepare
+function install_murano_dashboard() {
+    git_clone $MURANO_PYTHONCLIENT_REPO $MURANO_PYTHONCLIENT_DIR $MURANO_API_BRANCH
+    setup_develop $MURANO_PYTHONCLIENT_DIR
+
+    git_clone $MURANO_DASHBOARD_REPO $MURANO_DASHBOARD_DIR $MURANO_API_BRANCH
+    setup_develop $MURANO_DASHBOARD_DIR
+}
+
+# Cleanup file settings.py from Savanna
+function cleanup_murano_dashboard() {
+    #sed -i '/savanna/d' $HORIZON_DIR/openstack_dashboard/settings.py
+    :
+}
+
+# Restore xtrace
+$XTRACE
+
+# Local variables:
+# mode: shell-script
+# End:
+
