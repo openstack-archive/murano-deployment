@@ -249,30 +249,36 @@ function install_murano_common_app() {
 
 
 function install_murano_api_app() {
-    git_clone $MURANO_API_REPO $MURANO_API_DIR $MURANO_API_BRANCH
+    if is_service_enabled murano-api; then
+        git_clone $MURANO_API_REPO $MURANO_API_DIR $MURANO_API_BRANCH
 
-    install_pip_requirements "$MURANO_API_DIR" "http.*murano-common.*"
+        install_pip_requirements "$MURANO_API_DIR" "http.*murano-common.*"
 
-    setup_develop $MURANO_API_DIR
+        setup_develop $MURANO_API_DIR
+    fi
 }
 
 
 function install_murano_conductor_app() {
-    git_clone $MURANO_CONDUCTOR_REPO $MURANO_CONDUCTOR_DIR $MURANO_CONDUCTOR_BRANCH
+    if is_service_enabled murano-conductor; then
+        git_clone $MURANO_CONDUCTOR_REPO $MURANO_CONDUCTOR_DIR $MURANO_CONDUCTOR_BRANCH
 
-    install_pip_requirements "$MURANO_CONDUCTOR_DIR" "http.*murano-common.*
+        install_pip_requirements "$MURANO_CONDUCTOR_DIR" "http.*murano-common.*
 http.*murano-metadataclient.*"
 
-    setup_develop $MURANO_CONDUCTOR_DIR
+        setup_develop $MURANO_CONDUCTOR_DIR
+    fi
 }
 
 
 function install_murano_repository_app() {
-    git_clone $MURANO_REPOSITORY_REPO $MURANO_REPOSITORY_DIR $MURANO_REPOSITORY_BRANCH
+    if is_service_enabled murano-repository; then
+        git_clone $MURANO_REPOSITORY_REPO $MURANO_REPOSITORY_DIR $MURANO_REPOSITORY_BRANCH
 
-    install_pip_requirements "$MURANO_REPOSITORY_DIR" ""
+        install_pip_requirements "$MURANO_REPOSITORY_DIR" ""
 
-    setup_develop $MURANO_REPOSITORY_DIR
+        setup_develop $MURANO_REPOSITORY_DIR
+    fi
 }
 
 

@@ -100,16 +100,36 @@ function configure_murano_dashboard() {
     echo_summary "Configure Horizon local settings '$HORIZON_LOCAL_CONFIG'"
 
     # Murano Configuration Section
+
     cat << EOF >> "$HORIZON_LOCAL_CONFIG"
 
 #MURANO_CONFIG_SECTION_BEGIN
 #-------------------------------------------------------------------------------
 
 OPENSTACK_HOST = '$MURANO_AUTH_HOST'
+EOF
+
+    if [[ "$MURANO_SSL_ENABLED" = 'true' ]]; then
+        cat << EOF >> "$HORIZON_LOCAL_CONFIG"
+OPENSTACK_SSL_NO_VERIFY = True
+OPENSTACK_KEYSTONE_URL = "https://%s:5000/v2.0" % OPENSTACK_HOST
+OPENSTACK_KEYSTONE_ADMIN_URL = "https://%s:35357/v2.0" % OPENSTACK_HOST
+QUANTUM_URL = "https://%s" % OPENSTACK_HOST
+EOF
+    else
+        cat << EOF >> "$HORIZON_LOCAL_CONFIG"
+OPENSTACK_KEYSTONE_URL = "http://%s:5000/v2.0" % OPENSTACK_HOST
+OPENSTACK_KEYSTONE_ADMIN_URL = "http://%s:35357/v2.0" % OPENSTACK_HOST
+QUANTUM_URL = "http://%s" % OPENSTACK_HOST
 ALLOWED_HOSTS = '*'
+EOF
+    fi
+
+        cat << EOF >> "$HORIZON_LOCAL_CONFIG"
 
 #-------------------------------------------------------------------------------
 #MURANO_CONFIG_SECTION_END
+
 EOF
 
 
@@ -129,16 +149,16 @@ EOF
         cat << EOF >> "$horizon_config_part"
 MURANO_API_INSECURE = True
 MURANO_API_URL = "https://%s:8082" % OPENSTACK_HOST
-
-OPENSTACK_SSL_NO_VERIFY = True
-OPENSTACK_KEYSTONE_URL = "https://%s:5000/v2.0" % OPENSTACK_HOST
-OPENSTACK_KEYSTONE_ADMIN_URL = "https://%s:35357/v2.0" % OPENSTACK_HOST
-QUANTUM_URL = "https://%s" % OPENSTACK_HOST
-
+EOF
+    else
+        cat << EOF >> "$horizon_config_part"
+MURANO_API_INSECURE = False
+MURANO_API_URL = "http://%s:8082" % OPENSTACK_HOST
 EOF
     fi
 
     cat << EOF >> "$horizon_config_part"
+
 #TODO: should remove the next line once https://bugs.launchpad.net/ubuntu/+source/horizon/+bug/1243187 is fixed
 LOGOUT_URL = '/horizon/auth/logout/'
 METADATA_CACHE_DIR = '$MURANO_DASHBOARD_CACHE'
