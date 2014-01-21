@@ -80,14 +80,24 @@ This folder contains scripts required to add Murano into Devstack's installation
 ```
 >stack$ cd
 >stack$ cp -r murano-deployment/devstack-integration/* devstack/
+```
+
+5. Replace (or settings merge with) *local.conf* with another config file, if you need a different type of installation. Available config files and installation types are:
+
+	* single-node.local.conf - single-node all-in-one installation. OpenStack + Murano will be installed on your node together.
+	* devbox.local.conf - install Murano only. OpenStack must be installed on another node, and your node will be configured to use it.
+
+6. Edit devstack's configuration file
+
+```
 >stack$ vim devstack/local.conf
 ```
 
-5. From **devstack** directory, lauch **stack.sh**
+7. From **devstack** directory, lauch **stack.sh**
 
 ```
 >stack$ ./stack.sh
 ```
 
-6. Open URL **http://<your host ip>/** in web browser. Login with username **admin** and password **swordfiwh**. Open **Murano** tab and enjoy.
+8. Open URL **http://<your host ip>/** in web browser. Login with username **admin** and password **swordfiwh**. Open **Murano** tab and enjoy.
 
