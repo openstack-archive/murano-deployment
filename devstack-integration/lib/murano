@@ -90,6 +90,27 @@ MURANO_REPOSITORY_CONF=$MURANO_CONF_DIR/murano-repository.conf
 #-----------------------------
 
 
+# Endpoints
+#----------
+MURANO_AUTH_HOST=$HOST_IP
+MURANO_AUTH_URL=$KEYSTONE_SERVICE_PROTOCOL://$KEYSTONE_SERVICE_HOST:$KEYSTONE_SERVICE_PORT/v2.0
+
+MURANO_API_HOST=${MURANO_API_HOST:-'localhost'}
+if [[ $(trueorfalse False $MURANO_SSL_ENABLED) == 'False' ]]; then
+    MURANO_API_INSECURE='False'
+    MURANO_API_PROTOCOL='http'
+    MURANO_METADATA_PROTOCOL='http'
+else
+    MURANO_API_INSECURE='True'
+    MURANO_API_PROTOCOL='https'
+    MURANO_METADATA_PROTOCOL='https'
+fi
+
+MURANO_API_PORT=${MURANO_API_PORT:-8082}
+MURANO_METADATA_PORT=${MURANO_METADATA_PORT:-8084}
+#----------
+
+
 # Other options
 #--------------
 MURANO_DEBUG=${MURANO_DEBUG:-True}
@@ -108,9 +129,6 @@ MURANO_REPOSITORY_CACHE=$MURANO_CACHE_DIR/muranorepository-cache
 MURANO_DASHBOARD_CACHE=$MURANO_CACHE_DIR/muranodashboard-cache
 MURANO_API_SIGNING_DIR=$MURANO_CACHE_DIR/keystone-signing-muranoapi
 MURANO_REPOSITORY_SIGNING_DIR=$MURANO_CACHE_DIR/keystone-signing-muranorepository
-
-MURANO_AUTH_HOST=$HOST_IP
-MURANO_AUTH_URL=$KEYSTONE_SERVICE_PROTOCOL://$KEYSTONE_SERVICE_HOST:$KEYSTONE_SERVICE_PORT/v2.0
 #--------------
 
 
@@ -249,30 +267,36 @@ function install_murano_common_app() {
 
 
 function install_murano_api_app() {
-    git_clone $MURANO_API_REPO $MURANO_API_DIR $MURANO_API_BRANCH
+    if is_service_enabled murano-api; then
+        git_clone $MURANO_API_REPO $MURANO_API_DIR $MURANO_API_BRANCH
 
-    install_pip_requirements "$MURANO_API_DIR" "http.*murano-common.*"
+        install_pip_requirements "$MURANO_API_DIR" "http.*murano-common.*"
 
-    setup_develop $MURANO_API_DIR
+        setup_develop $MURANO_API_DIR
+    fi
 }
 
 
 function install_murano_conductor_app() {
-    git_clone $MURANO_CONDUCTOR_REPO $MURANO_CONDUCTOR_DIR $MURANO_CONDUCTOR_BRANCH
+    if is_service_enabled murano-conductor; then
+        git_clone $MURANO_CONDUCTOR_REPO $MURANO_CONDUCTOR_DIR $MURANO_CONDUCTOR_BRANCH
 
-    install_pip_requirements "$MURANO_CONDUCTOR_DIR" "http.*murano-common.*
+        install_pip_requirements "$MURANO_CONDUCTOR_DIR" "http.*murano-common.*
 http.*murano-metadataclient.*"
 
-    setup_develop $MURANO_CONDUCTOR_DIR
+        setup_develop $MURANO_CONDUCTOR_DIR
+    fi
 }
 
 
 function install_murano_repository_app() {
-    git_clone $MURANO_REPOSITORY_REPO $MURANO_REPOSITORY_DIR $MURANO_REPOSITORY_BRANCH
+    if is_service_enabled murano-repository; then
+        git_clone $MURANO_REPOSITORY_REPO $MURANO_REPOSITORY_DIR $MURANO_REPOSITORY_BRANCH
 
-    install_pip_requirements "$MURANO_REPOSITORY_DIR" ""
+        install_pip_requirements "$MURANO_REPOSITORY_DIR" ""
 
-    setup_develop $MURANO_REPOSITORY_DIR
+        setup_develop $MURANO_REPOSITORY_DIR
+    fi
 }
 
 
@@ -372,7 +396,7 @@ $MURANO_REPOSITORY_SIGNING_DIR"
     iniset "$MURANO_API_CONF" 'keystone_authtoken' 'admin_password' "$ADMIN_PASSWORD"
     iniset "$MURANO_API_CONF" 'keystone_authtoken' 'signing_dir' "$MURANO_API_SIGNING_DIR"
 
-    if [[ "$MURANO_SSL_ENABLED" = 'true' ]]; then
+    if [[ $(trueorfalse False $MURANO_SSL_ENABLED) = 'True' ]]; then
         generate_sample_certificate "$MURANO_CONF_DIR" 'server'
 
         iniset "$MURANO_API_CONF" 'ssl' 'cert_file' "$MURANO_CONF_DIR/server.crt"
@@ -404,7 +428,7 @@ $MURANO_REPOSITORY_SIGNING_DIR"
 
     iniset "$MURANO_CONDUCTOR_CONF" 'rabbitmq' 'ssl' "False"
 
-    if [[ "$MURANO_SSL_ENABLED" = 'true' ]]; then
+    if [[ $(trueorfalse False $MURANO_SSL_ENABLED) = 'True' ]]; then
         local ssl_insecure='True'
         # If any variable is not empty then ssl_insecure = False
         if [[ -n "${MURANO_SSL_CA_FILE}${MURANO_SSL_CERT_FILE}${MURANO_SSL_KEY_FILE}" ]]; then
@@ -461,7 +485,7 @@ $MURANO_REPOSITORY_SIGNING_DIR"
         replace '%RABBITMQ_HOST%' "$MURANO_RABBIT_HOST_ALT" "$MURANO_CONF_DIR/agent-config/Linux.template"
     fi
 
-    if [[ "$MURANO_SSL_ENABLED" = 'true' ]]; then
+    if [[ $(trueorfalse False $MURANO_SSL_ENABLED) = 'True' ]]; then
         replace '%RABBITMQ_SSL%' 'true' "$MURANO_CONF_DIR/agent-config/Default.template"
         replace '%RABBITMQ_SSL%' 'true' "$MURANO_CONF_DIR/agent-config/Demo.template"
         replace '%RABBITMQ_SSL%' 'true' "$MURANO_CONF_DIR/agent-config/Linux.template"
