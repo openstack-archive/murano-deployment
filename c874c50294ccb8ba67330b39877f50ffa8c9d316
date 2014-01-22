@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Timur Nurlygayanov <tnurlygayanov@mirantis.com>
+Approved+1: Ekaterina Fedorova <efedorova@mirantis.com>
+Code-Review+2: Ekaterina Fedorova <efedorova@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 22 Jan 2014 11:49:51 +0000
+Reviewed-on: https://review.openstack.org/68074
+Project: stackforge/murano-deployment
+Branch: refs/heads/master
