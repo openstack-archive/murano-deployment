@@ -13,6 +13,8 @@ shared_images_dir := ${build_root}/share/images
 libvirt_images_dir := ${build_root}/libvirt/images
 ps_modules_dir := ${CURDIR}/../WindowsPowerShell
 
+unattended_files := autounattend.xml unattend.xml
+
 commit_hash := $(shell git rev-list -n1 HEAD)
 
 image_list_2008r2 := ws-2008r2-core ws-2008r2-std
@@ -109,6 +111,12 @@ ${dirs} :
 	mkdir -p $@
 
 
+# Each file from ${unattended_files} list depends on approproate file with .template extension
+$(foreach dir,$(shell ls -d ${shared_files_dir}/*/),$(foreach file,${unattended_files},"${dir}${file}")) : %.template
+	cp $@.template $@
+	${CURDIR}/substvars.sh $@
+
+
 #test-build-files : ${build_files} ${static_files} ${dynamic_files}
 
 test-build-files : ${build_files} ${dynamic_files}
@@ -154,6 +162,7 @@ ${image_list_2012} : | build-root
 else
 
 ${image_name} : ${shared_images_dir}/${image_name}.qcow2
+${image_name} : $(foreach file,${unattended_files},"${shared_files_dir}/${file}")
 
 
 ${shared_images_dir}/${image_name}.qcow2 : ${libvirt_images_dir}/${image_name}.flp | test-build-files
