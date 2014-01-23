@@ -47,14 +47,14 @@ dirs += ${shared_images_dir}
 dynamic_files := ${shared_files_dir}/CoreFunctions.zip
 
 
-build_files := ${shared_files_dir}/ws-2012-core/autounattend.xml
-build_files += ${shared_files_dir}/ws-2012-core/unattend.xml
-build_files += ${shared_files_dir}/ws-2012-std/autounattend.xml
-build_files += ${shared_files_dir}/ws-2012-std/unattend.xml
-build_files += ${shared_files_dir}/ws-2008r2-std/autounattend.xml
-build_files += ${shared_files_dir}/ws-2008r2-std/unattend.xml
-build_files += ${shared_files_dir}/ws-2008r2-core/autounattend.xml
-build_files += ${shared_files_dir}/ws-2008r2-core/unattend.xml
+build_files := ${shared_files_dir}/ws-2012-core/autounattend.xml.template
+build_files += ${shared_files_dir}/ws-2012-core/unattend.xml.template
+build_files += ${shared_files_dir}/ws-2012-std/autounattend.xml.template
+build_files += ${shared_files_dir}/ws-2012-std/unattend.xml.template
+build_files += ${shared_files_dir}/ws-2008r2-std/autounattend.xml.template
+build_files += ${shared_files_dir}/ws-2008r2-std/unattend.xml.template
+build_files += ${shared_files_dir}/ws-2008r2-core/autounattend.xml.template
+build_files += ${shared_files_dir}/ws-2008r2-core/unattend.xml.template
 build_files += ${build_root}/install-vm.sh
 build_files += ${shared_scripts_dir}/ws-2012-core/wpi.ps1
 build_files += ${shared_scripts_dir}/ws-2012-core/Start-Sysprep.ps1
@@ -163,7 +163,12 @@ ${shared_images_dir}/${image_name}.qcow2 : ${libvirt_images_dir}/${image_name}.f
 	@echo '<<< done.'
 
 
-${libvirt_images_dir}/${image_name}.flp : ${shared_files_dir}/${image_name}/autounattend.xml
+${libvirt_images_dir}/${image_name}.flp : ${shared_files_dir}/${image_name}/autounattend.xml.template
+	@echo ''
+	@echo '>>> Updating file autounattend.xml ...'
+	cp ${shared_files_dir}/${image_name}/autounattend.xml.template ${shared_files_dir}/${image_name}/autounattend.xml
+	${CURDIR}/substvars.sh ${shared_files_dir}/${image_name}/autounattend.xml
+	@echo '<<< done.'
 	@echo ''
 	@echo '>>> Generating floppy image ...'
 	dd bs=512 count=2880 if=/dev/zero of=${libvirt_images_dir}/${image_name}.flp
@@ -172,8 +177,10 @@ ${libvirt_images_dir}/${image_name}.flp : ${shared_files_dir}/${image_name}/auto
 	-umount ${build_root}/mnt/floppy/${image_name}
 	mount -o loop ${libvirt_images_dir}/${image_name}.flp ${build_root}/mnt/floppy/${image_name}
 	cp ${shared_files_dir}/${image_name}/autounattend.xml  ${build_root}/mnt/floppy/${image_name}/autounattend.xml
+	sleep 5
 	umount ${build_root}/mnt/floppy/${image_name}
 	@echo '<<< done.'
+
 
 ${shared_files_dir}/${image_name}/% : ${CURDIR}/share/files/${image_name}/%
 	cp $< $@
