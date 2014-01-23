@@ -117,7 +117,7 @@
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
                     <Order>4</Order>
-                    <CommandLine>%WINDIR%\System32\net.exe use m: \\192.168.122.1\image-builder-share</CommandLine>
+                    <CommandLine>%WINDIR%\System32\net.exe use m: \\%_IMAGE_BUILDER_IP_%\image-builder-share</CommandLine>
                     <Description>Mounting network share from HOST</Description>
                 </SynchronousCommand>
                 <SynchronousCommand wcm:action="add">
