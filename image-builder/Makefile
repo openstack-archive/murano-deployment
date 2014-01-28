@@ -5,8 +5,10 @@ SHELL := /bin/bash
 
 image_name :=
 boot_iso := 
-virtio_iso := virtio_win-0.1_52.iso
-build_root := /opt/image-builder
+#virtio_iso := virtio_win-0.1_52.iso
+
+#build_root := /opt/image-builder
+build_root := $(shell ./process_config.sh 'get' 'DEFAULT' 'IMAGE_BUILDER_ROOT')
 shared_files_dir := ${build_root}/share/files
 shared_scripts_dir := ${build_root}/share/scripts
 shared_images_dir := ${build_root}/share/images
@@ -47,14 +49,14 @@ dirs += ${shared_images_dir}
 dynamic_files := ${shared_files_dir}/CoreFunctions.zip
 
 
-build_files := ${shared_files_dir}/ws-2012-core/autounattend.xml
-build_files += ${shared_files_dir}/ws-2012-core/unattend.xml
-build_files += ${shared_files_dir}/ws-2012-std/autounattend.xml
-build_files += ${shared_files_dir}/ws-2012-std/unattend.xml
-build_files += ${shared_files_dir}/ws-2008r2-std/autounattend.xml
-build_files += ${shared_files_dir}/ws-2008r2-std/unattend.xml
-build_files += ${shared_files_dir}/ws-2008r2-core/autounattend.xml
-build_files += ${shared_files_dir}/ws-2008r2-core/unattend.xml
+build_files := ${shared_files_dir}/ws-2012-core/autounattend.xml.template
+build_files += ${shared_files_dir}/ws-2012-core/unattend.xml.template
+build_files += ${shared_files_dir}/ws-2012-std/autounattend.xml.template
+build_files += ${shared_files_dir}/ws-2012-std/unattend.xml.template
+build_files += ${shared_files_dir}/ws-2008r2-std/autounattend.xml.template
+build_files += ${shared_files_dir}/ws-2008r2-std/unattend.xml.template
+build_files += ${shared_files_dir}/ws-2008r2-core/autounattend.xml.template
+build_files += ${shared_files_dir}/ws-2008r2-core/unattend.xml.template
 build_files += ${build_root}/install-vm.sh
 build_files += ${shared_scripts_dir}/ws-2012-core/wpi.ps1
 build_files += ${shared_scripts_dir}/ws-2012-core/Start-Sysprep.ps1
@@ -102,7 +104,7 @@ build-root : ${dirs} prerequisites
 
 
 prerequisites : ${dirs}
-	./depmgr.sh download dependency.list
+	./process_config.sh download_items
 
 
 ${dirs} :
@@ -112,7 +114,7 @@ ${dirs} :
 #test-build-files : ${build_files} ${static_files} ${dynamic_files}
 
 test-build-files : ${build_files} ${dynamic_files}
-	./depmgr.sh test dependency.list
+	./process_config.sh test_items
 
 # Rule to check if all 'static files' are in place
 #${static_files} :
@@ -159,11 +161,16 @@ ${image_name} : ${shared_images_dir}/${image_name}.qcow2
 ${shared_images_dir}/${image_name}.qcow2 : ${libvirt_images_dir}/${image_name}.flp | test-build-files
 	@echo ''
 	@echo '>>> Starting install-vm ...'
-	env BUILD_ROOT=${build_root} VM_NAME=${image_name}-${commit_hash} IMAGE_NAME=${image_name} FLOPPY_IMG=${image_name}.flp BOOT_ISO=${boot_iso} VIRTIO_ISO=${virtio_iso} ${build_root}/install-vm.sh
+	env VM_NAME=${image_name}-${commit_hash} IMAGE_NAME=${image_name} FLOPPY_IMG=${image_name}.flp BOOT_ISO=${boot_iso} ${build_root}/install-vm.sh
 	@echo '<<< done.'
 
 
-${libvirt_images_dir}/${image_name}.flp : ${shared_files_dir}/${image_name}/autounattend.xml
+${libvirt_images_dir}/${image_name}.flp : ${shared_files_dir}/${image_name}/autounattend.xml.template
+	@echo ''
+	@echo '>>> Updating file autounattend.xml ...'
+	cp ${shared_files_dir}/${image_name}/autounattend.xml.template ${shared_files_dir}/${image_name}/autounattend.xml
+	${CURDIR}/substvars.sh ${shared_files_dir}/${image_name}/autounattend.xml
+	@echo '<<< done.'
 	@echo ''
 	@echo '>>> Generating floppy image ...'
 	dd bs=512 count=2880 if=/dev/zero of=${libvirt_images_dir}/${image_name}.flp
@@ -172,6 +179,7 @@ ${libvirt_images_dir}/${image_name}.flp : ${shared_files_dir}/${image_name}/auto
 	-umount ${build_root}/mnt/floppy/${image_name}
 	mount -o loop ${libvirt_images_dir}/${image_name}.flp ${build_root}/mnt/floppy/${image_name}
 	cp ${shared_files_dir}/${image_name}/autounattend.xml  ${build_root}/mnt/floppy/${image_name}/autounattend.xml
+	sleep 5
 	umount ${build_root}/mnt/floppy/${image_name}
 	@echo '<<< done.'
 
