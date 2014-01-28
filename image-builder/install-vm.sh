@@ -1,24 +1,36 @@
 #!/bin/bash
 # automation job script
- 
 
-# Variables below may be changed thru 'env' command when script called like
-#   env BUILD_ROOT=/opt install-vm.sh
-# PLEASE BE CAREFUL RENAMING THEM!
-BUILD_ROOT=${BUILD_ROOT:-'/opt/build-system'}
-IMAGE_NAME=${IMAGE_NAME:-'ws-2012-std'}
-VM_NAME=${VM_NAME:-$IMAGE_NAME-REF}
-VM_IMG_SIZE='40G'
-BOOT_ISO=${BOOT_ISO:-'ws-2012-eval.iso'}
+source ./functions.sh
+
+# Exporting variables from config.ini
+process_config "$CONFIG_FILE" 'export'
+
+# Loading VirtIO image file name
+VIRTIO_ISO=$(process_config "$CONFIG_FILE" 'get' 'VirtIO Drivers' 'name')
+
+
+# Default values
+IMAGE_BUILDER_ROOT=${IMAGE_BUILDER_ROOT:-'/opt/build-system'}
 VIRTIO_ISO=${VIRTIO_ISO:-'virtio-win-0.1-52.iso'}
-FLOPPY_IMG=${FLOPPY_IMG:-'floppy.img'}
+VM_IMG_SIZE=${VM_IMG_SIZE:-'40G'}
 VM_IMG_FORMAT=${VM_IMG_FORMAT:-'raw'}
 
+
+# Variables below may be changed thru 'env' command when script called like
+#   env IMAGE_BUILDER_ROOT=/opt install-vm.sh
+# PLEASE BE CAREFUL RENAMING THEM!
+IMAGE_NAME=${IMAGE_NAME:-'ws-2012-std'}
+VM_NAME=${VM_NAME:-$IMAGE_NAME-REF}
+BOOT_ISO=${BOOT_ISO:-'ws-2012-eval.iso'}
+FLOPPY_IMG=${FLOPPY_IMG:-'floppy.img'}
+
+
 # Other variables
-LIBVIRT_IMAGES_DIR=$BUILD_ROOT/libvirt/images
+LIBVIRT_IMAGES_DIR=$IMAGE_BUILDER_ROOT/libvirt/images
 VM_IMG_NAME="$VM_NAME.$VM_IMG_FORMAT"
 VM_IMG_PATH="$LIBVIRT_IMAGES_DIR/$VM_IMG_NAME"
-VM_REF_IMG_PATH="$BUILD_ROOT/share/images/$IMAGE_NAME.qcow2"
+VM_REF_IMG_PATH="$IMAGE_BUILDER_ROOT/share/images/$IMAGE_NAME.qcow2"
 
 
 # Tuncating VM name to 50 chars
@@ -27,21 +39,14 @@ VM_NAME=${VM_NAME:0:50}
 # Functions
 #------------------------------------------------------------------------------
 
-die() {
-    echo ''
-    echo "STOP: $@"
-    echo '*** SCRIPT FAILED ***'
-    echo ''
-    exit 1
-}
-
-
 prealloc_img() {
     echo ''
     echo '-> Allocating new image file for VM ...'
     echo "* Image file: '$VM_IMG_PATH', requested size: '$VM_IMG_SIZE'"
+
     qemu-img create -f $VM_IMG_FORMAT $VM_IMG_PATH $VM_IMG_SIZE \
       || die "Command 'qemu-img create' failed."
+
     echo '<- done'
 }
 
@@ -50,8 +55,10 @@ compress_and_transfer_ready_img() {
     echo ''
     echo '-> Converting VM image to QCOW2 format ...'
     echo "* Compressing QCOW2 image ('$VM_IMG_PATH' --> '$VM_REF_IMG_PATH') ..."
+
     qemu-img convert -O qcow2 $VM_IMG_PATH $VM_REF_IMG_PATH \
       || die "Command 'qemu-img convert' failed."
+
     echo '<- done'
 }
 
@@ -59,6 +66,7 @@ compress_and_transfer_ready_img() {
 start_vm_install() {
     echo ''
     echo '-> Starting VM ...'
+
     virt-install --connect qemu:///system \
       --hvm \
       --name $VM_NAME \
@@ -84,8 +92,7 @@ start_vm_install() {
     fi
 
     # waiting for autounuttended setup completes
-    while true 
-    do 
+    while true; do
         DOM_STATE=$(get_domain_state $VM_NAME)
         if [ "$DOM_STATE" = 'shut off' ]; then 
             break
@@ -102,9 +109,11 @@ start_vm_install() {
 delete_vm() {
     echo ''
     echo '-> Deleting VM ...'
+
     #virsh undefine $VM_NAME --storage $VM_IMG_PATH
     virsh undefine $VM_NAME || die "Unable to undefine VM '$VM_NAME'."
     #virsh vol-delete $VM_IMG_PATH || die "Unable to delete volume '$VM_IMG_PATH'."
+
     echo '<- done'
 }
 
@@ -113,12 +122,13 @@ delete_vm() {
 get_domain_state() {
     local domain_name
     local domain_state
-    
+
     domain_name=$1
     domain_state=$(virsh domstate $domain_name)
     if [ $? -ne 0 ] ; then
         echo ''
     fi
+
     echo $domain_state
 }
 
