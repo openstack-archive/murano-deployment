@@ -1,28 +1,43 @@
-#!/bin/bash
+#!/bin/bash -x
 
-apt-get install zip kvm libvirt-bin virtinst samba
+source ./functions.sh
 
-mkdir -p /opt/image-builder/share/files
-mkdir -p /opt/image-builder/share/images
-mkdir -p /opt/image-builder/share/scripts
-mkdir -p /opt/image-builder/libvirt/images
+process_config "$CONFIG_FILE" 'export'
 
-if grep -q 'image-builder-share' /etc/samba/smb.conf ; then
-    echo "Samba configuration already applied"
-else
-    echo "Updating samba configuration"
-    cat << EOF >> /etc/samba/smb.conf
 
-[image-builder-share]
-    comment = Image Builder Share
-    path = /opt/image-builder/share
-    browsable = yes
-    guest ok = yes
-    guest account = nobody
-    read only = no
-    create mask = 0755
-EOF
+GetOSVersion
 
-    restart smbd
-    restart nmbd
-fi
+
+case $os_VENDOR in
+	'Red Hat'|'CentOS')
+		#yum install -y
+	;;
+	'Debian'|'Ubuntu')
+		apt-get install --yes zip kvm libvirt-bin virtinst samba
+	;;
+	*)
+	;;
+esac
+
+
+SAMBA_CONF=/etc/samba/smb.conf
+
+
+mkdir -p $IMAGE_BUILDER_ROOT/share/files
+mkdir -p $IMAGE_BUILDER_ROOT/share/images
+mkdir -p $IMAGE_BUILDER_ROOT/share/scripts
+mkdir -p $IMAGE_BUILDER_ROOT/libvirt/images
+
+
+iniset $SAMBA_CONF "image-builder-share" "comment" "Image Builder Share"
+iniset $SAMBA_CONF "image-builder-share" "path" "$IMAGE_BUILDER_ROOT/share"
+iniset $SAMBA_CONF "image-builder-share" "browsable" "yes"
+iniset $SAMBA_CONF "image-builder-share" "guest ok" "yes"
+iniset $SAMBA_CONF "image-builder-share" "guest account" "nobody"
+iniset $SAMBA_CONF "image-builder-share" "read only" "no"
+iniset $SAMBA_CONF "image-builder-share" "create mask" "0755"
+
+
+restart smbd
+restart nmbd
+
