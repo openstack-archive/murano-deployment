@@ -149,7 +149,7 @@ function install_prerequisites {
             yum update -y
 
             log "** Upgrading pip ..."
-            pip install --upgrade pip
+            pip install --upgrade "pip<1.5"
             #rm /usr/bin/pip
             #ln -s /usr/local/bin/pip /usr/bin/pip
 
@@ -182,7 +182,7 @@ function install_prerequisites {
             apt-get install -y python-pip
 
             log "** Upgrading pip ..."
-            pip install --upgrade pip
+            pip install --upgrade "pip<1.5"
 #            rm /usr/bin/pip
 #            ln -s /usr/local/bin/pip /usr/bin/pip
 
