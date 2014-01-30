@@ -239,7 +239,7 @@ foreach($file in $srcFiles)
             {
                 switch($file.Name)
                 {
-                    "Git-1.8.1.2-preview20130201.exe"
+                    "msysgit-1.8.3.exe"
                     {
                         $gitInstDir="$ENV:ProgramData\git";
 						runexeinstaller $file.FullName "/verysilent /setuptype=custom /components=icons,ext,ext\cheetah,assoc,assoc_sh /bash_context=1 /autocrlf=0 /dir=$gitInstDir";
