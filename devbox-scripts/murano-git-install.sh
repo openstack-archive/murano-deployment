@@ -8,7 +8,7 @@ curr_dir=$(cd $(dirname "$0") && pwd)
 
 murano_components='murano-api murano-conductor murano-dashboard murano-repository'
 
-murano_services='murano-api murano-conductor murano-repository'
+murano_services='openstack-murano-api openstack-murano-conductor openstack-murano-repository'
 
 murano_config_files='/etc/murano/murano-api.conf
  /etc/murano/murano-api-paste.ini
@@ -468,8 +468,7 @@ EOF
 function restart_murano {
     for service_name in $murano_services ; do
         log "** Restarting '$service_name'"
-        stop "$service_name"
-        start "$service_name"
+        service "$service_name" restart
     done
 
     log "** Restarting 'Apache'"
