@@ -23,6 +23,8 @@ murano_config_files='/etc/murano/murano-api.conf
 git_prefix="https://github.com/stackforge"
 git_clone_root='/opt/git'
 
+pip_requirements='/etc/murano-deployment/requirements.txt'
+
 os_version=''
 
 # Helper funtions
@@ -130,6 +132,17 @@ function get_distro_name()
     echo "$dist_name"
 }
 
+function pip_install() {
+	echo "--> pip_install($@)"
+
+	if [ -f "$pip_requirements" ]; then
+		pip -r "$pip_requirements" install --upgrade "$@"
+	else
+		pip install --upgrade "$@"
+	fi
+
+	echo "<-- pip_install()"
+}
 #-------------------------------------------------
 
 
@@ -149,7 +162,8 @@ function install_prerequisites {
             yum update -y
 
             log "** Upgrading pip ..."
-            pip install --upgrade "pip<1.5"
+            pip_install pip
+            #pip install --upgrade "pip<1.5"
             #rm /usr/bin/pip
             #ln -s /usr/local/bin/pip /usr/bin/pip
 
@@ -182,12 +196,14 @@ function install_prerequisites {
             apt-get install -y python-pip
 
             log "** Upgrading pip ..."
-            pip install --upgrade "pip<1.5"
+            pip_install pip
+            #pip install --upgrade "pip<1.5"
 #            rm /usr/bin/pip
 #            ln -s /usr/local/bin/pip /usr/bin/pip
 
             log "** Upgrading pbr ..."
-            pip install --upgrade pbr
+            pip_install pbr
+            #pip install --upgrade pbr
 
             log "** Installing OpenStack dashboard ..."
             apt-get install -y memcached apache2 libapache2-mod-wsgi openstack-dashboard
@@ -484,6 +500,13 @@ function restart_murano {
 #-------------------------------------------------
 
 
+################################################################################
+#
+# MAIN CODE START HERE
+#
+################################################################################
+
+
 if [[ $mode =~ '?'|'help'|'-h'|'--help' ]] ; then
     cat << EOF
 
@@ -602,6 +625,12 @@ fi
 
 if [ ! -f "$devbox_config" ] ; then
     die "Configuration file '$devbox_config' not found."
+fi
+
+if [ ! -f "$pip_requirements" ]; then
+    cat << EOF > "$pip_requirements"
+pip<1.5
+EOF
 fi
 
 source "$devbox_config"
