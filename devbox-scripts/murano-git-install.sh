@@ -488,6 +488,9 @@ EOF
             esac
         fi
     done
+
+    # Clean config directory of '.sample' files
+    find /etc/murano -name "*.sample" -exec rm -f {} \;
 }
 
 
