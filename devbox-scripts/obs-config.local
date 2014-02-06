@@ -1,0 +1,13 @@
+# Copy this file to '/etc/murano-deployment' folder and edit as needed.
+
+# OBS repository name prefix
+OBS_REPO_PREFIX=''
+
+# OBS location prefix
+OBS_URL_PREFIX=''
+
+# Local path to store high-priority packages in
+OBS_LOCAL_REPO=''
+
+# Requiest IDs of packages to fetch into local repo
+OBS_REQUEST_IDS=''
