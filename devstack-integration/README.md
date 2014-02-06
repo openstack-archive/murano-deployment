@@ -2,102 +2,35 @@
 
 **WARNING:** Only **single node** devstack deployment is supported at the moment.
 
+**NOTE:** These scripts were tested with the following devstack branches:
+
+* stable/havana
+
+
 ## Overview
 
 This folder contains scripts required to add Murano into Devstack's installation process.
 
-## Typography notes
-
-* ># - root's command prompt
-* >$ - user's command prompt, when it doesn't matter what user account is used
-* >stack$ - **stack** user's command prompt
-
-## System preparation
-
-1. Create user **stack**
-
-```
-># adduser stack
-```
-
-2. Add user **stack** to sudoers rules
-
-```
-># echo 'stack ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/stack
-># chmod 440 /etc/sudoers.d/stack
-```
-
-3. Install additional software
-
-	* Ubuntu
-
-	```
-	># apt-get install git
-	```
-
-	* CentOS
-
-	```
-	># yum install git
-	```
 
 ## Installation
 
-1. Create folders where devstack will install all the files
+This folder contains scripts and configuration files located in folders similar to Devstack's folder structure.
+To use the functionality provided by these script only a few simple steps are required:
 
-```
-># mkdir -p /opt/stack
-># chown stack:stack /opt/stack
-```
+1. Locate your Devstack's folder. In case you don't have running Devstack installation, please take a look at [http://devstack.org/](Devstack's) Quick Start guide and other documentation.
 
-2. Become user **stack** and cd to home directory
+2. Copy all the files from this folder to your **devstack** folder. This README file might be skipped.
 
-```
-># su stack
->stack$ cd
-```
+3. Choose one of two configuration files provided here and rename it to 'local.conf'. In case you already have running Devstack installation with existing configuration file, you have to copy only settings located between "MURANO SETTINGS BLOCK" tags.
 
-3. Clone repositories to home directory
+4. Run Devstack using './stack.sh' command.
 
-	* Clone devstack repository and checkout **havana** branch
+5. Open URL **http://\<your host ip\>/** in web browser. Login with credentials from your configuration file. Open **Murano** tab and enjoy.
 
-	```
-	>stack$ cd
-	>stack$ git clone https://github.com/openstack-dev/devstack.git
-	>stack$ cd devstack
-	>stack$ git checkout stable/havana
-	```
 
-	* Clone murano-deployment repository
+## Note on available configurations
 
-	```
-	>stack$ cd
-	>stack$ git clone https://github.com/stackforge/murano-deployment.git
-	```
-
-4. Copy required files from **murano-deployment** to **devstack**, then configure **local.conf**. You should set at least one configuration parameter there - **HOST_IP** address.
-
-```
->stack$ cd
->stack$ cp -r murano-deployment/devstack-integration/* devstack/
-```
-
-5. Replace (or settings merge with) *local.conf* with another config file, if you need a different type of installation. Available config files and installation types are:
+Two configuration files are provided as example, targeting the following installation modes:
 
 	* single-node.local.conf - single-node all-in-one installation. OpenStack + Murano will be installed on your node together.
 	* devbox.local.conf - install Murano only. OpenStack must be installed on another node, and your node will be configured to use it.
-
-6. Edit devstack's configuration file
-
-```
->stack$ vim devstack/local.conf
-```
-
-7. From **devstack** directory, lauch **stack.sh**
-
-```
->stack$ ./stack.sh
-```
-
-8. Open URL **http://<your host ip>/** in web browser. Login with username **admin** and password **swordfiwh**. Open **Murano** tab and enjoy.
-
