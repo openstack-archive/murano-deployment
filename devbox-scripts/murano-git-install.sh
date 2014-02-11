@@ -308,7 +308,7 @@ function install_murano_apps {
 
         case $os_version in
             'CentOS')
-                "$git_clone_dir"/setup-centos.sh install
+                "$git_clone_dir"/setup.sh install
             ;;
             'Ubuntu')
                 "$git_clone_dir"/setup.sh install
@@ -331,7 +331,7 @@ function uninstall_murano_apps {
 
         case $os_version in
             'CentOS')
-                "$git_clone_dir"/setup-centos.sh uninstall
+                "$git_clone_dir"/setup.sh uninstall
             ;;
             'Ubuntu')
                 "$git_clone_dir"/setup.sh uninstall
