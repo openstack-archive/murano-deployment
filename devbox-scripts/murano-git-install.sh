@@ -306,14 +306,7 @@ function install_murano_apps {
         git_clone_dir="$git_clone_root/$app_name"
         chmod +x $git_clone_dir/setup*.sh
 
-        case $os_version in
-            'CentOS')
-                "$git_clone_dir"/setup-centos.sh install
-            ;;
-            'Ubuntu')
-                "$git_clone_dir"/setup.sh install
-            ;;
-        esac
+        "$git_clone_dir"/setup.sh install
 
     done
 }
@@ -329,14 +322,7 @@ function uninstall_murano_apps {
         git_clone_dir="$git_clone_root/$app_name"
         chmod +x $git_clone_dir/setup*.sh
 
-        case $os_version in
-            'CentOS')
-                "$git_clone_dir"/setup-centos.sh uninstall
-            ;;
-            'Ubuntu')
-                "$git_clone_dir"/setup.sh uninstall
-            ;;
-        esac
+        "$git_clone_dir"/setup.sh uninstall
 
         case $app_name in
             'murano-api')
