@@ -12,7 +12,7 @@ murano_services='murano-api murano-conductor murano-repository'
 
 murano_config_files='/etc/murano/murano-api.conf
  /etc/murano/murano-api-paste.ini
- /etc/murano/conductor.conf
+ /etc/murano/murano-conductor.conf
  /etc/murano/conductor-paste.ini
  /etc/murano/murano-repository.conf
  /etc/murano/init-scripts/init.ps1
@@ -368,7 +368,7 @@ function configure_murano {
                 iniset 'keystone' 'admin_user' "$ADMIN_USER" "$config_file"
                 iniset 'keystone' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
             ;;
-            '/etc/murano/conductor.conf')
+            '/etc/murano/murano-conductor.conf')
                 iniset 'DEFAULT' 'log_file' '/var/log/murano/murano-conductor.log' "$config_file"
 		iniset 'DEFAULT' 'init_scripts_dir' '/etc/murano/init-scripts' "$config_file"
 		iniset 'DEFAULT' 'agent_config_dir' '/etc/murano/agent-config' "$config_file"
@@ -407,7 +407,7 @@ function configure_murano {
                     iniset 'rabbitmq' 'ssl' "True" "$config_file"
                     iniset 'keystone_authtoken' 'auth_protocol' 'https' "$config_file"
                 ;;
-                '/etc/murano/conductor.conf')
+                '/etc/murano/murano-conductor.conf')
                     local ssl_insecure='True'
                     # If any variable is not empty then ssl_insecure = False
                     if [ -n "${SSL_CA_FILE}${SSL_CERT_FILE}${SSL_KEY_FILE}" ] ; then
