@@ -8,11 +8,11 @@ curr_dir=$(cd $(dirname "$0") && pwd)
 
 murano_components='murano-api murano-conductor murano-dashboard murano-repository'
 
-murano_services='murano-api murano-conductor murano-repository'
+murano_services='openstack-murano-api openstack-murano-conductor openstack-murano-repository'
 
 murano_config_files='/etc/murano/murano-api.conf
  /etc/murano/murano-api-paste.ini
- /etc/murano/conductor.conf
+ /etc/murano/murano-conductor.conf
  /etc/murano/conductor-paste.ini
  /etc/murano/murano-repository.conf
  /etc/murano/init-scripts/init.ps1
@@ -22,6 +22,8 @@ murano_config_files='/etc/murano/murano-api.conf
 
 git_prefix="https://github.com/stackforge"
 git_clone_root='/opt/git'
+
+pip_version_requirements='/etc/murano-deployment/pip_version.txt'
 
 os_version=''
 
@@ -130,6 +132,36 @@ function get_distro_name()
     echo "$dist_name"
 }
 
+function pip_install() {
+    log "--> pip_install($@)"
+
+    log "** Installing pip packages '$@'"
+
+    if [ -f "$pip_version_requirements" ]; then
+        pip install --upgrade -r "$pip_version_requirements" "$@"
+    else
+        pip install --upgrade "$@"
+    fi
+
+    log "<-- pip_install()"
+}
+
+function upgrade_pip() {
+    log "--> upgrade_pip($@)"
+
+    log "** Upgrading pip to '$1'"
+
+    case "$1" in
+        '1.4')
+            echo 'pip<1.5' > "$pip_version_requirements"
+            pip install --upgrade -r "$pip_version_requirements"
+            rm /usr/bin/pip
+            ln -s /usr/local/bin/pip /usr/bin/pip
+        ;;
+    esac
+
+    log "<-- upgrade_pip()"
+}
 #-------------------------------------------------
 
 
@@ -148,10 +180,7 @@ function install_prerequisites {
             log "** Updating system ..."
             yum update -y
 
-            log "** Upgrading pip ..."
-            pip install --upgrade pip
-            #rm /usr/bin/pip
-            #ln -s /usr/local/bin/pip /usr/bin/pip
+            upgrade_pip '1.4'
 
             log "** Installing OpenStack dashboard ..."
             yum install make gcc memcached httpd python-memcached mod_wsgi openstack-dashboard python-netaddr.noarch --assumeyes
@@ -181,13 +210,10 @@ function install_prerequisites {
             apt-get install -y node-less
             apt-get install -y python-pip
 
-            log "** Upgrading pip ..."
-            pip install --upgrade pip
-#            rm /usr/bin/pip
-#            ln -s /usr/local/bin/pip /usr/bin/pip
+            upgrade_pip '1.4'
 
             log "** Upgrading pbr ..."
-            pip install --upgrade pbr
+            pip_install pbr
 
             log "** Installing OpenStack dashboard ..."
             apt-get install -y memcached apache2 libapache2-mod-wsgi openstack-dashboard
@@ -368,7 +394,7 @@ function configure_murano {
                 iniset 'keystone' 'admin_user' "$ADMIN_USER" "$config_file"
                 iniset 'keystone' 'admin_password' "$ADMIN_PASSWORD" "$config_file"
             ;;
-            '/etc/murano/conductor.conf')
+            '/etc/murano/murano-conductor.conf')
                 iniset 'DEFAULT' 'log_file' '/var/log/murano/murano-conductor.log' "$config_file"
 		iniset 'DEFAULT' 'init_scripts_dir' '/etc/murano/init-scripts' "$config_file"
 		iniset 'DEFAULT' 'agent_config_dir' '/etc/murano/agent-config' "$config_file"
@@ -407,7 +433,7 @@ function configure_murano {
                     iniset 'rabbitmq' 'ssl' "True" "$config_file"
                     iniset 'keystone_authtoken' 'auth_protocol' 'https' "$config_file"
                 ;;
-                '/etc/murano/conductor.conf')
+                '/etc/murano/murano-conductor.conf')
                     local ssl_insecure='True'
                     # If any variable is not empty then ssl_insecure = False
                     if [ -n "${SSL_CA_FILE}${SSL_CERT_FILE}${SSL_KEY_FILE}" ] ; then
@@ -448,14 +474,16 @@ EOF
             esac
         fi
     done
+
+    # Clean config directory of '.sample' files
+    find /etc/murano -name "*.sample" -exec rm -f {} \;
 }
 
 
 function restart_murano {
     for service_name in $murano_services ; do
         log "** Restarting '$service_name'"
-        stop "$service_name"
-        start "$service_name"
+        service "$service_name" restart
     done
 
     log "** Restarting 'Apache'"
@@ -469,6 +497,13 @@ function restart_murano {
     esac
 }
 #-------------------------------------------------
+
+
+################################################################################
+#
+# MAIN CODE START HERE
+#
+################################################################################
 
 
 if [[ $mode =~ '?'|'help'|'-h'|'--help' ]] ; then
