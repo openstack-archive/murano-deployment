@@ -139,9 +139,9 @@ get_domain_state() {
 # Check if files are exist
 #-------------------------
 
-die_if_no_file "$BOOT_ISO"
-die_if_no_file "$VIRTIO_ISO"
-die_if_no_file "$FLOPPY_IMG"
+die_if_no_file "$LIBVIRT_IMAGES_DIR/$BOOT_ISO"
+die_if_no_file "$LIBVIRT_IMAGES_DIR/$VIRTIO_ISO"
+die_if_no_file "$LIBVIRT_IMAGES_DIR/$FLOPPY_IMG"
 
 #-------------------------
 
