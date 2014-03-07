@@ -32,5 +32,5 @@ To use the functionality provided by these script only a few simple steps are re
 
 Two configuration files are provided as example, targeting the following installation modes:
 
-	* single-node.local.conf - single-node all-in-one installation. OpenStack + Murano will be installed on your node together.
-	* devbox.local.conf - install Murano only. OpenStack must be installed on another node, and your node will be configured to use it.
+    * single-node.local.conf - single-node all-in-one installation. OpenStack + Murano will be installed on your node together.
+    * devbox.local.conf - install Murano only. OpenStack must be installed on another node, and your node will be configured to use it.
