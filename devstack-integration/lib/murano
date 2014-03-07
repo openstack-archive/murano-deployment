@@ -132,6 +132,8 @@ MURANO_REPOSITORY_CACHE=$MURANO_CACHE_DIR/muranorepository-cache
 MURANO_DASHBOARD_CACHE=$MURANO_CACHE_DIR/muranodashboard-cache
 MURANO_API_SIGNING_DIR=$MURANO_CACHE_DIR/keystone-signing-muranoapi
 MURANO_REPOSITORY_SIGNING_DIR=$MURANO_CACHE_DIR/keystone-signing-muranorepository
+
+MURANO_IGNORE_GLOBAL_REQUIREMENTS=${MURANO_IGNORE_GLOBAL_REQUIREMENTS:-'true'}
 #--------------
 
 
@@ -142,6 +144,7 @@ MURANO_REPOSITORY_SIGNING_DIR=$MURANO_CACHE_DIR/keystone-signing-muranorepositor
 function replace {
     sed -i "s/$1/$2/g" "$3"
 }
+
 
 # create_murano_accounts() - Set up common required murano accounts
 #
@@ -159,6 +162,7 @@ function create_murano_accounts() {
         --tenant_id $SERVICE_TENANT \
         --email=murano@example.com \
         | grep " id " | get_field 2)
+
     keystone user-role-add \
         --tenant-id $SERVICE_TENANT \
         --user-id $MURANO_USER \
@@ -167,9 +171,10 @@ function create_murano_accounts() {
     if [[ "$KEYSTONE_CATALOG_BACKEND" = 'sql' ]]; then
         MURANO_SERVICE=$(keystone service-create \
             --name=murano \
-            --type=data_processing \
-            --description="Murano Data Processing" \
+            --type=application_catalog \
+            --description="Murano Application Catalog" \
             | grep " id " | get_field 2)
+
         keystone endpoint-create \
             --region RegionOne \
             --service_id $MURANO_SERVICE \
@@ -192,13 +197,13 @@ function generate_sample_certificate {
     rm "$cert_name.pass.key"
 
     openssl req -new \
-     -subj "/C=RU" \
-     -subj "/ST=Center" \
-     -subj "/L=Moscow" \
+     -subj "/C=US" \
+     -subj "/ST=California" \
+     -subj "/L=Mountain View" \
      -subj "/O=Mirantis" \
      -subj "/OU=Murano" \
      -subj "/CN=murano" \
-     -subj "/emailAddress=murano-all@mirantis.com" \
+     -subj "/emailAddress=murano@example.com" \
      -key "$cert_name.key" -out "$cert_name.csr"
 
     openssl x509 -req -days 365 \
@@ -210,44 +215,13 @@ function generate_sample_certificate {
 }
 
 
-function install_prerequisites {
-    if [[ "$os_VENDOR" =~ (Debian) ]]; then
-        echo_summary "Installing additional software sources"
-        apt-get install -y python-software-properties
-        add-apt-repository -y cloud-archive:havana
-
-        echo_summary "Installing additional packages"
-        apt-get install -y node-less python-pip
-
-        echo_summary "Upgrading 'pip'"
-        pip install --upgrade pip
-        #rm /usr/bin/pip
-        #ln -s /usr/local/bin/pip /usr/bin/pip
-
-        echo_summary "Upgrading 'pbr'"
-        pip install --upgrade pbr
-    fi
-
-    if is_fedora ; then
-        echo_summary "Upgrading 'pip'"
-        pip install --upgrade pip
-        #rm /usr/bin/pip
-        #ln -s /usr/local/bin/pip /usr/bin/pip
-
-        echo_summary "Disabling firewall"
-        service iptables stop
-        chkconfig iptables off
-
-        echo_summary "Disabling SELinux"
-        setenforce permissive
-        iniset '' 'SELINUX' 'permissive' '/etc/selinux/config'
-    fi
-}
-
-
 function install_pip_requirements() {
     local project_dir=$1
     local exclude_list=$2
+
+    if [[ $(trueorfalse False $MURANO_IGNORE_GLOBAL_REQUIREMENTS) = 'False' ]]; then
+        return
+    fi
 
     cp "$project_dir/requirements.txt" "$project_dir/requirements.txt.bak"
     while read expr ; do
