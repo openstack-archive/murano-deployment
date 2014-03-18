@@ -169,6 +169,7 @@ ${libvirt_images_dir}/${image_name}.flp : ${shared_files_dir}/${image_name}/auto
 	@echo ''
 	@echo '>>> Updating file autounattend.xml ...'
 	cp ${shared_files_dir}/${image_name}/autounattend.xml.template ${shared_files_dir}/${image_name}/autounattend.xml
+	cp ${shared_files_dir}/${image_name}/unattend.xml.template ${shared_files_dir}/${image_name}/unattend.xml
 	${CURDIR}/substvars.sh ${shared_files_dir}/${image_name}/autounattend.xml
 	@echo '<<< done.'
 	@echo ''

@@ -124,7 +124,7 @@ get_domain_state() {
     local domain_state
 
     domain_name=$1
-    domain_state=$(virsh domstate $domain_name)
+    domain_state=$(LANG=C virsh domstate $domain_name)
     if [ $? -ne 0 ] ; then
         echo ''
     fi
