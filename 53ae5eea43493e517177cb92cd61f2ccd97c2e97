@@ -1,0 +1,11 @@
+Verified+2: Jenkins
+Code-Review+1: Serg Melikyan <smelikyan@mirantis.com>
+Code-Review+2: Timur Sufiev <tsufiev@mirantis.com>
+Approved+1: Alexander Tivelkov <ativelkov@mirantis.com>
+Code-Review+2: Alexander Tivelkov <ativelkov@mirantis.com>
+Code-Review+1: Steve McLellan <steven.j.mclellan@gmail.com>
+Submitted-by: Jenkins
+Submitted-at: Mon, 21 Apr 2014 19:50:09 +0000
+Reviewed-on: https://review.openstack.org/88001
+Project: stackforge/murano-deployment
+Branch: refs/heads/master
