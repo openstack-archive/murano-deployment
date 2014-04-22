@@ -1,0 +1,20 @@
+- job:
+    name: murano-api-master-on-commit
+    project-type: freestyle
+    defaults: global
+    description: "<b>This job is managed by Jenkins Job Builder, do not edit it through WebUI."
+    disabled: false
+    concurrent: true
+    node: precise
+
+    properties:
+      - zeromq-event
+
+    builders:
+      - shell: "git clone https://git.openstack.org/stackforge/murano-deployment .\
+              \nbash -x murano-ci/scripts/murano-api-master-on-commit.sh"
+    publishers:
+      - console-log
+      - junit:
+          results: 'test_report$BUILD_NUMBER.xml'
+          keep-long-stdio: false

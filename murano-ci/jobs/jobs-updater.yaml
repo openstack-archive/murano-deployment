@@ -1,0 +1,20 @@
+- job:
+    name: jobs-updater
+    node: master
+    project-type: freestyle
+    description: "<b>This job is managed by Jenkins Job Builder, do not edit it through WebUI."
+    defaults: global
+    disabled: false
+    concurrent: false
+
+    scm:
+     - git:
+        url: https://git.openstack.org/stackforge/murano-deployment
+        branches:
+          - "master"
+
+    triggers:
+      - pollscm: "* * * * * "
+
+    builders:
+      - shell:  "sudo jenkins-jobs update murano-ci/jobs"
