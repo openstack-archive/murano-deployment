@@ -10,7 +10,7 @@ ADDR=`ifconfig eth0| awk -F ' *|:' '/inet addr/{print $4}'`
 
 git clone https://git.openstack.org/stackforge/murano-tests
 
-python murano-ci/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER
+python murano-ci/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_url 172.18.11.4:15672
 
 sudo bash -x murano-ci/infra/deploy_component_new.sh $ZUUL_REF murano-dashboard 172.18.11.4 $ZUUL_URL
 sudo bash -x murano-ci/infra/configure_api.sh 172.18.11.4 5672 False murano$BUILD_NUMBER
