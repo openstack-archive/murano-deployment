@@ -5,10 +5,10 @@ cd $WORKSPACE
 sudo ntpdate pool.ntp.org
 sudo su -c 'echo "ServerName localhost" >> /etc/apache2/apache2.conf'
 
-python murano-ci/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER
+python murano-ci/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_url 172.18.11.4:15672
 
 sudo bash -x murano-ci/infra/deploy_component_new.sh $ZUUL_REF murano-api noop $ZUUL_URL
-sudo bash -x murano-ci/infra/configure_api.sh 172.18.124.203 5672 False murano$BUILD_NUMBER
+sudo bash -x murano-ci/infra/configure_api.sh 172.18.11.4 5672 False murano$BUILD_NUMBER
 
 git clone https://github.com/Mirantis/tempest
 cd tempest
@@ -16,7 +16,7 @@ git checkout platform/stable/havana
 sudo pip install .
 
 cp etc/tempest.conf.sample etc/tempest.conf
-sed -i "s/uri = http:\/\/127.0.0.1:5000\/v2.0\//uri = http:\/\/172.18.124.203:5000\/v2.0\//" etc/tempest.conf
+sed -i "s/uri = http:\/\/127.0.0.1:5000\/v2.0\//uri = http:\/\/172.18.11.4:5000\/v2.0\//" etc/tempest.conf
 sed -i "s/admin_username = admin/admin_username = AutotestUser/" etc/tempest.conf
 sed -i "s/admin_password = secret/admin_password = swordfish/" etc/tempest.conf
 sed -i "s/admin_tenant_name = admin/admin_tenant_name = AutotestProject/" etc/tempest.conf
