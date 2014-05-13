@@ -1,0 +1,19 @@
+- job:
+    name: Build_documentation
+    description: 'Murano documents builder'
+    project-type: freestyle
+    block-downstream: false
+    scm:
+    - git:
+        url: https://github.com/stackforge/murano-docs.git
+    triggers:
+      - pollscm: "H/5 * * * *"
+    builders:
+      - shell: |
+          cd ~
+          sudo rm -rf murano-deployment
+          git clone https://github.com/stackforge/murano-deployment
+          sh murano-deployment/docs-builder/builder.sh
+    publishers:
+      - email:
+          recipients: "murano-all@mirantis.com, imarnat@mirantis.com, tnurlygayanov@mirantis.com"
