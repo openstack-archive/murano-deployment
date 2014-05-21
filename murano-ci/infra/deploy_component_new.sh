@@ -10,7 +10,7 @@ git fetch $4/stackforge/$2 $1
 git checkout FETCH_HEAD
 chown horizon:horizon /var/lib/openstack-dashboard/secret_key
 chmod 600 /var/lib/openstack-dashboard/secret_key
-bash setup.sh install > old.log
+bash setup.sh install
 sed -i "s/DEBUG = False/DEBUG = True/" /etc/openstack-dashboard/local_settings.py
 sed -i "s/OPENSTACK_HOST = \"127.0.0.1\"/OPENSTACK_HOST = \"$3\"/" /etc/openstack-dashboard/local_settings.py
 cd /var/cache/murano-dashboard/ && rm -rf *
