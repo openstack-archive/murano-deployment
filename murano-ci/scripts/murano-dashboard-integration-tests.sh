@@ -26,6 +26,16 @@ sed "s%murano_url = http://127.0.0.1:8082%murano_url = http://$ADDR:8082%g" -i c
 sed "s%user = WebTestUser%user = $ADMIN_USERNAME%g" -i config/config_file.conf
 sed "s%password = swordfish%password = $ADMIN_PASSWORD%g" -i config/config_file.conf
 sed "s%tenant = WebTestProject%tenant = $ADMIN_TENANT%g" -i config/config_file.conf
+sed "s%tomcat_repository = git_repo_for_tomcat%tomcat_repository = https://github.com/sergmelikyan/hello-world-servlet%g" -i config/config_file.conf
+
+git clone https://github.com/murano-project/murano-app-incubator
+cd murano-app-incubator
+sudo bash make-package.sh io.murano.apps.PostgreSql
+sudo bash make-package.sh io.murano.apps.apache.Apache
+sudo bash make-package.sh io.murano.apps.apache.Tomcat
+sudo bash make-package.sh io.murano.apps.linux.Telnet
+sudo bash make-package.sh io.murano.windows.ActiveDirectory
+cd ..
 
 nosetests sanity_check --nologcapture
 if [ $? == 1 ]
