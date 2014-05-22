@@ -11,7 +11,7 @@ sudo su -c 'echo "ServerName localhost" >> /etc/apache2/apache2.conf'
 python murano-ci/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_url $RABBITMQ_URL
 
 sudo bash -x murano-ci/infra/deploy_component_new.sh $ZUUL_REF murano-api noop $ZUUL_URL
-sudo bash -x murano-ci/infra/configure_api.sh $RABBITMQ_HOST $RABBITMQ_PORT False murano$BUILD_NUMBER
+sudo RUN_DB_SYNC=true bash -x murano-ci/infra/configure_api.sh $RABBITMQ_HOST $RABBITMQ_PORT False murano$BUILD_NUMBER murano$BUILD_NUMBER
 
 git clone https://github.com/Mirantis/tempest
 cd tempest
