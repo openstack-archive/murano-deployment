@@ -105,7 +105,7 @@ check_prerequisites || exit $?
 configure_api || exit $?
 if [ "$RUN_DB_SYNC" == true ]; then
     su -c "$MANAGE_CMD --config-file $DAEMON_CONF db-sync" -s /bin/bash $DAEMON_USER
-    if[ $? -ne 0 ]; then
+    if [ $? -ne 0 ]; then
         echo "\"$MANAGE_CMD --config-file $DAEMON_CONF db-sync\" fails!"
         exit 1
     fi
