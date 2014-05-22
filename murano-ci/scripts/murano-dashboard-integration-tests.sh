@@ -17,7 +17,7 @@ git clone https://git.openstack.org/stackforge/murano-tests
 python murano-ci/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_url $RABBITMQ_URL
 
 sudo bash -x murano-ci/infra/deploy_component_new.sh $ZUUL_REF murano-dashboard $KEYSTONE_URL $ZUUL_URL
-sudo bash -x murano-ci/infra/configure_api.sh $RABBITMQ_HOST $RABBITMQ_PORT False murano$BUILD_NUMBER
+sudo RUN_DB_SYNC=true bash -x murano-ci/infra/configure_api.sh $RABBITMQ_HOST $RABBITMQ_PORT False murano$BUILD_NUMBER murano$BUILD_NUMBER
 
 cd murano-tests/muranodashboard-tests
 sed "s%keystone_url = http://127.0.0.1:5000/v2.0/%keystone_url = http://$KEYSTONE_URL:5000/v2.0/%g" -i config/config_file.conf
