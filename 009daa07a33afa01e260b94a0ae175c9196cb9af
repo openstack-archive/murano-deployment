@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Dmitry Teselkin <dteselkin@mirantis.com>
+Workflow+1: Dmitry Teselkin <dteselkin@mirantis.com>
+Code-Review+2: Timur Sufiev <tsufiev@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 22 May 2014 14:21:25 +0000
+Reviewed-on: https://review.openstack.org/94879
+Project: stackforge/murano-deployment
+Branch: refs/heads/master
