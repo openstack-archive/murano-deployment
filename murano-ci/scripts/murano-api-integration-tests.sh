@@ -70,6 +70,7 @@ function run_component_deploy()
         retval=1
     else
         local component=$1
+        echo "Running: sudo bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh $ZUUL_REF $component noop $ZUUL_URL"
         sudo bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh $ZUUL_REF $component noop $ZUUL_URL
         if [ $? -ne 0 ]; then
             echo "\"${FUNCNAME[0]}\" return error!"
@@ -153,9 +154,9 @@ TEMPEST_DIR="${WORKSPACE}/tempest"
 cd $WORKSPACE
 sudo $NTPDATE_CMD -u ru.pool.ntp.org || exit $?
 handle_rabbitmq add || exit $?
-run_component_deploy murano-api || (e_code=$?; handle_rabbitmq del; exit $e_code)
-run_component_configure || (e_code=$?; handle_rabbitmq del; exit $e_code)
-prepare_tests || (e_code=$?; handle_rabbitmq del; exit $e_code)
+run_component_deploy murano-api || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
+run_component_configure || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
+prepare_tests || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
 run_tests || exit $?
 handle_rabbitmq del || exit $?
 move_results || exit $?

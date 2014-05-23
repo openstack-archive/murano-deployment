@@ -53,7 +53,7 @@ function prepare_component()
     $GIT_CMD clone $git_url $component_clone_dir
     cd $component_clone_dir
     bash setup.sh uninstall >> /dev/null
-    $GIT_CMD fetch $ZUUL_URL $ZUUL_REF
+    $GIT_CMD fetch ${ZUUL_URL}/stackforge/${COMPONENT_NAME} ${ZUUL_REF}
     $GIT_CMD checkout FETCH_HEAD
     bash setup.sh install
     if [ $? -ne 0 ]; then
