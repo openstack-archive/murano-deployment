@@ -95,7 +95,7 @@ function prepare_component()
     return $retval
 }
 #
-#Staring up:
+#Starting up:
 if [ ! $# -ge 4 ]; then
     echo "Usage: $(basename $0) zuul_ref component_name os_host zuul_url"
     exit 1
