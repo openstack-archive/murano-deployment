@@ -126,10 +126,12 @@ function run_tests()
 {
     local retval=0
     local tests_dir=$TEMPEST_DIR
+    cd $tests_dir
     $NOSETESTS_CMD -s -v --with-xunit --xunit-file=test_report$BUILD_NUMBER.xml ${tests_dir}/api/murano/test_murano_envs.py ${tests_dir}/api/murano/test_murano_services.py ${tests_dir}/api/murano/test_murano_sessions.py
     if [ $? -ne 0 ]; then
         handle_rabbitmq del || retval=$?
     fi
+    cd $WORKSPACE
     return $retval
 }
 #
