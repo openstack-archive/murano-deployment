@@ -155,8 +155,12 @@ function prepare_tests()
     else
         cd $tests_dir
         local tests_config=${tests_dir}/muranodashboard-tests/config/config_file.conf
+        local horizon_suffix="horizon"
+        if [ "$distro_based_on" == "redhat" ];
+            horizon_suffix="dashboard"
+        fi
         iniset 'common' 'keystone_url' "$(shield_slashes http://${KEYSTONE_URL}:5000/v2.0/)" "$tests_config"
-        iniset 'common' 'horizon_url' "$(shield_slashes http://${found_ip_address}/horizon)" "$tests_config"
+        iniset 'common' 'horizon_url' "$(shield_slashes http://${found_ip_address}/${horizon_suffix})" "$tests_config"
         iniset 'common' 'murano_url' "$(shield_slashes http://${found_ip_address}:8082)" "$tests_config"
         iniset 'common' 'user' "$ADMIN_USERNAME" "$tests_config"
         iniset 'common' 'password' "$ADMIN_PASSWORD" "$tests_config"
@@ -176,7 +180,8 @@ function run_tests()
     cd ${tests_dir}/muranodashboard-tests
     $NOSETESTS_CMD sanity_check --nologcapture
     if [ $? -ne 0 ]; then
-        handle_rabbitmq del || retval=$?
+        handle_rabbitmq del
+        retval=1
     fi
     cd $WORKSPACE
     return $retval
@@ -192,6 +197,7 @@ sudo $NTPDATE_CMD -u ru.pool.ntp.org || exit $?
 sudo $FW_CMD -F
 get_ip_from_iface eth0 || exit $?
 handle_rabbitmq add || exit $?
+get_os || exit $?
 run_component_deploy murano-dashboard || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
 run_component_configure || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
 prepare_tests || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?

@@ -130,7 +130,8 @@ function run_tests()
     cd $tests_dir
     $NOSETESTS_CMD -s -v --with-xunit --xunit-file=test_report$BUILD_NUMBER.xml ${tests_dir}/tempest/api/murano/test_murano_envs.py ${tests_dir}/tempest/api/murano/test_murano_services.py ${tests_dir}/tempest/api/murano/test_murano_sessions.py
     if [ $? -ne 0 ]; then
-        handle_rabbitmq del || retval=$?
+        handle_rabbitmq del
+        retval=1
     fi
     cd $WORKSPACE
     return $retval
