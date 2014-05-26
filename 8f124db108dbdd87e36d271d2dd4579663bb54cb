@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Code-Review+2: Ruslan Kamaldinov <rkamaldinov@mirantis.com>
+Workflow+1: Ruslan Kamaldinov <rkamaldinov@mirantis.com>
+Code-Review+2: Timur Sufiev <tsufiev@mirantis.com>
+Code-Review+1: Sergey Murashov <smurashov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Mon, 26 May 2014 11:59:17 +0000
+Reviewed-on: https://review.openstack.org/94865
+Project: stackforge/murano-deployment
+Branch: refs/heads/master
