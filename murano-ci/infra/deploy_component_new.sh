@@ -51,10 +51,25 @@ function prepare_component()
         rm -rf $component_clone_dir
     fi
     $GIT_CMD clone $git_url $component_clone_dir
+    if [ $? -ne 0 ]; then
+        echo "Error occured during git clone $git_url $component_clone_dir!"
+        retval=1
+        return $retval
+    fi
     cd $component_clone_dir
     bash setup.sh uninstall >> /dev/null
     $GIT_CMD fetch ${ZUUL_URL}/stackforge/${COMPONENT_NAME} ${ZUUL_REF}
+    if [ $? -ne 0 ]; then
+        echo "Error occured during git fetch ${ZUUL_URL}/stackforge/${COMPONENT_NAME} ${ZUUL_REF}!"
+        retval=1
+        return $retval
+    fi
     $GIT_CMD checkout FETCH_HEAD
+    if [ $? -ne 0 ]; then
+        echo "Error occured during git checkout FETCH_HEAD!"
+        retval=1
+        return $retval
+    fi
     bash setup.sh install
     if [ $? -ne 0 ]; then
         echo "Install of the \"$COMPONENT_NAME\" fails!"
