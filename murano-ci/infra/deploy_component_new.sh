@@ -99,7 +99,7 @@ function prepare_component()
             fi
             service $WEB_SERVICE_SYSNAME restart || retval=$?
             ;;
-        "murano-api")
+        "murano")
             echo "Handling \"$COMPONENT_NAME\" for future use"
             ;;
     esac
@@ -117,5 +117,6 @@ else
     readonly ZUUL_URL=$4
 fi
 do_cleanup || exit $?
+get_os || exit $?
 prepare_component || exit $?
 exit 0
