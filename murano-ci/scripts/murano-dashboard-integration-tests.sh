@@ -125,7 +125,7 @@ function prepare_incubator_at()
         for package_dir in io.murano.*
         do
             if [ -d "$package_dir" ]; then
-                if [ -f "${package_dir}/manifest.yaml"]; then
+                if [ -f "${package_dir}/manifest.yaml" ]; then
                     sudo bash make-package.sh $package_dir
                     pkg_counter=$((pkg_counter + 1))
                 fi
