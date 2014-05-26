@@ -87,8 +87,8 @@ function run_component_deploy()
         retval=1
     else
         local component=$1
-        echo "Running: sudo bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh $ZUUL_REF $component noop $ZUUL_URL"
-        sudo bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh $ZUUL_REF $component noop $ZUUL_URL
+        echo "Running: sudo bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh $ZUUL_REF $component $KEYSTONE_URL $ZUUL_URL"
+        sudo bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh $ZUUL_REF $component $KEYSTONE_URL $ZUUL_URL
         if [ $? -ne 0 ]; then
             echo "\"${FUNCNAME[0]}\" return error!"
             retval=1

@@ -73,7 +73,7 @@ function prepare_component()
         return 1
     fi
     case $COMPONENT_NAME in
-        murano-dashboard)
+        "murano-dashboard")
             case $distro_based_on in
                 "debian")
                     WEB_SERVICE_SYSNAME="apache2"
@@ -99,7 +99,7 @@ function prepare_component()
             fi
             service $WEB_SERVICE_SYSNAME restart || retval=$?
             ;;
-        murano-api)
+        "murano-api")
             echo "Handling \"$COMPONENT_NAME\" for future use"
             ;;
     esac
