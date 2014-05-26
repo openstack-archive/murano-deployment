@@ -95,7 +95,7 @@ function prepare_component()
                 retval=1
             else
                 iniset '' 'DEBUG' 'True' "$horizon_etc_cfg"
-                iniset '' 'OPENSTACK_HOST' "$OS_HOST" "$horizon_etc_cfg"
+                iniset '' 'OPENSTACK_HOST' "\"$OS_HOST\"" "$horizon_etc_cfg"
             fi
             service $WEB_SERVICE_SYSNAME restart || retval=$?
             ;;
