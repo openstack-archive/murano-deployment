@@ -176,7 +176,8 @@ function run_tests()
     cd ${tests_dir}/muranodashboard-tests
     $NOSETESTS_CMD sanity_check --nologcapture
     if [ $? -ne 0 ]; then
-        handle_rabbitmq del || retval=$?
+        handle_rabbitmq del
+        retval=1
     fi
     cd $WORKSPACE
     return $retval
