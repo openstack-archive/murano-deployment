@@ -156,7 +156,7 @@ function prepare_tests()
         cd $tests_dir
         local tests_config=${tests_dir}/muranodashboard-tests/config/config_file.conf
         local horizon_suffix="horizon"
-        if [ "$distro_based_on" == "redhat" ];
+        if [ "$distro_based_on" == "redhat" ]; then
             horizon_suffix="dashboard"
         fi
         iniset 'common' 'keystone_url' "$(shield_slashes http://${KEYSTONE_URL}:5000/v2.0/)" "$tests_config"
