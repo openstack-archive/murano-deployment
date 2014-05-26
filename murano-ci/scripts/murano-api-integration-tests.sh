@@ -154,7 +154,7 @@ TEMPEST_DIR="${WORKSPACE}/tempest"
 cd $WORKSPACE
 sudo $NTPDATE_CMD -u ru.pool.ntp.org || exit $?
 handle_rabbitmq add || exit $?
-run_component_deploy murano-api || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
+run_component_deploy murano || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
 run_component_configure || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
 prepare_tests || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
 run_tests || exit $?
