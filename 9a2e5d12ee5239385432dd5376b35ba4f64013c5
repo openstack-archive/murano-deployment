@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Code-Review+2: Dmitry Teselkin <dteselkin@mirantis.com>
+Workflow+1: Dmitry Teselkin <dteselkin@mirantis.com>
+Code-Review+2: Ruslan Kamaldinov <rkamaldinov@mirantis.com>
+Code-Review+1: Sergey Kolekonov <skolekonov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 27 May 2014 12:34:44 +0000
+Reviewed-on: https://review.openstack.org/95725
+Project: stackforge/murano-deployment
+Branch: refs/heads/master
