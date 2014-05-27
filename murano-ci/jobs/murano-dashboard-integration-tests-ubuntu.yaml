@@ -15,3 +15,6 @@
               \nbash -x murano-ci/scripts/murano-dashboard-integration-tests.sh"
     publishers:
       - console-log
+      - archive:
+          artifacts: 'murano-tests/muranodashboard-tests/screenshots/*.png'
+          allow-empty: 'true'
