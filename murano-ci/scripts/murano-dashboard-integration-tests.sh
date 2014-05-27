@@ -178,7 +178,7 @@ function run_tests()
     local retval=0
     local tests_dir=$TESTS_DIR
     cd ${tests_dir}/muranodashboard-tests
-    $NOSETESTS_CMD sanity_check --nologcapture
+    $NOSETESTS_CMD sanity_check --nologcapture --exclude=test_034_env_creation_form_app_catalog_page
     if [ $? -ne 0 ]; then
         handle_rabbitmq del
         retval=1
