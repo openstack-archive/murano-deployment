@@ -143,7 +143,7 @@ function prepare_incubator_at()
 function prepare_tests()
 {
     local retval=0
-    local git_url="https://git.openstack.org/stackforge/murano-tests"
+    local git_url="https://git.openstack.org/stackforge/murano-dashboard"
     local tests_dir=$TESTS_DIR
     if [ -d "$tests_dir" ]; then
         rm -rf $tests_dir
@@ -154,7 +154,7 @@ function prepare_tests()
         retval=1
     else
         cd $tests_dir
-        local tests_config=${tests_dir}/muranodashboard-tests/config/config_file.conf
+        local tests_config=${tests_dir}/functionaltests/config/config_file.conf
         local horizon_suffix="horizon"
         if [ "$distro_based_on" == "redhat" ]; then
             horizon_suffix="dashboard"
@@ -166,7 +166,7 @@ function prepare_tests()
         iniset 'common' 'password' "$ADMIN_PASSWORD" "$tests_config"
         iniset 'common' 'tenant' "$ADMIN_TENANT" "$tests_config"
         iniset 'common' 'tomcat_repository' "$(shield_slashes https://github.com/sergmelikyan/hello-world-servlet)" "$tests_config"
-        cd $tests_dir/muranodashboard-tests
+        cd $tests_dir/functionaltests
         prepare_incubator_at $(pwd) || retval=$?
     fi
     cd $WORKSPACE
@@ -177,7 +177,7 @@ function run_tests()
 {
     local retval=0
     local tests_dir=$TESTS_DIR
-    cd ${tests_dir}/muranodashboard-tests
+    cd ${tests_dir}/functionaltests
     $NOSETESTS_CMD sanity_check --nologcapture
     if [ $? -ne 0 ]; then
         handle_rabbitmq del
@@ -189,7 +189,7 @@ function run_tests()
 #
 #Starting up:
 WORKSPACE=$(cd $WORKSPACE && pwd)
-TESTS_DIR="${WORKSPACE}/murano-tests"
+TESTS_DIR="${WORKSPACE}/murano-dashboard"
 cd $WORKSPACE
 export DISPLAY=:${DISPLAY_NUM}
 get_os || exit $?
