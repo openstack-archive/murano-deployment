@@ -1,19 +1,14 @@
 - job:
-    name: murano-api-integration-tests-centos
+    name: murano-integration-tests-ubuntu
     project-type: freestyle
     defaults: global
     description: "<b>This job is managed by Jenkins Job Builder, do not edit it through WebUI."
     disabled: false
     concurrent: true
-    node: centos
+    node: precise
 
     properties:
       - zeromq-event
-
-    wrappers:
-      - timeout:
-          timeout: 30
-          fail: true
 
     builders:
       - shell: "git clone https://git.openstack.org/stackforge/murano-deployment .\
