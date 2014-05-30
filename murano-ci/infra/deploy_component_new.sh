@@ -24,7 +24,7 @@ else
 fi
 #Basic parameters:
 GIT_CMD=$(which git)
-GIT_WORKING_DIR="/opt/git"
+GIT_WORKING_DIR=${WORKSPACE:-/opt/git}
 WEB_SERVICE_SYSNAME=${WEB_SERVICE_SYSNAME:-httpd}
 WEB_SERVICE_USER=${WEB_SERVICE_USER:-apache}
 WEB_SERVICE_GROUP=${WEB_SERVICE_GROUP:-apache}
