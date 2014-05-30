@@ -88,7 +88,7 @@ function run_component_deploy()
     else
         local component=$1
         echo "Running: sudo bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh $ZUUL_REF $component $KEYSTONE_URL $ZUUL_URL"
-        sudo bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh $ZUUL_REF $component $KEYSTONE_URL $ZUUL_URL
+        sudo WORKSPACE=$WORKSPACE bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh $ZUUL_REF $component $KEYSTONE_URL $ZUUL_URL
         if [ $? -ne 0 ]; then
             echo "\"${FUNCNAME[0]}\" return error!"
             retval=1
@@ -143,14 +143,9 @@ function prepare_incubator_at()
 function prepare_tests()
 {
     local retval=0
-    local git_url="https://git.openstack.org/stackforge/murano-dashboard"
     local tests_dir=$TESTS_DIR
-    if [ -d "$tests_dir" ]; then
-        rm -rf $tests_dir
-    fi
-    $GIT_CMD clone $git_url $tests_dir
-    if [ $? -ne 0 ]; then
-        echo "Error occured during git clone $git_url $tests_dir!"
+    if [ ! -d "$tests_dir" ]; then
+        echo "Directory with tests isn't exist"
         retval=1
     else
         cd $tests_dir
