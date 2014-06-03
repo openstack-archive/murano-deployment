@@ -75,31 +75,32 @@ function configure_api()
     iniset 'DEFAULT' 'rabbit_userid' "$RMQ_USER" "$DAEMON_CONF"
     iniset 'DEFAULT' 'rabbit_use_ssl' "$RMQ_SSL" "$DAEMON_CONF"
     iniset 'DEFAULT' 'rabbit_port' "$RMQ_PORT" "$DAEMON_CONF"
-    iniset 'DEFAULT' 'rabbit_host' "$REMOTE_HOST" "$DAEMON_CONF"
+    iniset 'DEFAULT' 'rabbit_host' "$RMQ_HOST" "$DAEMON_CONF"
 
-    iniset 'keystone_authtoken' 'auth_host' "$REMOTE_HOST" "$DAEMON_CONF"
+    iniset 'keystone_authtoken' 'auth_host' "$AUTH_HOST" "$DAEMON_CONF"
 
-    iniset 'keystone' 'auth_url' "$(shield_slashes http://${REMOTE_HOST}:5000/v2.0)" "$DAEMON_CONF"
+    iniset 'keystone' 'auth_url' "$(shield_slashes http://${AUTH_HOST}:5000/v2.0)" "$DAEMON_CONF"
 
     iniset 'rabbitmq' 'virtual_host' "$RMQ_VHOST" "$DAEMON_CONF"
     iniset 'rabbitmq' 'password' "$RMQ_PASSWD" "$DAEMON_CONF"
     iniset 'rabbitmq' 'login' "$RMQ_USER" "$DAEMON_CONF"
     iniset 'rabbitmq' 'port' "$RMQ_PORT" "$DAEMON_CONF"
-    iniset 'rabbitmq' 'host' "$REMOTE_HOST" "$DAEMON_CONF"
+    iniset 'rabbitmq' 'host' "$RMQ_HOST" "$DAEMON_CONF"
 
     return $retval
 }
 #Staring up:
-if [ ! $# -ge 5 ]; then
-    echo "Usage: $(basename $0) os[rabbitmq]_host rabbitmq_port rabbitmq_usessl rabbitmq_userid rabbitmq_vhost"
+if [ ! $# -ge 6 ]; then
+    echo "Usage: $(basename $0) rabbitmq_host rabbitmq_port rabbitmq_usessl rabbitmq_userid rabbitmq_vhost auth_host"
     exit 1
 else
-    readonly REMOTE_HOST=$1
+    readonly RMQ_HOST=$1
     readonly RMQ_PORT=$2
     readonly RMQ_SSL=$3
     readonly RMQ_USER=$4
     readonly RMQ_PASSWD="swordfish"
     readonly RMQ_VHOST=$5
+    readonly AUTH_HOST=$6
 fi
 check_prerequisites || exit $?
 configure_api || exit $?

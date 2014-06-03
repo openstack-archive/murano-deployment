@@ -118,7 +118,7 @@ function run_component_configure()
 {
     local retval=0
     local run_db_sync=true
-    sudo RUN_DB_SYNC=${run_db_sync} bash -x ${CI_ROOT_DIR}/infra/configure_api.sh localhost 5672 False murano$BUILD_NUMBER murano$BUILD_NUMBER
+    sudo RUN_DB_SYNC=${run_db_sync} bash -x ${CI_ROOT_DIR}/infra/configure_api.sh localhost 5672 False murano$BUILD_NUMBER murano$BUILD_NUMBER $KEYSTONE_URL
     if [ $? -ne 0 ]; then
         echo "\"${FUNCNAME[0]}\" return error!"
         retval=1
