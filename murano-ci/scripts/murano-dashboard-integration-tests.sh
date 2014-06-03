@@ -38,12 +38,12 @@ get_os || exit $?
 if [ $distro_based_on == "redhat" ]; then
     sudo yum update -y || exit $?
     sudo yum install -y rabbitmq-server || exit $?
-    sudo rabbitmq-plugins enable rabbitmq_management || exit $?
+    sudo /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_management || exit $?
     sudo /etc/init.d/rabbitmq-server restart || exit $?
 else
     sudo apt-get update || exit $?
     sudo apt-get install -y rabbitmq-server || exit $?
-    sudo rabbitmq-plugins enable rabbitmq_management || exit $?
+    sudo /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_management || exit $?
     sudo service rabbitmq-server restart
 fi
 
