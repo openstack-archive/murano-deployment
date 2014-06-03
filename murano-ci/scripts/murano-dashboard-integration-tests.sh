@@ -38,12 +38,12 @@ get_os || exit $?
 if [ $distro_based_on == "redhat" ]; then
     sudo yum update -y || exit $?
     sudo yum install -y rabbitmq-server || exit $?
-    sudo rabbitmq-plugins enable rabbitmq_management || exit $?
+    sudo /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_management || exit $?
     sudo /etc/init.d/rabbitmq-server restart || exit $?
 else
     sudo apt-get update || exit $?
     sudo apt-get install -y rabbitmq-server || exit $?
-    sudo rabbitmq-plugins enable rabbitmq_management || exit $?
+    sudo /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_management || exit $?
     sudo service rabbitmq-server restart
 fi
 
@@ -68,7 +68,7 @@ function handle_rabbitmq()
             fi
             ;;
         del)
-            $PYTHON_CMD ${CI_ROOT_DIR}/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_url $RABBITMQ_URL -action delete
+            $PYTHON_CMD ${CI_ROOT_DIR}/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_url localhost:15672 -action delete
             if [ $? -ne 0 ]; then
                 echo "\"${FUNCNAME[0]} $action\" return error!"
                 retval=1
@@ -118,7 +118,7 @@ function run_component_configure()
 {
     local retval=0
     local run_db_sync=true
-    sudo RUN_DB_SYNC=${run_db_sync} bash -x ${CI_ROOT_DIR}/infra/configure_api.sh $RABBITMQ_HOST $RABBITMQ_PORT False murano$BUILD_NUMBER murano$BUILD_NUMBER
+    sudo RUN_DB_SYNC=${run_db_sync} bash -x ${CI_ROOT_DIR}/infra/configure_api.sh localhost 5672 False murano$BUILD_NUMBER murano$BUILD_NUMBER
     if [ $? -ne 0 ]; then
         echo "\"${FUNCNAME[0]}\" return error!"
         retval=1

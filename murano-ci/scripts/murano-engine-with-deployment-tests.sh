@@ -41,7 +41,7 @@ function handle_rabbitmq()
     local action=$1
     case $action in
         add)
-            $PYTHON_CMD ${CI_ROOT_DIR}/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_url $RABBITMQ_URL
+            $PYTHON_CMD ${CI_ROOT_DIR}/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_url $RABBITMQ_URL -action create
             if [ $? -ne 0 ]; then
                 echo "\"${FUNCNAME[0]} $action\" return error!"
                 retval=1
@@ -94,60 +94,27 @@ function run_component_configure()
 #
 function prepare_tests()
 {
-    local retval=0
-    local git_url="https://github.com/Mirantis/tempest"
-    local branch_name="platform/stable/havana"
-    local tests_dir=$TEMPEST_DIR
-    if [ -d "$tests_dir" ]; then
-        rm -rf $tests_dir
-    fi
-    $GIT_CMD clone $git_url $tests_dir
-    cd $tests_dir
-    $GIT_CMD checkout $branch_name
-    sudo $PIP_CMD install .
-    if [ $? -ne 0 ]; then
-        echo "\"pip install .\" fails!"
-        retval=1
-    else
-        local murano_url="http://127.0.0.1:8082/v1/"
-        local tempest_config=${tests_dir}/etc/tempest.conf
-        cp ${tests_dir}/etc/tempest.conf.sample $tempest_config
-        iniset 'identity' 'uri' "$(shield_slashes http://${KEYSTONE_URL}:5000/v2.0/)" "$tempest_config"
-        iniset 'identity' 'admin_username' "$ADMIN_USERNAME" "$tempest_config"
-        iniset 'identity' 'admin_password' "$ADMIN_PASSWORD" "$tempest_config"
-        iniset 'identity' 'admin_tenant_name' "$ADMIN_TENANT" "$tempest_config"
-        iniset 'murano' 'murano_url' "$(shield_slashes $murano_url)" "$tempest_config"
-        iniset 'service_available' 'murano' "true" "$tempest_config"
-    fi
-    cd $WORKSPACE
-    return $retval
+    local murano_url="http://127.0.0.1:8082/v1/"
+    local tests_config=./functionaltests/engine/config.conf
+    iniset 'murano' 'auth_uri' "$(shield_slashes http://${KEYSTONE_URL}:5000/v2.0/)" "$tests_config"
+    iniset 'morano' 'user' "$ADMIN_USERNAME" "$tests_config"
+    iniset 'murano' 'password' "$ADMIN_PASSWORD" "$tests_config"
+    iniset 'murano' 'tenant' "$ADMIN_TENANT" "$tests_config"
+    iniset 'murano' 'murano_url' "$(shield_slashes $murano_url)" "$tests_config"
+    return 0
 }
 #
 function run_tests()
 {
-    local retval=0
-    local tests_dir=$TEMPEST_DIR
-    cd $tests_dir
-    $NOSETESTS_CMD -s -v --with-xunit --xunit-file=test_report$BUILD_NUMBER.xml ${tests_dir}/tempest/api/murano/test_murano_envs.py ${tests_dir}/tempest/api/murano/test_murano_services.py ${tests_dir}/tempest/api/murano/test_murano_sessions.py
+    cd $WORKSPACE
+    $NOSETESTS_CMD -s -v --with-xunit --xunit-file=test_report$BUILD_NUMBER.xml $WORKSPACE/functionaltests/engine/base.py
     if [ $? -ne 0 ]; then
         handle_rabbitmq del
         retval=1
     fi
-    cd $WORKSPACE
-    return $retval
+    return 0
 }
-#
-function move_results()
-{
-    retval=0
-    local tests_dir=$TEMPEST_DIR
-    mv ${tests_dir}/test_report$BUILD_NUMBER.xml $WORKSPACE/
-    if [ $? -ne 0 ]; then
-        echo "Can't move file \"${tests_dir}/test_report$BUILD_NUMBER.xml\" to the \"$WORKSPACE/\"!"
-        retval=1
-    fi
-    return $retval
-}
+
 #
 #Starting up:
 WORKSPACE=$(cd $WORKSPACE && pwd)
@@ -160,5 +127,4 @@ run_component_configure || (e_code=$?; handle_rabbitmq del; exit $e_code) || exi
 prepare_tests || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
 run_tests || exit $?
 handle_rabbitmq del || exit $?
-move_results || exit $?
 exit 0
