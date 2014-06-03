@@ -30,25 +30,37 @@ action = args.action
 cl = Client(rabbitmq_url, rabbitmq_user, rabbitmq_password)
 assert cl.is_alive()
 
+print("-" * 30)
+print("This script will configure RabbitMQ server for Murano."
+      "If something can't be deleted, probably it doesn't exist.")
+
 for queue in cl.get_queues():
     if queue['vhost'] == vhost:
-        cl.purge_queue(vhost, queue['name'])
-        cl.delete_queue(vhost, queue['name'])
+        try:
+            cl.purge_queue(vhost, queue['name'])
+            cl.delete_queue(vhost, queue['name'])
+        except:
+            msg = "Can't delete queue {0} in RabbitMQ host {1}"
+            print(msg.format(queue['name'], rabbitmq_url))
 
-for vhost_ in cl.get_all_vhosts():
-    if vhost_['name'] == vhost:
-        while True:
-            try:
-                cl.delete_vhost(vhost_['name'])
-                break
-            except Exception:
-                pass
+try:
+    cl.delete_vhost(vhost)
+except:
+    msg = "Can't delete vhost {0} in RabbitMQ host {1}"
+    print(msg.format(vhost, rabbitmq_url))
 
-for user_ in cl.get_users():
-    if user_['name'] == user:
-        cl.delete_user(user_['name'])
+try:
+    cl.delete_user(user)
+except:
+    msg = "Can't delete user {0} in RabbitMQ host {1}"
+    print(msg.format(user, rabbitmq_url))
 
 if action == 'create':
-   cl.create_vhost(vhost)
-   cl.create_user(user, password, tags='administrator')
-   cl.set_vhost_permissions(vhost, user, '.*', '.*', '.*')
+    try:
+        cl.create_vhost(vhost)
+        cl.create_user(user, password, tags='administrator')
+        cl.set_vhost_permissions(vhost, user, '.*', '.*', '.*')
+    except:
+        print("Can't init new RabbitMQ vhost and user!")
+
+print("-" * 30)
