@@ -92,6 +92,37 @@ function run_component_configure()
     return $retval
 }
 #
+function prepare_incubator_at()
+{
+    local retval=0
+    local git_url="https://github.com/murano-project/murano-app-incubator"
+    local start_dir=$1
+    local clone_dir="${start_dir}/murano-app-incubator"
+    $GIT_CMD clone $git_url $clone_dir
+    if [ $? -ne 0 ]; then
+        echo "Error occured during git clone $git_url $clone_dir!"
+        retval=1
+    else
+        cd $clone_dir
+        local pkg_counter=0
+        for package_dir in io.murano.*
+        do
+            if [ -d "$package_dir" ]; then
+                if [ -f "${package_dir}/manifest.yaml" ]; then
+                    sudo bash make-package.sh $package_dir
+                    pkg_counter=$((pkg_counter + 1))
+                fi
+            fi
+        done
+        cd ${start_dir}
+        if [ $pkg_counter -eq 0 ]; then
+            echo "Warning: $pkg_counter packages was built at $clone_dir!"
+            retval=1
+        fi
+    fi
+    return $retval
+}
+#
 function prepare_tests()
 {
     local murano_url="http://127.0.0.1:8082/v1/"
@@ -101,6 +132,10 @@ function prepare_tests()
     iniset 'murano' 'password' "$ADMIN_PASSWORD" "$tests_config"
     iniset 'murano' 'tenant' "$ADMIN_TENANT" "$tests_config"
     iniset 'murano' 'murano_url' "$(shield_slashes $murano_url)" "$tests_config"
+
+    cd $WORKSPACE/functionaltests
+    prepare_incubator_at $(pwd) || retval=$?
+
     return 0
 }
 #
