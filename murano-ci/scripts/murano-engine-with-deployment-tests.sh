@@ -117,7 +117,7 @@ function run_tests()
 
 #
 #Starting up:
-WORKSPACE=$(cd $WORKSPACE && pwd)
+WORKSPACE="/opt/git/murano"
 TEMPEST_DIR="${WORKSPACE}/tempest"
 cd $WORKSPACE
 sudo $NTPDATE_CMD -u ru.pool.ntp.org || exit $?
