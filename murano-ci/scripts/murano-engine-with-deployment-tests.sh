@@ -95,9 +95,10 @@ function run_component_configure()
 function prepare_tests()
 {
     local murano_url="http://127.0.0.1:8082/v1/"
-    local tests_config=$WORKSPACE/functionaltests/engine/config.conf
+    local tests_config=$SOURCE_DIR/functionaltests/engine/config.conf
+    sudo chown -R jenkins:jenkins $SOURCE_DIR/functionaltests
     iniset 'murano' 'auth_uri' "$(shield_slashes http://${KEYSTONE_URL}:5000/v2.0/)" "$tests_config"
-    iniset 'morano' 'user' "$ADMIN_USERNAME" "$tests_config"
+    iniset 'murano' 'user' "$ADMIN_USERNAME" "$tests_config"
     iniset 'murano' 'password' "$ADMIN_PASSWORD" "$tests_config"
     iniset 'murano' 'tenant' "$ADMIN_TENANT" "$tests_config"
     iniset 'murano' 'murano_url' "$(shield_slashes $murano_url)" "$tests_config"
@@ -106,8 +107,8 @@ function prepare_tests()
 #
 function run_tests()
 {
-    cd $WORKSPACE
-    $NOSETESTS_CMD -s -v --with-xunit --xunit-file=test_report$BUILD_NUMBER.xml $WORKSPACE/functionaltests/engine/base.py
+    cd $SOURCE_DIR
+    $NOSETESTS_CMD -s -v --with-xunit --xunit-file=$WORKSPACE/test_report$BUILD_NUMBER.xml $SOURCE_DIR/functionaltests/engine/base.py
     if [ $? -ne 0 ]; then
         handle_rabbitmq del
         retval=1
@@ -118,6 +119,7 @@ function run_tests()
 #
 #Starting up:
 WORKSPACE=$(cd $WORKSPACE && pwd)
+SOURCE_DIR=/opt/git/murano
 TEMPEST_DIR="${WORKSPACE}/tempest"
 cd $WORKSPACE
 sudo $NTPDATE_CMD -u ru.pool.ntp.org || exit $?
