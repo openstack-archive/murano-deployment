@@ -199,6 +199,18 @@ function run_tests()
     return $retval
 }
 #
+function collect_artifacts()
+{
+    sudo mkdir $WORKSPACE/artifacts || exit $?
+    sudo cp -R $WORKSPACE/murano-dashboard/functionaltests/screenshots/* $WORKSPACE/artifacts || exit $?
+    if [ $distro_based_on == "redhat" ]; then
+        sudo cp /var/log/httpd/error_log $WORKSPACE/artifacts || exit $?
+    else
+        sudo cp /var/log/apache2/error.log $WORKSPACE/artifacts || exit $?
+    fi
+    sudo chown jenkins:jenkins $WORKSPACE/artifacts/error?log || exit $?
+}
+#
 #Starting up:
 WORKSPACE=$(cd $WORKSPACE && pwd)
 TESTS_DIR="${WORKSPACE}/murano-dashboard"
@@ -219,4 +231,5 @@ run_component_configure || (e_code=$?; handle_rabbitmq del; exit $e_code) || exi
 prepare_tests || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
 run_tests || exit $?
 handle_rabbitmq del || exit $?
+collect_artifacts || exit $?
 exit 0
