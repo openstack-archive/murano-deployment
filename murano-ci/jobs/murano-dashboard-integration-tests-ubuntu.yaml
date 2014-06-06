@@ -16,5 +16,5 @@
     publishers:
       - console-log
       - archive:
-          artifacts: 'murano-dashboard/functionaltests/screenshots/*.png'
+          artifacts: 'murano-dashboard/functionaltests/screenshots/*.png error.log' 
           allow-empty: 'true'
