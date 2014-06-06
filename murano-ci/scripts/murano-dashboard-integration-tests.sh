@@ -199,6 +199,19 @@ function run_tests()
     return $retval
 }
 #
+function collect_artifacts()
+{
+    mkdir $WORKSPACE/artifacts
+    
+    cp -R $WORKSPACE/screehshots $WORKSPACE/artifacts
+    if [ $distro_based_on == "redhat" ]; then
+        cp /var/log/httpd/error.log $WORKSPACE/artifacts
+    else
+        cp /var/log/apache2/error.log $WORKSPACE/artifacts
+    fi
+    chown jenkins:jenkins $WORKSPACE/artifacts/error.log
+}
+#
 #Starting up:
 WORKSPACE=$(cd $WORKSPACE && pwd)
 TESTS_DIR="${WORKSPACE}/murano-dashboard"
@@ -219,4 +232,5 @@ run_component_configure || (e_code=$?; handle_rabbitmq del; exit $e_code) || exi
 prepare_tests || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
 run_tests || exit $?
 handle_rabbitmq del || exit $?
+sudo get_apache_logs || exit $?
 exit 0
