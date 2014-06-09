@@ -200,6 +200,7 @@ function run_tests()
     cd ${tests_dir}/functionaltests
     $NOSETESTS_CMD sanity_check --nologcapture
     if [ $? -ne 0 ]; then
+        collect_artifacts
         handle_rabbitmq del
         retval=1
     fi
@@ -239,5 +240,4 @@ run_component_configure || (e_code=$?; handle_rabbitmq del; exit $e_code) || exi
 prepare_tests || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
 run_tests || exit $?
 handle_rabbitmq del || exit $?
-collect_artifacts
 exit 0
