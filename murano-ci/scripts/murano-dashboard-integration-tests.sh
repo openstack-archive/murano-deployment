@@ -33,6 +33,14 @@ FW_CMD=$(which iptables)
 DISPLAY_NUM=22
 get_os || exit $?
 
+### Error trapping
+set -o errexit
+
+function trap_handler()
+{
+    echo "Got error in '$1' on line '$2', error code '$3'"
+}
+trap 'trap_handler ${0} ${LINENO} ${?}' ERR
 
 ### Install RabbitMQ on the local host to avoid many problems
 if [ $distro_based_on == "redhat" ]; then
@@ -199,6 +207,18 @@ function run_tests()
     return $retval
 }
 #
+function collect_artifacts()
+{
+    sudo mkdir $WORKSPACE/artifacts
+    sudo cp -R $WORKSPACE/murano-dashboard/functionaltests/screenshots/* $WORKSPACE/artifacts
+    if [ $distro_based_on == "redhat" ]; then
+        sudo cp /var/log/httpd/error_log $WORKSPACE/artifacts
+    else
+        sudo cp /var/log/apache2/error.log $WORKSPACE/artifacts
+    fi
+    sudo chown jenkins:jenkins $WORKSPACE/artifacts/error?log
+}
+#
 #Starting up:
 WORKSPACE=$(cd $WORKSPACE && pwd)
 TESTS_DIR="${WORKSPACE}/murano-dashboard"
@@ -219,4 +239,5 @@ run_component_configure || (e_code=$?; handle_rabbitmq del; exit $e_code) || exi
 prepare_tests || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
 run_tests || exit $?
 handle_rabbitmq del || exit $?
+collect_artifacts
 exit 0
