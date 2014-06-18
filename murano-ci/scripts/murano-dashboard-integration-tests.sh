@@ -157,6 +157,7 @@ function prepare_incubator_at()
             fi
         done
         cd ${start_dir}
+        sudo bash murano-app-incubator/make-package.sh MockApp
         if [ $pkg_counter -eq 0 ]; then
             echo "Warning: $pkg_counter packages was built at $clone_dir!"
             retval=1
