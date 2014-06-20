@@ -133,6 +133,7 @@ function prepare_tests()
     iniset 'murano' 'password' "$ADMIN_PASSWORD" "$tests_config"
     iniset 'murano' 'tenant' "$ADMIN_TENANT" "$tests_config"
     iniset 'murano' 'murano_url' "$(shield_slashes $murano_url)" "$tests_config"
+    iniset 'murano' 'linux_image' "$LINUX_IMAGE" "$tests_config"
 
     cd $SOURCE_DIR/functionaltests
     prepare_incubator_at $(pwd) || retval=$?
