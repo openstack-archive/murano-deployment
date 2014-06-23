@@ -27,6 +27,7 @@ DAEMON_USER="murano"
 DAEMON_GROUP="murano"
 DAEMON_CONF="/etc/murano/murano.conf"
 MANAGE_CMD=$(which murano-manage)
+MANAGE_DB_CMD=$(which murano-db-manage)
 #Set up this variable if necessary like RUN_DB_SYNC=true configure_api.sh param0 paramN
 RUN_DB_SYNC=${RUN_DB_SYNC:-false}
 #Functions:
@@ -105,9 +106,9 @@ fi
 check_prerequisites || exit $?
 configure_api || exit $?
 if [ "$RUN_DB_SYNC" == true ]; then
-    su -c "$MANAGE_CMD --config-file $DAEMON_CONF db-sync" -s /bin/bash $DAEMON_USER
+    su -c "$MANAGE_DB_CMD --config-file $DAEMON_CONF upgrade" -s /bin/bash $DAEMON_USER
     if [ $? -ne 0 ]; then
-        echo "\"$MANAGE_CMD --config-file $DAEMON_CONF db-sync\" fails!"
+        echo "\"$MANAGE_DB_CMD --config-file $DAEMON_CONF upgrade\" fails!"
         exit 1
     fi
 fi
