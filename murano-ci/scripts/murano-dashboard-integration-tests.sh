@@ -69,14 +69,14 @@ function handle_rabbitmq()
     local action=$1
     case $action in
         add)
-            $PYTHON_CMD ${CI_ROOT_DIR}/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_url localhost:15672 -action create
+            $PYTHON_CMD ${CI_ROOT_DIR}/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_url localhost:$RABBITMQ_MGMT_PORT -action create
             if [ $? -ne 0 ]; then
                 echo "\"${FUNCNAME[0]} $action\" return error!"
                 retval=1
             fi
             ;;
         del)
-            $PYTHON_CMD ${CI_ROOT_DIR}/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_url localhost:15672 -action delete
+            $PYTHON_CMD ${CI_ROOT_DIR}/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_url localhost:$RABBITMQ_MGMT_PORT -action delete
             if [ $? -ne 0 ]; then
                 echo "\"${FUNCNAME[0]} $action\" return error!"
                 retval=1
