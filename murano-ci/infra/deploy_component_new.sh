@@ -56,16 +56,19 @@ function prepare_component()
         return 1
     fi
     cd $component_clone_dir
-    bash setup.sh uninstall >> /dev/null
-    $GIT_CMD fetch ${ZUUL_URL}/stackforge/${COMPONENT_NAME} ${ZUUL_REF}
-    if [ $? -ne 0 ]; then
-        echo "Error occured during git fetch ${ZUUL_URL}/stackforge/${COMPONENT_NAME} ${ZUUL_REF}!"
-        return 1
-    fi
-    $GIT_CMD checkout FETCH_HEAD
-    if [ $? -ne 0 ]; then
-        echo "Error occured during git checkout FETCH_HEAD!"
-        return 1
+    # "noop" used only for clean install from git
+    if [ "${ZUUL_REF}" != "noop" ] && [ "${ZUUL_URL}" != "noop" ]; then
+        bash setup.sh uninstall >> /dev/null
+        $GIT_CMD fetch ${ZUUL_URL}/stackforge/${COMPONENT_NAME} ${ZUUL_REF}
+        if [ $? -ne 0 ]; then
+            echo "Error occured during git fetch ${ZUUL_URL}/stackforge/${COMPONENT_NAME} ${ZUUL_REF}!"
+            return 1
+        fi
+        $GIT_CMD checkout FETCH_HEAD
+        if [ $? -ne 0 ]; then
+            echo "Error occured during git checkout FETCH_HEAD!"
+            return 1
+        fi
     fi
     bash setup.sh install
     if [ $? -ne 0 ]; then
