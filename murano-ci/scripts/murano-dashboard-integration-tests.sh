@@ -69,14 +69,14 @@ function handle_rabbitmq()
     local action=$1
     case $action in
         add)
-            $PYTHON_CMD ${CI_ROOT_DIR}/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_url localhost:$RABBITMQ_MGMT_PORT -action create
+            $PYTHON_CMD ${CI_ROOT_DIR}/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_host localhost -action create
             if [ $? -ne 0 ]; then
                 echo "\"${FUNCNAME[0]} $action\" return error!"
                 retval=1
             fi
             ;;
         del)
-            $PYTHON_CMD ${CI_ROOT_DIR}/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_url localhost:$RABBITMQ_MGMT_PORT -action delete
+            $PYTHON_CMD ${CI_ROOT_DIR}/infra/RabbitMQ.py -username murano$BUILD_NUMBER -vhostname murano$BUILD_NUMBER -rabbitmq_host localhost -action delete
             if [ $? -ne 0 ]; then
                 echo "\"${FUNCNAME[0]} $action\" return error!"
                 retval=1
@@ -112,11 +112,21 @@ function run_component_deploy()
         retval=1
     else
         local component=$1
-        echo "Running: sudo bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh $ZUUL_REF $component $KEYSTONE_URL $ZUUL_URL"
-        sudo WORKSPACE=$WORKSPACE bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh $ZUUL_REF $component $KEYSTONE_URL $ZUUL_URL
-        if [ $? -ne 0 ]; then
-            echo "\"${FUNCNAME[0]}\" return error!"
-            retval=1
+        local isnoop=$2
+        if [ $# -eq 2 ] && [ "$isnoop" == "noop" ]; then
+            echo "Running: sudo bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh noop $component $KEYSTONE_URL noop"
+            sudo WORKSPACE=$WORKSPACE bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh noop $component $KEYSTONE_URL noop
+            if [ $? -ne 0 ]; then
+                echo "\"${FUNCNAME[0]}\" return error!"
+                retval=1
+            fi
+        else
+            echo "Running: sudo bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh $ZUUL_REF $component $KEYSTONE_URL $ZUUL_URL"
+            sudo WORKSPACE=$WORKSPACE bash -x ${CI_ROOT_DIR}/infra/deploy_component_new.sh $ZUUL_REF $component $KEYSTONE_URL $ZUUL_URL
+            if [ $? -ne 0 ]; then
+                echo "\"${FUNCNAME[0]}\" return error!"
+                retval=1
+            fi
         fi
     fi
     return $retval
@@ -236,6 +246,7 @@ sudo $FW_CMD -F
 get_ip_from_iface eth0 || exit $?
 handle_rabbitmq add || exit $?
 run_component_deploy murano-dashboard || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
+run_component_deploy murano noop || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
 run_component_configure || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
 prepare_tests || (e_code=$?; handle_rabbitmq del; exit $e_code) || exit $?
 run_tests || exit $?
