@@ -165,6 +165,18 @@
               copy-after-failure: true
 
 - publisher:
+    name: console-log-with-artifacs
+    publishers:
+      - scp:
+          site: 'localhost'
+          files:
+            - target: 'logs/$LOG_PATH'
+              copy-console: true
+              copy-after-failure: true
+            - target: 'logs/$LOG_PATH/artifacts'
+              source: 'artifacts/**'
+
+- publisher:
     name: console-log-periodic
     publishers:
       - scp:
