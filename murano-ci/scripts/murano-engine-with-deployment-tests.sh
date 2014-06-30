@@ -33,7 +33,7 @@ PIP_CMD=$(which pip)
 #It contains credentials to access RabbitMQ and an OpenStack lab
 source ~/credentials
 #sudo su -c 'echo "ServerName localhost" >> /etc/apache2/apache2.conf'
-
+STORE_AS_ARTIFACTS="/tmp/murano*.log /var/log/murano/"
 #Functions:
 function handle_rabbitmq()
 {
@@ -146,12 +146,29 @@ function run_tests()
     cd $SOURCE_DIR
     $NOSETESTS_CMD -s -v --with-xunit --xunit-file=$WORKSPACE/test_report$BUILD_NUMBER.xml $SOURCE_DIR/functionaltests/engine/base.py
     if [ $? -ne 0 ]; then
+        collect_artifacts $STORE_AS_ARTIFACTS
         handle_rabbitmq del
         retval=1
+    else
+        collect_artifacts $STORE_AS_ARTIFACTS
     fi
     return 0
 }
-
+#
+function collect_artifacts()
+{
+    local sources=$@
+    local destination=${WORKSPACE}/artifacts
+    sudo mkdir -p $destination
+    for src_element in $sources; do
+        if [ -d "${src_element}" ]; then
+            sudo cp -R ${src_element}/* ${destination}/
+        else
+            sudo cp -R ${src_element} ${destination}/
+        fi
+    done
+    sudo chown -R jenkins:jenkins $WORKSPACE/artifacts/*
+}
 #
 #Starting up:
 WORKSPACE=$(cd $WORKSPACE && pwd)
