@@ -14,7 +14,7 @@
       - shell: "git clone https://git.openstack.org/stackforge/murano-deployment .\
               \nbash -x murano-ci/scripts/murano-dashboard-integration-tests.sh"
     publishers:
-      - console-log
+      - console-log-with-artifacts
       - archive:
           artifacts: 'artifacts/*'
           allow-empty: 'true'
