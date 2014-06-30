@@ -31,6 +31,7 @@ PIP_CMD=$(which pip)
 SCREEN_CMD=$(which screen)
 FW_CMD=$(which iptables)
 DISPLAY_NUM=22
+STORE_AS_ARTIFACTS="${WORKSPACE}/murano-dashboard/functionaltests/screenshots /tmp/murano*.log /var/log/murano-dashboard/ /var/log/murano/"
 get_os || exit $?
 
 ### Error trapping
@@ -48,11 +49,13 @@ if [ $distro_based_on == "redhat" ]; then
     sudo yum install -y rabbitmq-server || exit $?
     sudo /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_management || exit $?
     sudo /etc/init.d/rabbitmq-server restart || exit $?
+    STORE_AS_ARTIFACTS+=" /var/log/httpd/error_log"
 else
     sudo apt-get update || exit $?
     sudo apt-get install -y rabbitmq-server || exit $?
     sudo /usr/lib/rabbitmq/bin/rabbitmq-plugins enable rabbitmq_management || exit $?
     sudo service rabbitmq-server restart
+    STORE_AS_ARTIFACTS+=" /var/log/apache2/error.log"
 fi
 
 
@@ -210,24 +213,28 @@ function run_tests()
     cd ${tests_dir}/functionaltests
     $NOSETESTS_CMD sanity_check --nologcapture
     if [ $? -ne 0 ]; then
-        collect_artifacts
+        collect_artifacts $STORE_AS_ARTIFACTS
         handle_rabbitmq del
         retval=1
     fi
+    collect_artifacts $STORE_AS_ARTIFACTS
     cd $WORKSPACE
     return $retval
 }
 #
 function collect_artifacts()
 {
-    sudo mkdir $WORKSPACE/artifacts
-    sudo cp -R $WORKSPACE/murano-dashboard/functionaltests/screenshots/* $WORKSPACE/artifacts
-    if [ $distro_based_on == "redhat" ]; then
-        sudo cp /var/log/httpd/error_log $WORKSPACE/artifacts
-    else
-        sudo cp /var/log/apache2/error.log $WORKSPACE/artifacts
-    fi
-    sudo chown jenkins:jenkins $WORKSPACE/artifacts/error?log
+    local sources=$@
+    local destination=${WORKSPACE}/artifacts
+    sudo mkdir -p $destination
+    for src_element in $sources; do
+        if [ -d "${src_element}" ]; then
+            sudo cp -R ${src_element}/* ${destination}/
+        else
+            sudo cp -R ${src_element} ${destination}/
+        fi
+    done
+    sudo chown -R jenkins:jenkins $WORKSPACE/artifacts/*
 }
 #
 #Starting up:
