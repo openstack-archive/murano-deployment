@@ -20,6 +20,9 @@
               \nbash -x murano-ci/scripts/murano-engine-with-deployment-tests.sh"
     publishers:
       - console-log
+      - archive:
+          artifacts: 'artifacts/*'
+          allow-empty: 'true'
       - junit:
           results: 'test_report$BUILD_NUMBER.xml'
           keep-long-stdio: false
