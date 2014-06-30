@@ -1,6 +1,7 @@
 from pyrabbit import api
 import argparse
 import sys
+import time
 # Global variables and command line parsing
 parser = argparse.ArgumentParser(description="Script for creating rabbitmq"
                                              "users and vhost for jenkins's"
@@ -90,7 +91,11 @@ def check_vhost_exists(vhost_name):
 # queues cleanup
 def clean_queues(vhost_name):
     owner=api.Client(rabbitmq_url, user, password)
-    vhost_queues=owner.get_queues(vhost_name)
+    try:
+        vhost_queues=owner.get_queues(vhost_name)
+    except :
+        print("Something wrong with credentials, can't access queues in the vhost '%s'" % vhost_name)
+        return
     if vhost_queues.count > 0:
         for vhost_queue in vhost_queues:
             try:
@@ -107,11 +112,15 @@ def clean_queues(vhost_name):
 # remove rabbitmq endpoint
 def remove_rabbit_endpoint(vhost_name,vhost_owner):
     print("Deleting vhost '%s' and user '%s'" % (vhost_name,vhost_owner))
+    time.sleep(1)
     try:
+        mute_stdout()
         cl.delete_user(vhost_owner)
     except Exception, err:
-        print("User '%s' deletion fails" % vhost_owner)
-        exit(1)
+        unmute_stdout()
+        print("User '%s' deletion fails or user doesn't exists" % vhost_owner)
+    unmute_stdout()
+    time.sleep(1)
     try:
         cl.delete_vhost(vhost_name)
     except Exception, err:
@@ -120,13 +129,35 @@ def remove_rabbit_endpoint(vhost_name,vhost_owner):
 
 # add rabbitmq endpoint
 def create_rabbit_endpoint(vhost_name, vhost_owner, vhost_password):
+    retries=2
+    ret_interval=2
     print("Creating vhost '%s' and user '%s'" % (vhost_name,vhost_owner))
-    try:
-        cl.create_vhost(vhost_name)
-        cl.create_user(vhost_owner, vhost_password, tags='administrator')
-        cl.set_vhost_permissions(vhost_name, vhost_owner, '.*', '.*', '.*')
-    except Exception, err:
-        print(err)
+    for attempt in range(retries):
+        try:
+            cl.create_vhost(vhost_name)
+        except Exception, err:
+            print("Error occurred:'%s', making one more attempt" % err)
+            time.sleep(ret_interval)
+        else:
+            break
+    for attempt in range(retries):
+        try:
+            cl.create_user(vhost_owner, vhost_password, tags='administrator')
+        except Exception, err:
+            print("Error occurred:'%s', making one more attempt" % err)
+            time.sleep(ret_interval)
+        else:
+            break
+    for attempt in range(retries):
+        try:
+            cl.set_vhost_permissions(vhost_name, vhost_owner, '.*', '.*', '.*')
+        except Exception, err:
+            print("Error occurred:'%s', making one more attempt" % err)
+            time.sleep(ret_interval)
+        else:
+            break
+    else:
+        print("Max attempts reached, exiting!")
         exit(1)
 
 # Main runtime
@@ -139,7 +170,7 @@ check_mgmt_ctx_port()
 if check_vhost_exists(vhost):
     print("vhost named '%s' exists and will be deleted" % vhost)
     clean_queues(vhost)
-    remove_rabbit_endpoint(vhost,user)
+    remove_rabbit_endpoint(vhost, user)
 if action == 'create':
     create_rabbit_endpoint(vhost, user, password)
 print("-" * 30)
