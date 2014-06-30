@@ -2,7 +2,7 @@
     name: murano-engine-app-deployment-tests-centos
     project-type: freestyle
     defaults: global
-    description: "<b>This job is managed by Jenkins Job Builder, do not edit it through WebUI."
+    description: "<b>This job is managed by Jenkins Job Builder, do not edit it through WebUI.</b>"
     disabled: false
     concurrent: true
     node: centos
@@ -20,6 +20,6 @@
               \nbash -x murano-ci/scripts/murano-engine-with-deployment-tests.sh"
     publishers:
       - console-log
-      - junit:
-          results: 'test_report$BUILD_NUMBER.xml'
-          keep-long-stdio: false
+      - archive:
+          artifacts: 'artifacts/*'
+          allow-empty: 'true'

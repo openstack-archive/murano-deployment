@@ -163,6 +163,8 @@
             - target: 'logs/$LOG_PATH'
               copy-console: true
               copy-after-failure: true
+            - target: 'logs/$LOG_PATH/artifacts'
+              source: 'artifacts/**'
 
 - publisher:
     name: console-log-periodic
