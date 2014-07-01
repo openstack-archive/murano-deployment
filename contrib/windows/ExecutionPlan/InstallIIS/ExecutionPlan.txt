@@ -1,0 +1,9 @@
+include Install-WebServer.ps1
+
+call Import-Module Name="CoreFunctions"
+call Copy-Prerequisites Destination="C:\Prerequisites"
+call Install-WebServer PrerequisitesPath="C:\Prerequisites"
+
+reboot 0
+
+out out.json

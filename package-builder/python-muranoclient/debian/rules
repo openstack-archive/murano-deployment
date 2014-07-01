@@ -1,8 +1,0 @@
-#!/usr/bin/make -f
-# -*- makefile -*-
-
-# export DH_VERBOSE=1
-
-%:
-	dh $@ --buildsystem python_distutils --with python2
-
