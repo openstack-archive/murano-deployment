@@ -125,6 +125,8 @@ function prepare_incubator_at()
 #
 function prepare_tests()
 {
+    sudo pip install -r $SOURCE_DIR/test-requirements.txt
+
     local murano_url="http://127.0.0.1:8082/v1/"
     local tests_config=$SOURCE_DIR/functionaltests/engine/config.conf
     sudo chown -R jenkins:jenkins $SOURCE_DIR/functionaltests
