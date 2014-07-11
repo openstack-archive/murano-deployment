@@ -1,0 +1,35 @@
+includes:
+  - python-file: openstack_functions.py
+
+pipelines:
+  - name: check
+    manager: IndependentPipelineManager
+    trigger:
+      gerrit:
+        - event: patchset-created
+        - event: comment-added
+          comment_filter: (?i)^(Patch Set [0-9]+:\n\n)?\s*recheck(( (?:bug|lp)[\s#:]*(\d+))|( no bug)|( murano-ci))\s*$
+    start:
+      gerrit:
+        verified: 0
+    success:
+      gerrit:
+        verified: 0
+    failure:
+      gerrit:
+        verified: 0
+
+projects:
+  - name: stackforge/murano
+    check:
+      - murano-engine-app-deployment-tests-ubuntu
+  - name: stackforge/murano-dashboard
+    check:
+      - murano-dashboard-integration-tests-ubuntu
+      - murano-dashboard-integration-tests-centos
+
+jobs:
+  - name: ^.*$
+    parameter-function: single_use_node
+  - name: murano-engine-app-deployment-tests-centos
+    voting: false

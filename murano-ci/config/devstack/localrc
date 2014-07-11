@@ -1,0 +1,63 @@
+#CINDER_BRANCH=milestone-proposed
+#GLANCE_BRANCH=milestone-proposed
+#HORIZON_BRANCH=milestone-proposed
+#KEYSTONE_BRANCH=milestone-proposed
+#NOVA_BRANCH=milestone-proposed
+#NEUTRON_BRANCH=milestone-proposed
+#SWIFT_BRANCH=milestone-proposed
+#HEAT_BRANCH=milestone-proposed
+
+#EXTRA_OPTS=(force_config_drive=true libvirt_images_type=qcow2 force_raw_images=false instances_path=/mnt/ramdisk)
+EXTRA_OPTS=(force_config_drive=true libvirt_images_type=qcow2 force_raw_images=false)
+
+ADMIN_PASSWORD=nova
+MYSQL_PASSWORD=nova
+RABBIT_PASSWORD=nova
+SERVICE_PASSWORD=$ADMIN_PASSWORD
+SERVICE_TOKEN=nova
+
+# Enable Swift
+#enable_service swift
+enable_service s-proxy s-object s-container s-account
+SWIFT_HASH=66a3d6b56c1f479c8b4e70ab5c2000f5
+SWIFT_REPLICAS=1
+SWIFT_LOOPBACK_DISK_SIZE=50G
+
+# Force checkout prerequsites
+# FORCE_PREREQ=1
+
+VOLUME_BACKING_FILE_SIZE=100000M
+
+# keystone is now configured by default to use PKI as the token format which produces huge tokens.
+# set UUID as keystone token format which is much shorter and easier to work with.
+KEYSTONE_TOKEN_FORMAT=UUID
+
+# Change the FLOATING_RANGE to whatever IPs VM is working in.
+# In NAT mode it is subnet VMWare Fusion provides, in bridged mode it is your local network.
+# But only use the top end of the network by using a /27 and starting at the 224 octet.
+FIXED_RANGE=10.0.0.0/24
+FIXED_NETWORK_SIZE=256
+FLOATING_RANGE=172.18.169.0/26
+PUBLIC_NETWORK_GATEWAY=172.18.169.1
+
+# Enable logging
+#SCREEN_LOGDIR=/var/log/devstack
+
+# Set ``OFFLINE`` to ``True`` to configure ``stack.sh`` to run cleanly without
+# Internet access. ``stack.sh`` must have been previously run with Internet
+# access to install prerequisites and fetch repositories.
+# OFFLINE=True
+disable_service n-net
+enable_service q-svc
+enable_service q-agt
+enable_service q-dhcp
+enable_service q-l3
+enable_service q-meta
+enable_service neutron
+
+ENABLED_SERVICES+=,heat,h-api,h-api-cfn,h-api-cw,h-eng
+
+CINDER_SECURE_DELETE=False
+
+RECLONE=yes
+API_RATE_LIMIT=False

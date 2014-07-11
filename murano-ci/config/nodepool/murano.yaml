@@ -1,0 +1,56 @@
+script-dir: /etc/nodepool/scripts
+dburi: 'mysql://nodepool:nodepool_sql@localhost/nodepool'
+
+cron:
+  check: '*/1 * * * *'
+
+zmq-publishers:
+  - tcp://127.0.0.1:8888
+
+gearman-servers:
+  - host: 127.0.0.1
+
+labels:
+  - name: precise
+    image: precise
+    min-ready: 1
+    providers:
+      - name: murano-lab201
+  - name: centos
+    image: centos
+    min-ready: 1
+    providers:
+      - name: murano-lab201
+
+providers:
+  - name: murano-lab201
+    username: '${OS_USER}'
+    password: '${OS_PASSWORD}'
+    auth-url: 'http://${OS_LAB_ADDRESS}:5000/v2.0'
+    project-id: '${OS_TENANT}'
+    max-servers: 4
+    boot-timeout: 120
+    pool: 'Public'
+    networks:
+      - net-id: '${NEUTRON_PRIVATE_NET_ID}'
+
+    images:
+      - name: precise
+        base-image: 'cloud-ubuntu-12.04-amd64'
+        min-ram: 1024
+        private-key: '/home/nodepool/.ssh/key'
+        setup: prepare_node_murano.sh
+      - name: centos
+        base-image: 'CentOS-6.5-cloud-init-root'
+        min-ram: 1024
+        private-key: '/home/nodepool/.ssh/key'
+        setup: prepare_node_murano.sh
+
+targets:
+  - name: murano-gate
+    jenkins:
+      url: 'http://127.0.0.1/jenkins'
+      user: 'admin'
+      apikey: '${ADMIN_API_KEY}'
+      credentials-id: '${CREDENTIALS_ID}'
+

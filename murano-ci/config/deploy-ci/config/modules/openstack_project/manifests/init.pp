@@ -1,0 +1,7 @@
+# == Class: openstack_project
+#
+class openstack_project {
+
+  $jenkins_ssh_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDJT1d+2zKca28nFykpizh7z1yPLzK5fpMUH/zKaupINKqZxyMNbKiIQsYHSRXESRj6dpkCI2VQGO99fosPF7/XYCNVRcMLZ3lefi6aUaoBGhGTlj/Lbfwln9sN+o3m9oWgrwX/1+IkY9KlUPS4skVsiExHaGRLmCkMbF+dryB5oWKnOcf27z/fpXIFU06opYzxWZ1wR98vSlazqe+m1nDB4ZHYsvP2ztP2wn6+6xTeLj9tzWDRFmHluW7KJrN5PuX+KExPQx6IidDL92UX2E8ua5S+f6bGttT37wS0smKQTw3dnnM79sJnbd1hc4UtyDBQcFFqFq/L+ohpmM7EKY/f\n"
+
+}

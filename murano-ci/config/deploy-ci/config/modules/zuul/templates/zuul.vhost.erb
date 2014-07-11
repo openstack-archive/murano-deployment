@@ -1,0 +1,42 @@
+<VirtualHost *:80>
+  ServerAdmin <%= scope.lookupvar("::zuul::serveradmin") %>
+  #DocumentRoot /var/lib/zuul/www
+
+  ErrorLog ${APACHE_LOG_DIR}/<%= scope.lookupvar("::zuul::vhost_name") %>-error.log
+
+  LogLevel warn
+
+  CustomLog ${APACHE_LOG_DIR}/<%= scope.lookupvar("::zuul::vhost_name") %>-access.log combined
+
+  RewriteEngine on
+  RewriteRule ^/zuul/status.json$ http://127.0.0.1:8001/status.json [P]
+
+  Alias /rechecks.html /var/www/recheckwatch/rechecks.html
+  Alias /rechecks /var/www/recheckwatch/rechecks.html
+
+  Alias /logs /opt/logs
+  Alias /zuul /opt/zuul/etc/status/public_html
+
+  AddType text/plain .log
+  Alias /icons/ "/usr/share/apache2/icons/"
+
+  <Directory /opt/logs*>
+    Order allow,deny
+    Allow from all
+    Options +Indexes
+  </Directory>
+
+  <Directory "/usr/share/apache2/icons">
+      Options FollowSymlinks
+      AllowOverride None
+      Order allow,deny
+      Allow from all
+  </Directory>
+
+  SetEnv GIT_PROJECT_ROOT /var/lib/zuul/git/
+  SetEnv GIT_HTTP_EXPORT_ALL
+
+  AliasMatch ^/(.*/objects/[0-9a-f]{2}/[0-9a-f]{38})$ /var/lib/zuul/git/$1
+  AliasMatch ^/(.*/objects/pack/pack-[0-9a-f]{40}.(pack|idx))$ /var/lib/zuul/git/$1
+  ScriptAlias / /usr/lib/git-core/git-http-backend/
+</VirtualHost>

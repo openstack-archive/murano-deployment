@@ -1,0 +1,33 @@
+[gearman]
+server=<%= gearman_server %>
+
+[gearman_server]
+start=<%= internal_gearman %>
+
+[gerrit]
+server=<%= gerrit_server %>
+;baseurl=https://review.example.com/r
+user=<%= gerrit_user %>
+sshkey=/var/lib/zuul/ssh/id_rsa
+
+[zuul]
+push_change_refs=false
+layout_config=/etc/zuul/layout.yaml
+log_config=/etc/zuul/logging.conf
+state_dir=/var/lib/zuul
+status_url=<%= status_url %>
+url_pattern=<%= zuul_url %>/logs/{build.parameters[LOG_PATH]}
+job_name_in_report=<%= job_name_in_report %>
+pidfile=/var/run/zuul/zuul.pid
+
+[merger]
+git_dir=/var/lib/zuul/git
+zuul_url=<%= zuul_url %>
+log_config=/etc/zuul/logging.conf
+pidfile=/var/run/zuul-merger/zuul-merger.pid
+
+[smtp]
+server=localhost
+port=25
+default_from=zuul@example.com
+default_to=you@example.com
