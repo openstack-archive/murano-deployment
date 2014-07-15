@@ -79,6 +79,7 @@ function configure_api()
     iniset 'DEFAULT' 'rabbit_host' "$RMQ_HOST" "$DAEMON_CONF"
 
     iniset 'keystone_authtoken' 'auth_host' "$AUTH_HOST" "$DAEMON_CONF"
+    iniset 'keystone_authtoken' 'auth_protocol' "http" "$DAEMON_CONF"
 
     iniset 'keystone' 'auth_url' "$(shield_slashes http://${AUTH_HOST}:5000/v2.0)" "$DAEMON_CONF"
 
