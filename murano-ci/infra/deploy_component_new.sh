@@ -33,6 +33,7 @@ WEB_SERVICE_GROUP=${WEB_SERVICE_GROUP:-apache}
 function do_cleanup()
 {
     local retval=0
+    pip uninstall ply -y
     pip uninstall pycrypto -y
     rm -rf /tmp/keystone-signing-muranoapi || retval=1
     rm -rf /tmp/keystone-signing-muranorepository || retval=1

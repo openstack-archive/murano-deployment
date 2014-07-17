@@ -147,38 +147,7 @@ function run_component_configure()
     return $retval
 }
 #
-function prepare_incubator_at()
-{
-    local retval=0
-    local git_url="https://github.com/murano-project/murano-app-incubator"
-    local start_dir=$1
-    local clone_dir="${start_dir}/murano-app-incubator"
-    $GIT_CMD clone $git_url $clone_dir
-    if [ $? -ne 0 ]; then
-        echo "Error occured during git clone $git_url $clone_dir!"
-        retval=1
-    else
-        cd $clone_dir
-        local pkg_counter=0
-        for package_dir in io.murano.*
-        do
-            if [ -d "$package_dir" ]; then
-                if [ -f "${package_dir}/manifest.yaml" ]; then
-                    bash make-package.sh $package_dir
-                    pkg_counter=$((pkg_counter + 1))
-                fi
-            fi
-        done
-        cd ${start_dir}
-        bash murano-app-incubator/make-package.sh MockApp
-        if [ $pkg_counter -eq 0 ]; then
-            echo "Warning: $pkg_counter packages was built at $clone_dir!"
-            retval=1
-        fi
-    fi
-    return $retval
-}
-#
+
 function prepare_tests()
 {
     local retval=0
@@ -201,7 +170,6 @@ function prepare_tests()
         iniset 'common' 'password' "$ADMIN_PASSWORD" "$tests_config"
         iniset 'common' 'tenant' "$ADMIN_TENANT" "$tests_config"
         cd $tests_dir/functionaltests
-        prepare_incubator_at $(pwd) || retval=$?
     fi
     cd $WORKSPACE
     return $retval
@@ -211,6 +179,9 @@ function run_tests()
 {
     local retval=0
     local tests_dir=$TESTS_DIR
+    if [ -f /tmp/parser_table.py ]; then
+        sudo rm -f /tmp/parser_table.py
+    fi
     cd ${tests_dir}/functionaltests
     $NOSETESTS_CMD sanity_check --nologcapture
     if [ $? -ne 0 ]; then
