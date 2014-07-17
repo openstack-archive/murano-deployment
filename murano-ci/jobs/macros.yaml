@@ -175,6 +175,7 @@
               copy-after-failure: true
             - target: 'logs/$LOG_PATH/artifacts'
               source: 'artifacts/**'
+              copy-after-failure: true
 
 - publisher:
     name: console-log-periodic

@@ -33,6 +33,8 @@ WEB_SERVICE_GROUP=${WEB_SERVICE_GROUP:-apache}
 function do_cleanup()
 {
     local retval=0
+    # resolving conflict between pip installed packages and yum, because of yum can't re write files installed by pip
+    pip uninstall ply -y
     pip uninstall pycrypto -y
     rm -rf /tmp/keystone-signing-muranoapi || retval=1
     rm -rf /tmp/keystone-signing-muranorepository || retval=1

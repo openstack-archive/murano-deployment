@@ -13,7 +13,7 @@
           cd ~
           sudo rm -rf murano-deployment
           git clone https://github.com/stackforge/murano-deployment
-          sh murano-deployment/docs-builder/builder.sh
+          sh -xe murano-deployment/docs-builder/builder.sh
     publishers:
       - email:
           recipients: "smelikyan@mirantis.com, rkamaldinov@mirantis.com, efedorova@mirantis.com, tnurlygayanov@mirantis.com"
