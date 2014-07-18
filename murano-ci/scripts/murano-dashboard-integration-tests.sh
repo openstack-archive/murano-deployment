@@ -183,7 +183,11 @@ function run_tests()
         sudo rm -f /tmp/parser_table.py
     fi
     cd ${tests_dir}/functionaltests
-    $NOSETESTS_CMD sanity_check --nologcapture
+    $NOSETESTS_CMD sanity_check.py:TestSuiteSmoke --nologcapture
+    $NOSETESTS_CMD sanity_check.py:TestSuiteEnvironment --nologcapture
+    $NOSETESTS_CMD sanity_check.py:TestSuiteImage --nologcapture
+    $NOSETESTS_CMD sanity_check.py:TestSuiteFields --nologcapture
+    $NOSETESTS_CMD sanity_check.py:TestSuiteApplications --nologcapture
     if [ $? -ne 0 ]; then
         collect_artifacts $STORE_AS_ARTIFACTS
         handle_rabbitmq del
