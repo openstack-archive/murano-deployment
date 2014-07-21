@@ -147,7 +147,25 @@ function run_component_configure()
     return $retval
 }
 #
-
+function add_mock()
+{
+    local retval=0
+    local dirname=$1
+    if [[ -z "$dirname" ]]; then
+        echo "No directory name provided."
+        retval=1
+    fi
+    if [[ ! -d "${dirname}" ]]; then
+        echo "Folder '${dirname}' doesn't exist."
+        retval=1
+    fi
+    dirname=${dirname%/*}
+    pushd ${dirname}
+    zip -r "../${dirname}.zip" *
+    popd
+    return $retval
+}
+#
 function prepare_tests()
 {
     local retval=0
@@ -170,6 +188,7 @@ function prepare_tests()
         iniset 'common' 'password' "$ADMIN_PASSWORD" "$tests_config"
         iniset 'common' 'tenant' "$ADMIN_TENANT" "$tests_config"
         cd $tests_dir/functionaltests
+        add_mock MockApp || retval=$?
     fi
     cd $WORKSPACE
     return $retval
@@ -220,7 +239,7 @@ fonts_path="/usr/share/fonts/X11/misc/"
 if [ $distro_based_on == "redhat" ]; then
     fonts_path="/usr/share/X11/fonts/misc/"
 fi
-$SCREEN_CMD -dmS display sudo Xvfb -fp ${fonts_path} :${DISPLAY_NUM} -screen 0 1024x768x16 || exit $?
+$SCREEN_CMD -dmS display sudo Xvfb -fp ${fonts_path} :${DISPLAY_NUM} -screen 0 1600x900x16 || exit $?
 sudo $NTPDATE_CMD -u ru.pool.ntp.org || exit $?
 sudo $FW_CMD -F
 get_ip_from_iface eth0 || exit $?
