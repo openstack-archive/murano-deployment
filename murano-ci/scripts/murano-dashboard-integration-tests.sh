@@ -220,7 +220,7 @@ fonts_path="/usr/share/fonts/X11/misc/"
 if [ $distro_based_on == "redhat" ]; then
     fonts_path="/usr/share/X11/fonts/misc/"
 fi
-$SCREEN_CMD -dmS display sudo Xvfb -fp ${fonts_path} :${DISPLAY_NUM} -screen 0 1024x768x16 || exit $?
+$SCREEN_CMD -dmS display sudo Xvfb -fp ${fonts_path} :${DISPLAY_NUM} -screen 0 1600x900x16 || exit $?
 sudo $NTPDATE_CMD -u ru.pool.ntp.org || exit $?
 sudo $FW_CMD -F
 get_ip_from_iface eth0 || exit $?
