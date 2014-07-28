@@ -128,8 +128,8 @@ function prepare_tests()
     sudo pip install -r $SOURCE_DIR/test-requirements.txt
 
     local murano_url="http://127.0.0.1:8082/v1/"
-    local tests_config=$SOURCE_DIR/functionaltests/engine/config.conf
-    sudo chown -R jenkins:jenkins $SOURCE_DIR/functionaltests
+    local tests_config=$SOURCE_DIR/murano/tests/functional/engine/config.conf
+    sudo chown -R jenkins:jenkins $SOURCE_DIR/murano/tests/functional
     iniset 'murano' 'auth_url' "$(shield_slashes http://${KEYSTONE_URL}:5000/v2.0/)" "$tests_config"
     iniset 'murano' 'user' "$ADMIN_USERNAME" "$tests_config"
     iniset 'murano' 'password' "$ADMIN_PASSWORD" "$tests_config"
@@ -137,7 +137,7 @@ function prepare_tests()
     iniset 'murano' 'murano_url' "$(shield_slashes $murano_url)" "$tests_config"
     iniset 'murano' 'linux_image' "$LINUX_IMAGE" "$tests_config"
 
-    cd $SOURCE_DIR/functionaltests
+    cd $SOURCE_DIR/murano/tests/functional
     prepare_incubator_at $(pwd) || retval=$?
 
     return 0
@@ -146,7 +146,7 @@ function prepare_tests()
 function run_tests()
 {
     cd $SOURCE_DIR
-    $NOSETESTS_CMD -s -v --with-xunit --xunit-file=$WORKSPACE/test_report$BUILD_NUMBER.xml $SOURCE_DIR/functionaltests/engine/base.py
+    $NOSETESTS_CMD -s -v --with-xunit --xunit-file=$WORKSPACE/test_report$BUILD_NUMBER.xml $SOURCE_DIR/functional/engine/base.py
     if [ $? -ne 0 ]; then
         collect_artifacts $STORE_AS_ARTIFACTS
         handle_rabbitmq del
