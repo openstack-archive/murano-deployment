@@ -31,7 +31,7 @@ PIP_CMD=$(which pip)
 SCREEN_CMD=$(which screen)
 FW_CMD=$(which iptables)
 DISPLAY_NUM=22
-STORE_AS_ARTIFACTS="${WORKSPACE}/murano-dashboard/functionaltests/screenshots /tmp/murano*.log /var/log/murano-dashboard/ /var/log/murano/"
+STORE_AS_ARTIFACTS="${WORKSPACE}/murano-dashboard/muranodashboard/tests/functional/screenshots /tmp/murano*.log /var/log/murano-dashboard/ /var/log/murano/"
 get_os || exit $?
 
 ### Error trapping
@@ -176,7 +176,7 @@ function prepare_tests()
     else
         sudo chown -R $USER $tests_dir
         cd $tests_dir
-        local tests_config=${tests_dir}/functionaltests/config/config_file.conf
+        local tests_config=${tests_dir}/muranodashboard/tests/functional/config/config_file.conf
         local horizon_suffix="horizon"
         if [ "$distro_based_on" == "redhat" ]; then
             horizon_suffix="dashboard"
@@ -187,7 +187,7 @@ function prepare_tests()
         iniset 'common' 'user' "$ADMIN_USERNAME" "$tests_config"
         iniset 'common' 'password' "$ADMIN_PASSWORD" "$tests_config"
         iniset 'common' 'tenant' "$ADMIN_TENANT" "$tests_config"
-        cd $tests_dir/functionaltests
+        cd $tests_dir/muranodashboard/tests/functional
         add_mock MockApp || retval=$?
     fi
     cd $WORKSPACE
@@ -201,7 +201,7 @@ function run_tests()
     if [ -f /tmp/parser_table.py ]; then
         sudo rm -f /tmp/parser_table.py
     fi
-    cd ${tests_dir}/functionaltests
+    cd ${tests_dir}/muranodashboard/tests/functional
     $NOSETESTS_CMD sanity_check --nologcapture
     if [ $? -ne 0 ]; then
         collect_artifacts $STORE_AS_ARTIFACTS
