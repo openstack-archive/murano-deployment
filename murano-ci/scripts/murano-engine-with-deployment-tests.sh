@@ -76,6 +76,20 @@ function run_component_deploy()
             echo "\"${FUNCNAME[0]}\" return error!"
             retval=1
         fi
+        local murano_config=/etc/murano/murano.conf
+        sudo service murano-api stop
+        sudo service murano-engine stop
+        sudo chown -R jenkins:jenkins /etc/murano
+        iniset 'murano' 'url' "http://127.0.0.1:8082/v2.0" "$murano_config"
+        iniset 'keystone_authtoken' 'auth_host' "$KEYSTONE_URL" "$murano_config"
+        iniset 'keystone_authtoken' 'auth_port' "35357" "$murano_config"
+        iniset 'keystone_authtoken' 'auth_protocol' "http" "$murano_config"
+        iniset 'keystone_authtoken' 'admin_tenant_name' "$ADMIN_TENANT" "$murano_config"
+        iniset 'keystone_authtoken' 'admin_user' "$ADMIN_USERNAME" "$murano_config"
+        iniset 'keystone_authtoken' 'admin_password' "$ADMIN_PASSWORD" "$murano_config"
+        sudo chown -R root:root /etc/murano
+        sudo service murano-api start
+        sudo service murano-engine start
     fi
     return $retval
 }
