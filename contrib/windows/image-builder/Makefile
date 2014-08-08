@@ -12,7 +12,8 @@ build_root := $(shell ./process_config.sh 'get' 'DEFAULT' 'IMAGE_BUILDER_ROOT')
 shared_files_dir := ${build_root}/share/files
 shared_scripts_dir := ${build_root}/share/scripts
 shared_images_dir := ${build_root}/share/images
-libvirt_images_dir := ${build_root}/libvirt/images
+#libvirt_images_dir := ${build_root}/libvirt/images
+libvirt_images_dir := $(shell ./process_config.sh 'get' 'DEFAULT' 'LIBVIRT_IMAGES_DIR')
 ps_modules_dir := ${CURDIR}/../WindowsPowerShell
 
 commit_hash := $(shell git rev-list -n1 HEAD)

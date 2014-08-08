@@ -24,7 +24,7 @@ Function Show-Variable {
     param (
         [String[]] $Name
     )
-    
+
     Log logHorSeparator
     foreach ($VarName in $Name) {
         try {
@@ -70,9 +70,9 @@ function unzip()
         $destinationFolder = $shellApplication.NameSpace($dstPath);
         try
         {
-            Log "Extracting $srcPath to $dstPath ..."; 
+            Log "Extracting $srcPath to $dstPath ...";
             $destinationFolder.CopyHere($zipPackage.Items(),0x14);
-            # 0x14 - force overwrite 
+            # 0x14 - force overwrite
         }
         catch
         {
@@ -90,8 +90,8 @@ function un-zip()
     try
     {
         Log "Unzipping $srcPath to $dstPath  ...";
-		#$unzipper=$srcScriptsPath+"\unzip.exe";
-		$unzipper="$srcPacksPath\unzip.exe";
+        #$unzipper=$srcScriptsPath+"\unzip.exe";
+        $unzipper="$srcPacksPath\unzip.exe";
         Start-Process -FilePath $unzipper -ArgumentList "-e `"$srcPath`" -d `"$dstPath`"" -Wait
     }
     catch
@@ -111,7 +111,7 @@ function runexeinstaller()
     {
         Log "Running $installer ...";
         #Start-Process -FilePath $installer -ArgumentList /verysilent,/bash_context=1,/autocrlf=0,"/SetupType=custom /Components=icons,ext,ext\cheetah,assoc,assoc_sh" -Wait
-		Start-Process -FilePath $installer -ArgumentList "$argList" -Wait
+        Start-Process -FilePath $installer -ArgumentList "$argList" -Wait
     }
     catch
     {
@@ -139,7 +139,7 @@ function CreateDir()
             Log "Can not create $path, exiting...";
             exit;
         }
-    }     
+    }
 }
 
 # Log function
@@ -151,7 +151,7 @@ function Log()
     $datestamp = Get-Date -Format yyyyMMdd-HHmmss;
     $logString = "$datestamp`t$msg";
     if($LogLevel -ge 1)
-    { 
+    {
         Write-Host "LOG:> $logString";
     }
     if($LogLevel -eq 2)
@@ -163,19 +163,19 @@ function Log()
 # Updating registry
 function AddToEnvPath()
 {
-	param (
-		$addString
-	)
+    param (
+        $addString
+    )
     $oldPath=(Get-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH).Path
     if ($oldPath | Select-String -SimpleMatch "$addString")
-    { 
+    {
         Log "$addString already within PATH=`"$oldPath`"";
     }
     else
     {
-	    $newPath=$oldPath+';'+$addString;
+        $newPath=$oldPath+';'+$addString;
         Set-ItemProperty -Path 'Registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment' -Name PATH -Value $newPath
-		Log "$addString was add to system PATH";
+        Log "$addString was add to system PATH";
     }
 }
 
@@ -220,13 +220,13 @@ foreach($file in $srcFiles)
                     "MuranoAgent.zip"
                     {
                         un-zip $file.FullName $agentDir;
-						Start-Sleep -s 5;
-						& "$agentDir\WindowsAgent.exe" /install
+                        Start-Sleep -s 5;
+                        & "$agentDir\WindowsAgent.exe" /install
                     }
                     "CoreFunctions.zip"
                     {
                         un-zip $file.FullName $modulesDir;
-						Start-Sleep -s 5
+                        Start-Sleep -s 5
                         Import-Module "$modulesDir\CoreFunctions\CoreFunctions.psm1" -ArgumentList register;
                     }
                     "SysinternalsSuite.zip"
@@ -242,14 +242,14 @@ foreach($file in $srcFiles)
                     "msysgit-1.8.3.exe"
                     {
                         $gitInstDir="$ENV:ProgramData\git";
-						runexeinstaller $file.FullName "/verysilent /setuptype=custom /components=icons,ext,ext\cheetah,assoc,assoc_sh /bash_context=1 /autocrlf=0 /dir=$gitInstDir";
-						Start-Sleep -s 5;
-						AddToEnvPath "$gitInstDir\cmd";
+                        runexeinstaller $file.FullName "/verysilent /setuptype=custom /components=icons,ext,ext\cheetah,assoc,assoc_sh /bash_context=1 /autocrlf=0 /dir=$gitInstDir";
+                        Start-Sleep -s 5;
+                        AddToEnvPath "$gitInstDir\cmd";
                     }
                 }
             }
-        }     
-    }    
+        }
+    }
 }
 Log $logHorSeparator;
 
@@ -266,7 +266,7 @@ if($CanGo -eq 1)
 #    Import-Module ServerManager
 #    Install-WindowsFeature Server-Gui-Mgmt-Infra -Source 'wim:D:\sources\install.wim:2' -Restart:$false
 # For windows 2008 r2 x64
-	New-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce -Name "PostInstallSysprep" -Value "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe -Command `"& $srcScriptsPath\Start-Sysprep.ps1 -BatchExecution`""
+    New-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce -Name "PostInstallSysprep" -Value "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe -Command `"& $srcScriptsPath\Start-Sysprep.ps1 -BatchExecution`""
 
     Log "Changing LowRiskFileTypes list"
     & reg ADD "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\Associations" /f /v "LowRiskFileTypes" /t REG_SZ /d ".exe;.bat;.reg;.vbs;.ps1;"
@@ -280,7 +280,7 @@ if($CanGo -eq 1)
     #Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 0
     #New-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 0 -PropertyType dword
 
-	Log "Starting Powershell 3 install ..."
-	Start-Process -FilePath wusa.exe -ArgumentList "$srcPacksPath\Prereq\Windows6.1-KB2506143-x64.msu /quiet /forcerestart" -Wait;
+    Log "Starting Powershell 3 install ..."
+    Start-Process -FilePath wusa.exe -ArgumentList "$srcPacksPath\Prereq\Windows6.1-KB2506143-x64.msu /quiet /forcerestart" -Wait;
 }
 

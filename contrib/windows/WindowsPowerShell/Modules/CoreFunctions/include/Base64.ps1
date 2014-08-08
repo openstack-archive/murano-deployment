@@ -6,10 +6,10 @@ Function ConvertTo-Base64String {
     param (
         [Parameter(Position=1,ParameterSetName="FromString")]
         [String] $String,
-        
+
         [Parameter(ParameterSetName="FromFile")]
         [String] $Path,
-        
+
         [Parameter(ParameterSetName="FromFile")]
         [Int] $ChunkSize = 5KB,
 
@@ -24,11 +24,11 @@ Function ConvertTo-Base64String {
         "FromFile" {
             $FileStream = [IO.File]::Open($Path, [System.IO.FileMode]::Open)
             $BytesToRead = $FileStream.Length
-            
+
             if ($OneChunk) {
                 $ChunkSize = $BytesToRead
             }
-            
+
             $Bytes = New-Object Byte[] $ChunkSize
             while ($BytesToRead -gt 0) {
                 if ($BytesToRead -lt $ChunkSize) {
@@ -38,7 +38,7 @@ Function ConvertTo-Base64String {
                 #Write-Host ("BytesToRead: {0}, ChunkSize: {1}" -f $BytesToRead, $ChunkSize )
                 $BytesRead = $FileStream.Read($Bytes, 0, $ChunkSize)
                 $BytesToRead -= $BytesRead
-                
+
                 [System.Convert]::ToBase64String($Bytes)
             }
             $FileStream.Close()
@@ -55,10 +55,10 @@ Function ConvertFrom-Base64String {
     param (
         [Parameter(Position=1,ValueFromPipeline=$true)]
         [String] $Base64String,
-        
+
         [Parameter(ParameterSetName="ToFile")]
         [String] $Path,
-        
+
         [Parameter(ParameterSetName="ToString")]
         [Switch] $ToString
     )

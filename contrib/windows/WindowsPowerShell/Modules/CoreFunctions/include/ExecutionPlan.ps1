@@ -3,13 +3,13 @@ function New-ExecutionResult {
         [Object] $Result = $null,
         [Switch] $IsException
     )
-    
+
     $obj = New-Object -TypeName PSObject |
         Add-Member -Type NoteProperty -Name IsException -Value ([Bool] $IsException) -PassThru |
         Add-Member -Type NoteProperty -Name Result -Value $Result -PassThru
-        
+
     $obj.PSTypeNames.Insert(0, 'Custom.MuranoAgentExecutionsResult')
-    
+
     return $obj
 }
 
@@ -21,18 +21,18 @@ function Add-ExecutionResult {
         [Object] $Result,
         [Switch] $IsException
     )
-    
+
     if (@($InputObject.Result)[0].PSTypeNames -contains 'Custom.MuranoAgentExecutionsResult') {
         $InputObject.Result = @($InputObject.Result) + @(New-ExecutionResult $Result -IsException:$IsException)
     }
     else {
         $InputObject.Result = New-ExecutionResult $Result -IsException:$IsException
     }
-    
+
     if (-not $InputObject.IsException) {
         $InputObject.IsException = ([Bool] $IsException)
     }
-    
+
     $InputObject
 }
 
@@ -42,7 +42,7 @@ function Load-FromJsonFile {
         [String] $Path = ''
     )
     Write-LogDebug "Loading JSON from file '$Path'"
-    
+
     if ([IO.File]::Exists($Path)) {
         Get-Content $Path | ConvertFrom-Json
     }
@@ -81,7 +81,7 @@ function Invoke-ExecutionPlan {
     catch {
         $ExecutionResult = New-ExecutionResult
     }
-    
+
 
     try {
         if ($ExecutionPlan -eq '') {
@@ -99,7 +99,7 @@ function Invoke-ExecutionPlan {
         $ExecutionResult | ConvertTo-Json -Depth 10
         return
     }
-    
+
     try {
         foreach ($Base64Script in $ExecutionPlanObject.Scripts) {
             $ExecutionPlanScript = ConvertFrom-Base64String -Base64String $Base64Script -ToString
@@ -124,11 +124,11 @@ $ExecutionPlanScript
                 Write-LogDebug "Invoking command '$command'"
                 $ExecutionResult = Add-ExecutionResult $ExecutionResult $(Invoke-Expression $Command)
             }
-            
+
             $CommandIndex++
             $ExecutionPlanObject.NextCommandIndex = $CommandIndex
             Save-ToJsonFile $ExecutionPlanCache_plan $ExecutionPlanObject
-            
+
             Save-ToJsonFile $ExecutionPlanCache_result $ExecutionResult
         }
     }
@@ -137,11 +137,11 @@ $ExecutionPlanScript
         $ExecutionResult | ConvertTo-Json -Depth 10
         return
     }
-    
+
     if ($CommandIndex -ge $ExecutionPlanObject.Commands.Count) {
         Write-LogDebug "All commands were executed successfully!"
     }
-    
+
     $ExecutionResult | ConvertTo-Json -Depth 10
 }
 
@@ -151,17 +151,15 @@ function ConvertTo-PowerShellCommand {
     param (
         [Object] $InputObject
     )
-    
+
     $Command = $InputObject.Name
 
-    $InputObject.Arguments | 
+    $InputObject.Arguments |
         Get-Member -MemberType NoteProperty |
         ForEach-Object {
             $ArgName = $_.Name
             $Command += " -$ArgName `"" + $InputObject.Arguments.$ArgName + "`""
         }
-    
+
     $Command
 }
-
-

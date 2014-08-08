@@ -13,11 +13,11 @@ The following files **MUST** be added to the folder **$BUILD_ROOT/image-builder/
 * Far30b3367.x64.20130426.msi
 * SysinternalsSuite.zip
 * Git-1.8.1.2-preview20130201.exe
-* unzip.exe 
+* unzip.exe
 
 The following files will be build by other makefiles:
 * CoreFunctions.zip
 
 The following files should be also added to the folder **$BUILD_ROOT/image-builder/share/files**, but in future they might also be built automatically:
-* MuranoAgent.zip 
+* MuranoAgent.zip
 

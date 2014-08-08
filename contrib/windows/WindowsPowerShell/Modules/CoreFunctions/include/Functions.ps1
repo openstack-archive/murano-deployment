@@ -1,4 +1,4 @@
-﻿Function Stop-Execution {
+Function Stop-Execution {
 <#
 .SYNOPSIS
 Breaks execution with specified error code.
@@ -9,21 +9,21 @@ Function break script execution with error code provided. Error code may be 0 in
 It also tries to parse ErrorRecord or Exception object (if provided) and logs this information.
 #>
     [CmdletBinding(DefaultParameterSetName="Exception")]
-    
-	param (
+
+    param (
         [Parameter(Position=1,ParameterSetName="Exception")]
-		$InputObject = $null,
-        
+        $InputObject = $null,
+
         [Parameter(ParameterSetName="ErrorString")]
-		[String] $ExitString = "",
-        
+        [String] $ExitString = "",
+
         [Parameter(ParameterSetName="ErrorString")]
-		[Int] $ExitCode = 0,
-        
+        [Int] $ExitCode = 0,
+
         [Parameter(ParameterSetName="ErrorString")]
-		[Switch] $Success
-	)
-    
+        [Switch] $Success
+    )
+
     Function Exit-Function {
         if ($ExitCode -eq 0) {
             Write-LogInfo ( "STOP ({0}):`n{1}" -f $ExitCode, $ExitString )
@@ -31,7 +31,7 @@ It also tries to parse ErrorRecord or Exception object (if provided) and logs th
         else {
             Write-LogFatal ( "STOP ({0}):`n{1}" -f $ExitCode,  $ExitString )
         }
-        
+
         Write-Log "__StopExecutionPreference__ = '$__StopExecutionPreference__'"
         switch ("$__StopExecutionPreference__") {
             "Exit" {
@@ -55,19 +55,19 @@ It also tries to parse ErrorRecord or Exception object (if provided) and logs th
     }
 
     switch($PSCmdlet.ParameterSetName) {
-		"Exception" {
+        "Exception" {
             #----------
             if ($InputObject -eq $null) {
-		        $ExitString = "***** SCRIPT INTERRUPTED *****"
+                $ExitString = "***** SCRIPT INTERRUPTED *****"
                 $ExitCode = 255
                 Exit-Function
             }
             #----------
-        
-        
+
+
             #----------
-    		try {
-    			$ErrorRecord = [System.Management.Automation.ErrorRecord] $InputObject
+            try {
+                $ErrorRecord = [System.Management.Automation.ErrorRecord] $InputObject
 <#
                 $ExitString = @"
 $($ErrorRecord.ToString())
@@ -89,38 +89,38 @@ $($ErrorRecord.ScriptStackTrace.ToString())
                 $ExitString = Out-String -InputObject $InputObject
                 $ExitCode = 255
                 Exit-Function
-    		}
-    		catch {
-    			$ErrorRecord = $null
-    			Write-LogWarning "Unable to cast InputObject to [System.Management.Automation.ErrorRecord]"
-    		}
+            }
+            catch {
+                $ErrorRecord = $null
+                Write-LogWarning "Unable to cast InputObject to [System.Management.Automation.ErrorRecord]"
+            }
             #----------
-            
-            
+
+
             #----------
-    		try {
-    			$Exception = [System.Exception] $InputObject
-    			#$ExitString = $Exception.ToString()
+            try {
+                $Exception = [System.Exception] $InputObject
+                #$ExitString = $Exception.ToString()
                 $ExitString = Out-String -InputObject $InputObject
                 $ExitCode = 255
                 Exit-Function
-    		}
-    		catch {
-    			$Exception = $null
-    			Write-LogWarning "Unable to cast InputObject to [System.Exception]"
-    		}
+            }
+            catch {
+                $Exception = $null
+                Write-LogWarning "Unable to cast InputObject to [System.Exception]"
+            }
             #----------
 
-        
+
             #----------
-    		try {
-    			$ExitString = Out-String -InputObject $InputObject
+            try {
+                $ExitString = Out-String -InputObject $InputObject
                 $ExitCode = 255
                 Exit-Function
-    		}
-    		catch {
-    			Write-LogWarning "Unable to cast InputObject of type [$($InputObject.GetType())] to any of supported types."
-    		}
+            }
+            catch {
+                Write-LogWarning "Unable to cast InputObject of type [$($InputObject.GetType())] to any of supported types."
+            }
             #----------
         }
         "ErrorString" {
@@ -128,11 +128,11 @@ $($ErrorRecord.ScriptStackTrace.ToString())
                 $ExitString = "Script stopped with NO ERROR."
                 $ExitCode = 0
             }
-            
+
             Exit-Function
         }
     }
-    
+
     $ExitString = "Unknown error occured in Stop-Execution"
     $ExitCode = 255
     Exit-Function
@@ -150,7 +150,7 @@ Convert to / request password as secure string.
         [String] $Password = "",
         [String] $Prompt = "Please enter password"
     )
-    
+
     if ($Password -eq "") {
         Read-Host -Prompt $Prompt -AsSecureString
     }
@@ -167,15 +167,15 @@ Function New-Credential {
 Create new creadential object with username and password provided.
 #>
     [CmdletBinding()]
-	param (
-		[Parameter(Mandatory=$true)]
-		[String] $UserName,
-		
-		[String] $Password
-	)
-	
-	$SecurePassword = Get-PasswordAsSecureString -Password "$Password"
-	New-Object System.Management.Automation.PSCredential( "$UserName", $SecurePassword )
+    param (
+        [Parameter(Mandatory=$true)]
+        [String] $UserName,
+
+        [String] $Password
+    )
+
+    $SecurePassword = Get-PasswordAsSecureString -Password "$Password"
+    New-Object System.Management.Automation.PSCredential( "$UserName", $SecurePassword )
 }
 
 
@@ -199,8 +199,8 @@ public static extern IntPtr SendMessageTimeout(
     Write-Log "Executing 'SendMessageTimeout' ..."
 
     $retval = [Win32.NativeMethods]::SendMessageTimeout($HWND_BROADCAST, $WM_SETTINGCHANGE,
-	    [UIntPtr]::Zero, "Environment", 2, 5000, [ref] $result)
-    
+        [UIntPtr]::Zero, "Environment", 2, 5000, [ref] $result)
+
     Write-Log "'SendMessageTimeout' returned '$retval' (non-zero is OK)"
 }
 
@@ -292,8 +292,8 @@ Function Start-Program {
     }
 
     $Result.ExitCode = $Process.ExitCode
-    $Result.StdOut = $Result.StdOut - split "`r`n"
-    $Result.StdErr = $Result.StdErr - split "`r`n"
+    $Result.StdOut = $Result.StdOut -split "`r`n"
+    $Result.StdErr = $Result.StdErr -split "`r`n"
     $Process = $null
 
     if ($RedirectStreams) {
@@ -325,12 +325,12 @@ Function Backup-File {
     )
 
     $BackupFile = "$Path.bak"
-    
+
     if (-not [IO.File]::Exists($Path)) {
         Write-LogError "Unable to backup file '$Path': file not exists."
         return
     }
-    
+
     if ([IO.File]::Exists($BackupFile)) {
         try {
             [IO.File]::Delete($BackupFile)
@@ -362,20 +362,20 @@ Function Install-Module {
              $ModuleName = $ModulePath.Split("\")[-1]
         }
     }
-    
+
     if ($InstallPath -eq "") {
         Stop-Execution -ExitString "To install the module destination path must be provided."
     }
     else {
         Write-Log "Installing the module to '$InstallPath'"
-        
+
         $NewModulePath = [IO.Path]::Combine($InstallPath, $ModuleName)
         if ([IO.Directory]::Exists($NewModulePath)) {
             [IO.Directory]::Delete($NewModulePath, $true)
         }
-            
+
         Copy-Item -Path $ModulePath -Destination $InstallPath -Recurse -Force -ErrorAction Stop
-            
+
         Update-PsModulePath -AddPath "$InstallPath"
     }
 }
@@ -412,12 +412,12 @@ Returned values:
     )
 
     $ModuleVersion = (Get-Module -Name $Name -ListAvailable).Version
-    
+
     if ($ModuleVersion -eq $null) {
         Write-Log "Module '$Name' not found."
         return -2
     }
-    
+
     try {
         $RequiredVersion = [System.Version]::Parse($Version)
     }
@@ -425,6 +425,6 @@ Returned values:
         Write-Log "'$Version' is not a correct version string."
         return -2
     }
-    
+
     $ModuleVersion.CompareTo($RequiredVersion)
 }
