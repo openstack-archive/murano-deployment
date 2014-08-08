@@ -1,9 +1,9 @@
-﻿Function Initialize-Logger {
+Function Initialize-Logger {
     param (
         [String] $ModuleName = $__ModuleName,
         [String] $LogPath = $__DefaultLogPath
     )
-    
+
     if (-not ("log4net.LogManager" -as [type])) {
         $FileStream = ([System.IO.FileInfo] (Get-Item "$__ModulePath\log4net.dll")).OpenRead()
 
@@ -23,7 +23,7 @@
     $Log4NetConfig = New-Object System.IO.FileInfo("$__ModulePath\log4net.config")
 
     [log4net.Config.XmlConfigurator]::Configure($Log4NetConfig)
-    
+
     $__Logger.info("Logger initialized. Log file: '$LogPath'`n")
 }
 
