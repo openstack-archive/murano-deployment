@@ -1,0 +1,7 @@
+commit 93618a2f701e83c67942518292e33cb7b50f4c42
+Merge: 653955e 8ccc227
+Author: Jenkins <jenkins@review.openstack.org>
+Date:   Thu Jun 26 19:14:32 2014 +0000
+
+    Merge "Handle task manager shutdown more correctly"
+
