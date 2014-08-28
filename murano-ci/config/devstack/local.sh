@@ -15,12 +15,19 @@ fi
 # setup ci tenant and ci users
 CI_TENANT_ID=$(keystone tenant-create --name ci --description 'CI tenant' | grep ' id ' | get_field 2)
 CI_USER_ID=$(keystone user-create --name ci-user --tenant_id $CI_TENANT_ID --pass swordfish | grep ' id ' | get_field 2)
+
 ADMIN_USER_ID=$(keystone user-list | grep admin |  get_field 1)
 MEMBER_ROLE_ID=$(keystone role-list | grep Member | get_field 1)
+
+HEAT_STACK_OWNER_ROLE_ID=$(keystone role-list | grep heat_stack_owner | get_field 1)
+
 keystone user-role-add --user $CI_USER_ID --role $MEMBER_ROLE_ID --tenant $CI_TENANT_ID
+keystone user-role-add --user $CI_USER_ID --role $HEAD_STACK_OWNER_ROLE_ID --tenant $CI_TENANT_ID
 keystone user-role-add --user $ADMIN_USER_ID --role $MEMBER_ROLE_ID --tenant $CI_TENANT_ID
+
 _MEMBER_ROLE_ID=$(keystone role-list | grep _member_ | get_field 1)
 keystone user-role-add --user $ADMIN_USER_ID --role $_MEMBER_ROLE_ID --tenant $CI_TENANT_ID
+
 ADMIN_ROLE_ID=$(keystone role-list | grep admin | get_field 1)
 keystone user-role-add --user $CI_USER_ID --role $ADMIN_ROLE_ID --tenant $CI_TENANT_ID
 keystone user-role-add --user $ADMIN_USER_ID --role $ADMIN_ROLE_ID --tenant $CI_TENANT_ID
@@ -36,7 +43,8 @@ EXT_NET_ID=$(neutron net-external-list | grep ' public' | get_field 1)
 neutron router-gateway-set $CI_ROUTER_ID $EXT_NET_ID
 neutron router-interface-add $CI_ROUTER_ID $CI_SUBNET_ID
 
-CI_DEFAULT_SECURITY_GROUP_ID=$(neutron security-group-list --tenant_id $CI_TENANT_ID | grep ' default ' | get_field 1)
+#CI_DEFAULT_SECURITY_GROUP_ID=$(neutron security-group-list --tenant_id $CI_TENANT_ID | grep ' default ' | get_field 1)
+CI_DEFAULT_SECURITY_GROUP_ID=$(nova secgroup-list --os-tenant-id ${CI_TENANT_ID} | grep ' default ' | get_field 1)
 neutron security-group-rule-create --tenant_id $CI_TENANT_ID --protocol icmp --direction ingress $CI_DEFAULT_SECURITY_GROUP_ID
 neutron security-group-rule-create --tenant_id $CI_TENANT_ID --protocol icmp --direction egress $CI_DEFAULT_SECURITY_GROUP_ID
 neutron security-group-rule-create --tenant_id $CI_TENANT_ID --protocol tcp --port-range-min 1 --port-range-max 65535 --direction ingress $CI_DEFAULT_SECURITY_GROUP_ID
