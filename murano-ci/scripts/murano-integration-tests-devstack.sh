@@ -354,9 +354,9 @@ function collect_openstack_logs() {
 
     set +o errexit
     mkdir -p ${WORKSPACE}/artifacts/openstack
-    ssh $OPENSTACK_HOST BUILD_TAG=${BUILD_TAG} ./cut-logs.sh ${TESTS_STARTED_AT[0]} ${TESTS_STARTED_AT[1]} ${TESTS_FINISHED_AT[0]} ${TESTS_FINISHED_AT[1]} heat neutron
-    scp -r $OPENSTACK_HOST:~/output/${BUILD_TAG}/* ${WORKSPACE}/artifacts/openstack
-    ssh $OPENSTACK_HOST rm -rf ~/output/${BUILD_TAG}
+    ssh ${OPENSTACK_HOST} BUILD_TAG=${BUILD_TAG} ~/split-logs.sh ${TESTS_STARTED_AT[0]} ${TESTS_STARTED_AT[1]} ${TESTS_FINISHED_AT[0]} ${TESTS_FINISHED_AT[1]} heat neutron
+    scp -r ${OPENSTACK_HOST}:~/log-parts/${BUILD_TAG}/* ${WORKSPACE}/artifacts/openstack
+    ssh ${OPENSTACK_HOST} rm -rf ~/log-parts/${BUILD_TAG}
     set -o errexit
 }
 
