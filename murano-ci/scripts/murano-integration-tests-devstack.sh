@@ -31,6 +31,7 @@ EOF
 function exit_handler() {
     mkdir -p $WORKSPACE/artifacts
     echo $BUILD_STATUS_ON_EXIT > $WORKSPACE/artifacts/build_status
+    echo $BUILD_STATUS_ON_EXIT > $WORKSPACE/artifacts/overall-status.txt
     cat << EOF
 ********************************************************************************
 *
@@ -39,6 +40,10 @@ function exit_handler() {
 *
 ********************************************************************************
 EOF
+    set +o xtrace
+    while [ -f ~/keep-vm-alive ]; do
+        sleep 5
+    done
 }
 
 trap 'trap_handler ${?} ${LINENO} ${0}' ERR
@@ -111,13 +116,7 @@ esac
 
 # Commands used in script
 #------------------------
-PYTHON_CMD=$(which python)
 NOSETESTS_CMD=$(which nosetests)
-GIT_CMD=$(which git)
-NTPDATE_CMD=$(which ntpdate)
-PIP_CMD=$(which pip)
-SCREEN_CMD=$(which screen)
-FW_CMD=$(which iptables)
 #------------------------
 
 
@@ -171,7 +170,7 @@ function prepare_murano_apps() {
     cd ${start_dir}
 
     if [ "${PROJECT_NAME}" == 'murano' ]; then
-        ${GIT_CMD} clone --branch ${APP_INCUBATOR_BRANCH} -- ${APP_INCUBATOR_REPO} ${clone_dir}
+        git clone $git_url $clone_dir
 
         local app
         cd ${clone_dir}
@@ -284,6 +283,8 @@ EOF
 
     popd
 
+    ensure_no_heat_stacks_left || retval=$?
+
     return $retval
 }
 
@@ -346,10 +347,39 @@ function collect_openstack_logs() {
 
     set +o errexit
     mkdir -p ${WORKSPACE}/artifacts/openstack
-    ssh $OPENSTACK_HOST BUILD_TAG=${BUILD_TAG} ./cut-logs.sh ${TESTS_STARTED_AT[0]} ${TESTS_STARTED_AT[1]} ${TESTS_FINISHED_AT[0]} ${TESTS_FINISHED_AT[1]} heat neutron
-    scp -r $OPENSTACK_HOST:~/output/${BUILD_TAG}/* ${WORKSPACE}/artifacts/openstack
-    ssh $OPENSTACK_HOST rm -rf ~/output/${BUILD_TAG}
+    ssh ${OPENSTACK_HOST} BUILD_TAG=${BUILD_TAG} \~/split-logs.sh ${TESTS_STARTED_AT[0]} ${TESTS_STARTED_AT[1]} ${TESTS_FINISHED_AT[0]} ${TESTS_FINISHED_AT[1]} heat neutron
+    scp -r ${OPENSTACK_HOST}:~/log-parts/${BUILD_TAG}/* ${WORKSPACE}/artifacts/openstack
+    ssh ${OPENSTACK_HOST} rm -rf \~/log-parts/${BUILD_TAG}
     set -o errexit
+}
+
+
+function ensure_no_heat_stacks_left() {
+    local log_file="${STACK_HOME}/log/screen-murano-engine.log"
+    local retval=0
+
+    pushd "${STACK_HOME}/devstack"
+
+    set +o xtrace
+    echo "Importing openrc ..."
+    source openrc ${ADMIN_USERNAME} ${ADMIN_TENANT}
+    env > ~/envvars
+    set -o xtrace
+
+    for id in $(sed -n 's/.*\"OS\:\:stack_id\"\: \"\(.\{36\}\)\".*/\1/p' "${log_file}" | sort | uniq); do
+        stack_info=$(heat stack-list | grep "${id}")
+        if [ -n "${stack_info}" ]; then
+            retval=1
+            echo "Stack '${id}' found!"
+            echo "${stack_info}"
+            echo "Deleting stack '${id}'"
+            heat stack-delete "${id}" > /dev/null
+        fi
+    done
+
+    popd
+
+    return $retval
 }
 
 
@@ -362,14 +392,12 @@ function compress_log_files() {
 
 function git_clone_devstack() {
     # Assuming the script is run from 'jenkins' user
-    local git_dir=/opt/git
 
-    sudo mkdir -p "$git_dir/openstack-dev"
-    sudo chown -R jenkins:jenkins "$git_dir/openstack-dev"
-    cd "$git_dir/openstack-dev"
-    git clone https://github.com/openstack-dev/devstack
+    sudo mkdir -p "${STACK_HOME}"
+    sudo chown -R jenkins:jenkins "${STACK_HOME}"
+    git clone https://github.com/openstack-dev/devstack ${STACK_HOME}/devstack
 
-    #source ./devstack/functions-common
+    #source ${STACK_HOME}/devstack/functions-common
 }
 
 
@@ -377,9 +405,9 @@ function deploy_devstack() {
     # Assuming the script is run from 'jenkins' user
     local git_dir=/opt/git
 
-    sudo mkdir -p "$git_dir/stackforge"
-    sudo chown -R jenkins:jenkins "$git_dir/stackforge"
-    cd "$git_dir/stackforge"
+    sudo mkdir -p "${git_dir}/stackforge"
+    sudo chown -R jenkins:jenkins "${git_dir}/stackforge"
+    cd "${git_dir}/stackforge"
     git clone https://github.com/stackforge/murano
 
     if [ "${PROJECT_NAME}" == 'murano' ]; then
@@ -389,14 +417,14 @@ function deploy_devstack() {
     fi
 
     # NOTE: Source path MUST ends with a slash!
-    rsync --recursive --exclude README.* "$git_dir/stackforge/murano/contrib/devstack/" "$git_dir/openstack-dev/devstack/"
+    rsync --recursive --exclude README.* "${git_dir}/stackforge/murano/contrib/devstack/" "${STACK_HOME}/devstack/"
 
-    cd "$git_dir/openstack-dev/devstack"
+    cd "${STACK_HOME}/devstack"
 
     cat << EOF > local.conf
 [[local|localrc]]
-HOST_IP=${OPENSTACK_HOST}             # IP address of OpenStack lab
-ADMIN_PASSWORD=.                    # This value doesn't matter
+HOST_IP=${OPENSTACK_HOST}           # IP address of OpenStack lab
+ADMIN_PASSWORD=${ADMIN_PASSWORD}    # This value doesn't matter
 MYSQL_PASSWORD=swordfish            # Random password for MySQL installation
 SERVICE_PASSWORD=${ADMIN_PASSWORD}  # Password of service user
 SERVICE_TOKEN=.                     # This value doesn't matter
@@ -436,12 +464,12 @@ EOF
     sudo ./tools/create-stack-user.sh
     echo 'stack:swordfish' | sudo chpasswd
 
+    sudo chown -R stack:stack "${STACK_HOME}"
+
     sudo sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
     sudo service ssh restart
 
-    sudo chown -R stack:stack "$git_dir/openstack-dev/devstack"
-
-    sudo su -c "cd $git_dir/openstack-dev/devstack && ./stack.sh" stack
+    sudo su -c "cd ${STACK_HOME}/devstack && ./stack.sh" stack
 
     # Fix iptables to allow outbound access
     sudo iptables -I INPUT 1 -p tcp --dport 80 -j ACCEPT
@@ -500,11 +528,11 @@ function adjust_time_settings(){
     sudo sh -c "echo \"${TZ_STRING}\" > /etc/timezone"
     sudo dpkg-reconfigure -f noninteractive tzdata
 
-    sudo $NTPDATE_CMD -u ru.pool.ntp.org
+    sudo ntpdate -u ru.pool.ntp.org
 }
 #-------------------------------------------------------------------------------
 
-BUILD_STATUS_ON_EXIT='PREPARATION_FAILED'
+BUILD_STATUS_ON_EXIT='VM_REUSED'
 
 # Create flags (files to check VM state)
 if [ -f ~/build-started ]; then
@@ -514,13 +542,15 @@ else
     touch ~/build-started
 fi
 
+BUILD_STATUS_ON_EXIT='PREPARATION_FAILED'
+
 if [ "${KEEP_VM_ALIVE}" == 'true' ]; then
     touch ~/keep-vm-alive
 fi
 
 
 sudo sh -c "echo '127.0.0.1 $(hostname)' >> /etc/hosts"
-sudo $FW_CMD -F
+sudo iptables -F
 
 adjust_time_settings
 
@@ -545,7 +575,7 @@ cat << EOF
 ********************************************************************************
 EOF
 
-configure_apt_cacher enable
+#configure_apt_cacher enable
 
 BUILD_STATUS_ON_EXIT='DEVSTACK_FAILED'
 
@@ -569,11 +599,5 @@ EOF
 run_tests
 
 BUILD_STATUS_ON_EXIT='SUCCESS'
-
-set +o xtrace
-while [ -f ~/keep-vm-alive ]; do
-    sleep 5
-done
-set -o xtrace
 
 exit 0
