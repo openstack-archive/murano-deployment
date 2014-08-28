@@ -39,6 +39,10 @@ function exit_handler() {
 *
 ********************************************************************************
 EOF
+    set +o xtrace
+    while [ -f ~/keep-vm-alive ]; do
+        sleep 5
+    done
 }
 
 trap 'trap_handler ${?} ${LINENO} ${0}' ERR
@@ -292,6 +296,8 @@ EOF
 
     popd
 
+    ensure_no_heat_stacks_left || retval=$?
+
     return $retval
 }
 
@@ -354,10 +360,38 @@ function collect_openstack_logs() {
 
     set +o errexit
     mkdir -p ${WORKSPACE}/artifacts/openstack
-    ssh $OPENSTACK_HOST BUILD_TAG=${BUILD_TAG} ./cut-logs.sh ${TESTS_STARTED_AT[0]} ${TESTS_STARTED_AT[1]} ${TESTS_FINISHED_AT[0]} ${TESTS_FINISHED_AT[1]} heat neutron
-    scp -r $OPENSTACK_HOST:~/output/${BUILD_TAG}/* ${WORKSPACE}/artifacts/openstack
-    ssh $OPENSTACK_HOST rm -rf ~/output/${BUILD_TAG}
+    ssh ${OPENSTACK_HOST} BUILD_TAG=${BUILD_TAG} \~/split-logs.sh ${TESTS_STARTED_AT[0]} ${TESTS_STARTED_AT[1]} ${TESTS_FINISHED_AT[0]} ${TESTS_FINISHED_AT[1]} heat neutron
+    scp -r ${OPENSTACK_HOST}:~/log-parts/${BUILD_TAG}/* ${WORKSPACE}/artifacts/openstack
+    ssh ${OPENSTACK_HOST} rm -rf \~/log-parts/${BUILD_TAG}
     set -o errexit
+}
+
+
+function ensure_no_heat_stacks_left() {
+    local log_file="${STACK_HOME}/log/screen-murano-engine.log"
+    local retval=0
+
+    pushd "${STACK_HOME}/devstack"
+
+    set +o xtrace
+    echo "Importing openrc ..."
+    source openrc ${ADMIN_USERNAME} ${ADMIN_TENANT}
+    set -o xtrace
+
+    for id in $(sed -n 's/.*\"OS\:\:stack_id\"\: \"\(.\{36\}\)\".*/\1/p' "${log_file}" | sort | uniq); do
+        stack_info=$(heat stack-list | grep "${id}")
+        if [ -n "${stack_info}" ]; then
+            retval=1
+            echo "Stack '${id}' found!"
+            echo "${stack_info}"
+            echo "Deleting stack '${id}'"
+            heat stack-delete "${id}"
+        fi
+    done
+
+    popd
+
+    return $retval
 }
 
 
@@ -370,14 +404,12 @@ function compress_log_files() {
 
 function git_clone_devstack() {
     # Assuming the script is run from 'jenkins' user
-    local git_dir=/opt/git
 
-    sudo mkdir -p "$git_dir/openstack-dev"
-    sudo chown -R jenkins:jenkins "$git_dir/openstack-dev"
-    cd "$git_dir/openstack-dev"
-    git clone https://github.com/openstack-dev/devstack
+    sudo mkdir -p "${STACK_HOME}"
+    sudo chown -R jenkins:jenkins "${STACK_HOME}"
+    git clone https://github.com/openstack-dev/devstack ${STACK_HOME}/devstack
 
-    #source ./devstack/functions-common
+    #source ${STACK_HOME}/devstack/functions-common
 }
 
 
@@ -385,9 +417,9 @@ function deploy_devstack() {
     # Assuming the script is run from 'jenkins' user
     local git_dir=/opt/git
 
-    sudo mkdir -p "$git_dir/stackforge"
-    sudo chown -R jenkins:jenkins "$git_dir/stackforge"
-    cd "$git_dir/stackforge"
+    sudo mkdir -p "${git_dir}/stackforge"
+    sudo chown -R jenkins:jenkins "${git_dir}/stackforge"
+    cd "${git_dir}/stackforge"
     git clone https://github.com/stackforge/murano
 
     if [ "${PROJECT_NAME}" == 'murano' ]; then
@@ -397,9 +429,9 @@ function deploy_devstack() {
     fi
 
     # NOTE: Source path MUST ends with a slash!
-    rsync --recursive --exclude README.* "$git_dir/stackforge/murano/contrib/devstack/" "$git_dir/openstack-dev/devstack/"
+    rsync --recursive --exclude README.* "${git_dir}/stackforge/murano/contrib/devstack/" "${STACK_HOME}/devstack/"
 
-    cd "$git_dir/openstack-dev/devstack"
+    cd "${STACK_HOME}/devstack"
 
     cat << EOF > local.conf
 [[local|localrc]]
@@ -444,12 +476,12 @@ EOF
     sudo ./tools/create-stack-user.sh
     echo 'stack:swordfish' | sudo chpasswd
 
+    sudo chown -R stack:stack "${STACK_HOME}"
+
     sudo sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
     sudo service ssh restart
 
-    sudo chown -R stack:stack "$git_dir/openstack-dev/devstack"
-
-    sudo su -c "cd $git_dir/openstack-dev/devstack && ./stack.sh" stack
+    sudo su -c "cd ${STACK_HOME}/devstack && ./stack.sh" stack
 
     # Fix iptables to allow outbound access
     sudo iptables -I INPUT 1 -p tcp --dport 80 -j ACCEPT
@@ -553,7 +585,7 @@ cat << EOF
 ********************************************************************************
 EOF
 
-configure_apt_cacher enable
+#configure_apt_cacher enable
 
 BUILD_STATUS_ON_EXIT='DEVSTACK_FAILED'
 
@@ -577,11 +609,5 @@ EOF
 run_tests
 
 BUILD_STATUS_ON_EXIT='SUCCESS'
-
-set +o xtrace
-while [ -f ~/keep-vm-alive ]; do
-    sleep 5
-done
-set -o xtrace
 
 exit 0
