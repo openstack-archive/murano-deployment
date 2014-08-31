@@ -72,6 +72,9 @@ ZUUL_URL=${ZUUL_URL:-'https://git.openstack.org'}
 ZUUL_REF=${ZUUL_REF:-'master'}
 ZUUL_PROJECT=${ZUUL_PROJECT:-'stackforge/murano'}
 
+APP_INCUBATOR_REPO=${APP_INCUBATOR_REPO:-https://github.com/murano-project/murano-app-incubator}
+APP_INCUBATOR_BRANCH=${APP_INCUBATOR_BRANCH:-'master'}
+
 PROJECT_NAME=${ZUUL_PROJECT##*/}
 
 APT_PROXY_HOST=${APT_PROXY_HOST:-''}
@@ -164,18 +167,17 @@ function get_floating_ip() {
 function prepare_murano_apps() {
     local start_dir=$1
     local clone_dir="${start_dir}/murano-app-incubator"
-    local git_url="https://github.com/murano-project/murano-app-incubator"
 
     cd ${start_dir}
 
     if [ "${PROJECT_NAME}" == 'murano' ]; then
-        $GIT_CMD clone $git_url $clone_dir
+        ${GIT_CMD} clone --branch ${APP_INCUBATOR_BRANCH} -- ${APP_INCUBATOR_REPO} ${clone_dir}
 
         local app
         cd ${clone_dir}
         for app in io.murano.*; do
             if [ -f "${app}/manifest.yaml" ]; then
-                make_package $app
+                make_package ${app}
             fi
         done
     fi
