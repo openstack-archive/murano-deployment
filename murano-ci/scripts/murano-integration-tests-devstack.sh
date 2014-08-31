@@ -262,7 +262,7 @@ function run_tests() {
             $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteSmoke || retval=$?
             $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteEnvironment || retval=$?
             $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteImage || retval=$?
-#            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteFields || retval=$?
+            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteFields || retval=$?
             $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteApplications || retval=$?
         ;;
         'python-muranoclient')
@@ -272,7 +272,7 @@ function run_tests() {
             $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteSmoke || retval=$?
             $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteEnvironment || retval=$?
             $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteImage || retval=$?
-#            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteFields || retval=$?
+            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteFields || retval=$?
             $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteApplications || retval=$?
         ;;
     esac
