@@ -260,22 +260,22 @@ function run_tests() {
                 ${PROJECT_TESTS_DIR}/engine/base.py || retval=$?
         ;;
         'murano-dashboard')
-#            $NOSETESTS_CMD -s -v sanity_check || retval=$?
-            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteSmoke || retval=$?
-            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteEnvironment || retval=$?
-            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteImage || retval=$?
-            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteFields || retval=$?
-            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteApplications || retval=$?
+            $NOSETESTS_CMD -s -v sanity_check || retval=$?
+#            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteSmoke || retval=$?
+#            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteEnvironment || retval=$?
+#            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteImage || retval=$?
+#            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteFields || retval=$?
+#            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteApplications || retval=$?
         ;;
         'python-muranoclient')
             # Use tests from murano-dashboard until tests for
             #   python-muranoclient are ready.
-#            $NOSETESTS_CMD -s -v sanity_check || retval=$?
-            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteSmoke || retval=$?
-            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteEnvironment || retval=$?
-            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteImage || retval=$?
-            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteFields || retval=$?
-            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteApplications || retval=$?
+            $NOSETESTS_CMD -s -v sanity_check || retval=$?
+#            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteSmoke || retval=$?
+#            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteEnvironment || retval=$?
+#            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteImage || retval=$?
+#            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteFields || retval=$?
+#            $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteApplications || retval=$?
         ;;
     esac
     TESTS_FINISHED_AT=($(date +'%Y-%m-%d %H:%M:%S'))
