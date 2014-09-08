@@ -266,6 +266,7 @@ function run_tests() {
             $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteImage || retval=$?
             $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteFields || retval=$?
             $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteApplications || retval=$?
+            $NOSETESTS_CMD -s -v sanity_check.py:TestSuitePackages || retval=$?
         ;;
         'python-muranoclient')
             # Use tests from murano-dashboard until tests for
@@ -276,6 +277,7 @@ function run_tests() {
             $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteImage || retval=$?
             $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteFields || retval=$?
             $NOSETESTS_CMD -s -v sanity_check.py:TestSuiteApplications || retval=$?
+            $NOSETESTS_CMD -s -v sanity_check.py:TestSuitePackages || retval=$?
         ;;
     esac
     TESTS_FINISHED_AT=($(date +'%Y-%m-%d %H:%M:%S'))
