@@ -92,6 +92,8 @@ WORKSPACE=$(cd $WORKSPACE && pwd)
 
 TZ_STRING='Europe/Moscow'
 
+DISTR_NAME=${DISTR_NAME:-'ubuntu'}
+
 case "${PROJECT_NAME}" in
     'murano')
         PROJECT_DIR="${STACK_HOME}/murano"
@@ -105,6 +107,10 @@ case "${PROJECT_NAME}" in
         PROJECT_DIR="${STACK_HOME}/python-muranoclient"
         #PROJECT_TESTS_DIR="${PROJECT_DIR}/muranoclient/tests/functional"
         PROJECT_TESTS_DIR="${STACK_HOME}/murano-dashboard/muranodashboard/tests/functional"
+    ;;
+    'murano-agent')
+        PROJECT_TESTS_DIR="${STACK_HOME}/murano/murano/tests/functional"
+        # tests for engine launch on iso with murano-agent
     ;;
     *)
         echo "Project name '$ZUUL_PROJECT' isn't supported yet."
@@ -206,6 +212,55 @@ function make_package() {
 }
 
 
+function make_img_with_murano_agent() {
+    local agent_dir='/opt/git/agent'
+
+    sudo apt-get --yes update && sudo apt-get --yes upgrade
+    sudo apt-get --yes install kpartx git qemu-utils python-pip
+    sudo pip install dib-utils
+
+    mkdir -p ${agent_dir}
+
+    git clone https://git.openstack.org/openstack/diskimage-builder.git \
+        ${agent_dir}/diskimage-builder
+    git clone ${ZUUL_URL}/${ZUUL_PROJECT} ${agent_dir}/murano-agent
+
+    pushd ${agent_dir}/murano-agent
+    git fetch ${ZUUL_URL}/${ZUUL_PROJECT} ${ZUUL_REF} && git checkout FETCH_HEAD
+    popd
+
+    export ELEMENTS_PATH=${agent_dir}/murano-agent/contrib/elements
+    ${agent_dir}/diskimage-builder/bin/disk-image-create vm ${DISTR_NAME} \
+        murano-agent -o ${DISTR_NAME}${BUILD_NUMBER}-murano-agent.qcow2
+
+    pushd "${STACK_HOME}/devstack"
+    source openrc ${ADMIN_USERNAME} ${ADMIN_TENANT}
+    popd
+
+    glance image-create --name ${DISTR_NAME}${BUILD_NUMBER} \
+        --disk-format qcow2 --container-format bare \
+        --file ${DISTR_NAME}${BUILD_NUMBER}.qcow2 --is-public True \
+        --property 'murano_image_info'="{\"type\":\"linux\",\"title\":\"${DISTR_NAME}${BUILD_NUMBER}\"}"
+
+    LINUX_IMAGE=${DISTR_NAME}${BUILD_NUMBER}
+}
+
+
+function remove_image_with_murano_agent() {
+    local dist_name=$1
+
+    pushd "${STACK_HOME}/devstack"
+    source openrc ${ADMIN_USERNAME} ${ADMIN_TENANT}
+    popd
+
+    for i in $(glance image-list | get_field 2); do
+        if [ "${dist_name}${BUILD_NUMBER}" == "$i" ]; then
+           glance image-delete $i
+        fi
+    done
+}
+
+
 function prepare_tests() {
     sudo chown -R $USER "${PROJECT_TESTS_DIR}"
 
@@ -221,6 +276,11 @@ function prepare_tests() {
         'python-muranoclient')
             local config_file="${PROJECT_TESTS_DIR}/engine/config.conf"
             local section_name='murano'
+        ;;
+        'murano-agent')
+            local config_file="${PROJECT_TESTS_DIR}/engine/config.conf"
+            local section_name='murano'
+            make_img_with_murano_agent
         ;;
     esac
 
@@ -265,6 +325,14 @@ function run_tests() {
             # Use tests from murano-dashboard until tests for
             #   python-muranoclient are ready.
             $NOSETESTS_CMD -s -v sanity_check || retval=$?
+        ;;
+        'murano-agent')
+            $NOSETESTS_CMD -s -v \
+                --with-xunit \
+                --xunit-file=${WORKSPACE}/test_report${BUILD_NUMBER}.xml \
+                ${PROJECT_TESTS_DIR}/engine/base.py:MuranoBase.test_deploy_telnet \
+                ${PROJECT_TESTS_DIR}/engine/base.py:MuranoBase.test_deploy_apache || retval=$?
+            remove_image_with_murano_agent
         ;;
     esac
     TESTS_FINISHED_AT=($(date +'%Y-%m-%d %H:%M:%S'))
