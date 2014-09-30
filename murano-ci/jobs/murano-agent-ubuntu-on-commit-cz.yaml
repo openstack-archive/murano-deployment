@@ -1,0 +1,58 @@
+- job:
+    name: murano-agent-on-commit-cz
+    project-type: freestyle
+    defaults: global
+    description: |
+        On commit job for murano agent
+    disabled: false
+    concurrent: true
+    node: precise-devstack-cz
+
+    parameters:
+      - bool:
+          name: KEEP_VM_ALIVE
+      - string:
+          name: ZUUL_REF_OPT
+
+    properties:
+      - zeromq-event
+
+    builders:
+      - shell: |
+          #!/bin/bash
+
+          # DO NOT ENABLE xtrace OPTION HERE, OR YOU COMPROMISE YOUR PRIVATE KEY
+          cat << EOF > ~/.ssh/id_rsa
+          -----BEGIN RSA PRIVATE KEY-----
+          -----END RSA PRIVATE KEY-----
+          EOF
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keygen -y -f ~/.ssh/id_rsa > ~/.ssh/id_rsa.pub
+
+          cat << EOF > ~/.ssh/config
+          Host *
+              IdentityFile ~/.ssh/id_rsa
+              User stack
+              StrictHostKeyChecking no
+              UserKnownHostsFile=/dev/null
+          EOF
+
+          export ZUUL_REF=${ZUUL_REF:-$ZUUL_REF_OPT}
+
+          git clone https://git.openstack.org/stackforge/murano-deployment .
+
+          export DISTR_NAME='ubuntu'
+
+          bash ./murano-ci/scripts/murano-integration-tests-devstack.sh
+
+    publishers:
+      - scp:
+          site: 'localhost'
+          files:
+            - target: 'logs/$LOG_PATH/artifacts'
+              source: 'artifacts/**'
+              copy-console: true
+              copy-after-failure: true
+      - archive:
+          artifacts: 'artifacts/**'
+          allow-empty: 'true'
