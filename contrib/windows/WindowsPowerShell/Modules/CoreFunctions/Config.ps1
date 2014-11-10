@@ -1,4 +1,4 @@
-﻿<#
+<#
 Naming convention:
 
 == Normal variables

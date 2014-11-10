@@ -4,4 +4,3 @@ foreach ($ServiceName in @('cloudbase-init')) {
     & "sc.exe" config "$ServiceName" start= auto
     Start-Service "$ServiceName"
 }
-

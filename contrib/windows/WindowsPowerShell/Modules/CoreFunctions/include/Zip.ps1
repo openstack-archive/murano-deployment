@@ -10,25 +10,25 @@ Function Compress-Folder {
         [String] $Path,
 
         [String] $ZipFile = "",
-        
+
         [Switch] $TempFile,
-        
+
         [Switch] $ContentOnly
     )
-    
+
     if (-not [IO.Directory]::Exists($Path)) {
         Write-LogError "Directory '$Path' not found."
         return
     }
-    
+
     if ($TempFile) {
         $ZipFile = [IO.Path]::GetTempFileName()
     }
-    
+
     if ($ZipFile -eq "") {
         $ZipFile = "$Path.zip"
     }
-    
+
     if ([IO.File]::Exists($ZipFile)) {
         [IO.File]::Delete($ZipFile)
     }
@@ -42,7 +42,7 @@ Function Compress-Folder {
     }
     $zip.Save($ZipFile)
     $zip.Dispose()
-    
+
     return $ZipFile
 }
 
@@ -57,12 +57,12 @@ Function Expand-Zip {
 
         [String] $Destination
     )
-    
+
     if (-not [IO.File]::Exists($Path)) {
         Write-LogError "File not found '$Path'"
         return
     }
-    
+
     $zip = [Ionic.Zip.ZipFile]::Read($Path)
     $zip.ExtractAll($Destination, [Ionic.Zip.ExtractExistingFileAction]::OverwriteSilently)
     $zip.Dispose()

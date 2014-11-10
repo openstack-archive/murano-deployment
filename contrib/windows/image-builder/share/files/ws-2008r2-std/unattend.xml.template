@@ -29,8 +29,8 @@
             </OOBE>
             <FirstLogonCommands>
                 <SynchronousCommand wcm:action="add">
-                    <RequiresUserInput>true</RequiresUserInput>
-                    <CommandLine>powershell.exe -File C:\Murano\Scripts\ws-2008r2-std\Start-AtFirstBoot.ps1 -ExecutionPolicy Unrestricted</CommandLine>
+                    <RequiresUserInput>false</RequiresUserInput>
+                    <CommandLine>%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe -File C:\Murano\Scripts\ws-2008r2-std\Start-AtFirstBoot.ps1 -ExecutionPolicy Unrestricted</CommandLine>
                     <Order>1</Order>
                 </SynchronousCommand>
             </FirstLogonCommands>
@@ -44,7 +44,7 @@
     </settings>
     <settings pass="generalize">
         <component name="Microsoft-Windows-Security-SPP" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-            <SkipRearm>1</SkipRearm>
+            <SkipRearm>0</SkipRearm>
         </component>
     </settings>
     <cpi:offlineImage cpi:source="wim:d:/aik/install.wim#Windows Server 2012 SERVERSTANDARD" xmlns:cpi="urn:schemas-microsoft-com:cpi" />

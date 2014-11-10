@@ -1,16 +1,16 @@
-﻿Function Set-LocalUserPassword {
+Function Set-LocalUserPassword {
     param (
         [String] $UserName,
         [String] $Password,
         [Switch] $Force
     )
-    
+
     trap { Stop-Execution $_ }
-    
+
     if ((Get-WmiObject Win32_UserAccount -Filter "LocalAccount = 'True' AND Name='$UserName'") -eq $null) {
         throw "Unable to find local user account '$UserName'"
     }
-    
+
     if ($Force) {
         Write-Log "Changing password for user '$UserName' to '*****'" # :)
         ([ADSI] "WinNT://./$UserName").SetPassword($Password) | Out-Null
@@ -23,30 +23,30 @@
 
 
 Function Set-AutoLogonCredentials {
-	param (
-		[String] $DomainName,
-		[String] $UserName,
-		[String] $Password
-	)
-	
-	$KeyName = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"
+    param (
+        [String] $DomainName,
+        [String] $UserName,
+        [String] $Password
+    )
 
-	if ($DomainName -ne "") {
-		$UserName = "$DomainName\$UserName"
-	}
-    
+    $KeyName = "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"
+
+    if ($DomainName -ne "") {
+        $UserName = "$DomainName\$UserName"
+    }
+
     Write-Log "Setting AutoLogon credentials ..."
-	try {
-    	[Microsoft.Win32.Registry]::SetValue($KeyName, "DefaultUserName", "$UserName", [Microsoft.Win32.RegistryValueKind]::String)
-    	[Microsoft.Win32.Registry]::SetValue($KeyName, "DefaultPassword", "$Password", [Microsoft.Win32.RegistryValueKind]::String)
-    	[Microsoft.Win32.Registry]::SetValue($KeyName, "AutoAdminLogon", "1", [Microsoft.Win32.RegistryValueKind]::String)
-    	[Microsoft.Win32.Registry]::SetValue($KeyName, "ForceAutoLogon", "1", [Microsoft.Win32.RegistryValueKind]::String)
+    try {
+        [Microsoft.Win32.Registry]::SetValue($KeyName, "DefaultUserName", "$UserName", [Microsoft.Win32.RegistryValueKind]::String)
+        [Microsoft.Win32.Registry]::SetValue($KeyName, "DefaultPassword", "$Password", [Microsoft.Win32.RegistryValueKind]::String)
+        [Microsoft.Win32.Registry]::SetValue($KeyName, "AutoAdminLogon", "1", [Microsoft.Win32.RegistryValueKind]::String)
+        [Microsoft.Win32.Registry]::SetValue($KeyName, "ForceAutoLogon", "1", [Microsoft.Win32.RegistryValueKind]::String)
     }
     catch {
         Write-LogError "FAILED"
         return
     }
-    
+
     Write-Log "SUCCESS"
 }
 
@@ -59,16 +59,16 @@ Function Expand-Template {
         [System.Collections.Hashtable] $ReplacementList,
         [String] $Encoding = "Ascii"
     )
-    
+
     if (-not [IO.File]::Exists($TemplateFile)) {
         Write-Error "File '$TemplateFile' not exists"
         return $null
     }
-    
+
     if ([IO.File]::Exists($OutputFile)) {
         [IO.File]::Delete($OutputFile)
     }
-    
+
     Get-Content $TemplateFile -Encoding $Encoding |
         ForEach-Object {
             $Line = $_
@@ -93,35 +93,35 @@ It fails if any of required features fails.
 
 It reports that reboot required if it is required, or restarts the computer.
 #>
-	param (
-		[Parameter(Mandatory=$true)]
-		[String[]] $Name,
-		[Switch] $IncludeManagementTools,
-		[Switch] $AllowRestart,
+    param (
+        [Parameter(Mandatory=$true)]
+        [String[]] $Name,
+        [Switch] $IncludeManagementTools,
+        [Switch] $AllowRestart,
         [Switch] $NotifyRestart
-	)
-	
+    )
+
     $RestartNeeded = $false
-    
-	foreach ($Feature in $Name) {
-		Write-Log "Installing feature '$Feature' ..."
-		$Action = Install-WindowsFeature `
-			-Name $Feature `
-			-IncludeManagementTools:$IncludeManagementTools `
-			-ErrorAction Stop
-		
-		if ($Action.Success -eq $true) {
-			if ($Action.FeatureResult.RestartNeeded -eq $true) {
-				Write-LogWarning "Restart required"
-				$RestartNeeded = $true
-			}
-			Write-Log "Feature '$Feature' installed successfully"
-		}
-		else {
-			Stop-Execution "Failed to install feature '$Feature'"
-		}
-	}
-	
+
+    foreach ($Feature in $Name) {
+        Write-Log "Installing feature '$Feature' ..."
+        $Action = Install-WindowsFeature `
+            -Name $Feature `
+            -IncludeManagementTools:$IncludeManagementTools `
+            -ErrorAction Stop
+
+        if ($Action.Success -eq $true) {
+            if ($Action.FeatureResult.RestartNeeded -eq $true) {
+                Write-LogWarning "Restart required"
+                $RestartNeeded = $true
+            }
+            Write-Log "Feature '$Feature' installed successfully"
+        }
+        else {
+            Stop-Execution "Failed to install feature '$Feature'"
+        }
+    }
+
     if ($RestartNeeded) {
         Write-Log "Restart required to finish feature(s) installation."
         if ($AllowRestart) {
@@ -148,25 +148,25 @@ This funciton checks if ReturnValue property is equal to 0.
 If it is not, then funtion should try to provide desctiption for the error code based on the WMI object type.
 WMI object type must be provided explicitely.
 #>
-	param (
-		[Parameter(ValueFromPipeline=$true,Mandatory=$true)]
-		$InputObject,
-		[String] $Type = ""
-	)
-		
-	try {
-		$ReturnValue = $InputObject.ReturnValue
-	}
-	catch {
-		throw "Property 'ReturnValue' not found on this object"
-	}
-		
-	if ($ReturnValue -eq 0) {
-		Write-Log "WMI operation completed successfully"
-	}
-	else {
-		throw "Operation failed with status code = $ReturnValue"
-	}
+    param (
+        [Parameter(ValueFromPipeline=$true,Mandatory=$true)]
+        $InputObject,
+        [String] $Type = ""
+    )
+
+    try {
+        $ReturnValue = $InputObject.ReturnValue
+    }
+    catch {
+        throw "Property 'ReturnValue' not found on this object"
+    }
+
+    if ($ReturnValue -eq 0) {
+        Write-Log "WMI operation completed successfully"
+    }
+    else {
+        throw "Operation failed with status code = $ReturnValue"
+    }
 }
 
 
@@ -190,142 +190,142 @@ PS> Set-NetworkAdapterConfiguration -MACAddress aa:bb:cc:dd:ee:ff -DNSServer "19
 Configure DNS servers list for network adapter with MAC address aa:bb:cc:dd:ee:ff
 
 #>
-	param (
-		[String] $MACAddress = "",
-		
-		[Parameter(ParameterSetName="ManualConfig")]
-		[String] $IPAddress = "",
-		
-		[Parameter(ParameterSetName="ManualConfig")]
-		[String] $IPNetmask = "",
-		
-		[Parameter(ParameterSetName="ManualConfig")]
-		[String[]] $IPGateway = @(),
-		
-		[Parameter(ParameterSetName="ManualConfig")]
-		[String[]] $DNSServer = @(),
-		
-		[Parameter(ParameterSetName="ManualConfig")]
-		[Switch] $FirstAvailable,
+    param (
+        [String] $MACAddress = "",
 
-		[String] $Name = "",
-		
-		[Parameter(ParameterSetName="AutoConfig",Mandatory=$true)]
-		[Switch] $Auto,
+        [Parameter(ParameterSetName="ManualConfig")]
+        [String] $IPAddress = "",
 
-		[Parameter(ParameterSetName="AutoConfig")]
-		[Switch] $All
-	)
-    
-	Write-Log "Configuring network adapter(s) ..."
-    
-	:SetIPAddress switch($PSCmdlet.ParameterSetName) {
-		"AutoConfig" {
+        [Parameter(ParameterSetName="ManualConfig")]
+        [String] $IPNetmask = "",
+
+        [Parameter(ParameterSetName="ManualConfig")]
+        [String[]] $IPGateway = @(),
+
+        [Parameter(ParameterSetName="ManualConfig")]
+        [String[]] $DNSServer = @(),
+
+        [Parameter(ParameterSetName="ManualConfig")]
+        [Switch] $FirstAvailable,
+
+        [String] $Name = "",
+
+        [Parameter(ParameterSetName="AutoConfig",Mandatory=$true)]
+        [Switch] $Auto,
+
+        [Parameter(ParameterSetName="AutoConfig")]
+        [Switch] $All
+    )
+
+    Write-Log "Configuring network adapter(s) ..."
+
+    :SetIPAddress switch($PSCmdlet.ParameterSetName) {
+        "AutoConfig" {
             Write-Log "'auto' mode"
-            
-			$IPv4RegExp = "\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-			
-			if ($All -eq $true) {
-				$Filter = { $_.AdapterTypeId -eq 0 }
-				$Name = ""
-			}
-			else {
-				$Filter = { $_.MACAddress -eq $MACAddress }
-			}
-			
-			Get-WmiObject Win32_NetworkAdapter |
-				Where-Object $Filter |
-				ForEach-Object {
-					$NetworkAdapter = $_
-					$AdapterConfig = Get-WmiObject Win32_NetworkAdapterConfiguration |
-						Where-Object { $_.Index -eq $NetworkAdapter.DeviceId }
-					
-					Write-Log "Configuring '$($NetworkAdapter.Name)' ..."
-					
-					for ($i = 0; $i -lt $AdapterConfig.IPAddress.Length; $i++) {
-						if ($AdapterConfig.IPAddress[$i] -match $IPv4RegExp) {
-							$IPAddress = $AdapterConfig.IPAddress[$i]
-							$IPNetmask = $AdapterConfig.IPSubnet[$i]
-							$IPGateway = $AdapterConfig.DefaultIPGateway
+
+            $IPv4RegExp = "\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+
+            if ($All -eq $true) {
+                $Filter = { $_.AdapterTypeId -eq 0 }
+                $Name = ""
+            }
+            else {
+                $Filter = { $_.MACAddress -eq $MACAddress }
+            }
+
+            Get-WmiObject Win32_NetworkAdapter |
+                Where-Object $Filter |
+                ForEach-Object {
+                    $NetworkAdapter = $_
+                    $AdapterConfig = Get-WmiObject Win32_NetworkAdapterConfiguration |
+                        Where-Object { $_.Index -eq $NetworkAdapter.DeviceId }
+
+                    Write-Log "Configuring '$($NetworkAdapter.Name)' ..."
+
+                    for ($i = 0; $i -lt $AdapterConfig.IPAddress.Length; $i++) {
+                        if ($AdapterConfig.IPAddress[$i] -match $IPv4RegExp) {
+                            $IPAddress = $AdapterConfig.IPAddress[$i]
+                            $IPNetmask = $AdapterConfig.IPSubnet[$i]
+                            $IPGateway = $AdapterConfig.DefaultIPGateway
                             $DNSServer = $AdapterConfig.DNSServerSearchOrder
-							
-							Write-Log "Setting IP address ($IPAddress), netmask ($IPNetmask) ..."
-							$AdapterConfig.EnableStatic($IPAddress, $IPNetmask) | Out-Null
-                            
+
+                            Write-Log "Setting IP address ($IPAddress), netmask ($IPNetmask) ..."
+                            $AdapterConfig.EnableStatic($IPAddress, $IPNetmask) | Out-Null
+
                             Write-Log "Setting default gateways ($IPGateway) ..."
-							$AdapterConfig.SetGateways($IPGateway) | Out-Null
-                            
+                            $AdapterConfig.SetGateways($IPGateway) | Out-Null
+
                             Write-Log "Setting DNS servers ($DNSServer) ..."
                             $AdapterConfig.SetDNSServerSearchOrder($DNSServer) | Out-Null
-						}
-					}
-                    
+                        }
+                    }
+
                     Write-Log "'$($NetworkAdapter.Name)' configured"
-				}
-		}
-		"ManualConfig" {
+                }
+        }
+        "ManualConfig" {
             Write-Log "'manual' mode"
-			if ( $FirstAvailable ) {
+            if ( $FirstAvailable ) {
                 Write-Log "Selecting first available network adapter ..."
-				$NetworkAdapter = Get-WmiObject Win32_NetworkAdapter |
-					Where-Object { $_.AdapterTypeId -eq 0 } |
-					Select-Object -First 1
-			}
-			else {
-				$NetworkAdapter = Get-WmiObject Win32_NetworkAdapter |
-					Where-Object { $_.MACAddress -eq $MACAddress }
-			}
-			
-			if ( $NetworkAdapter -eq $null ) {
-				Write-LogError "Network adapter with MAC = '$MACAddress' not found."
-				return
-			}
-			
-			$AdapterConfig = Get-WmiObject Win32_NetworkAdapterConfiguration |
-				Where-Object { $_.Index -eq $NetworkAdapter.DeviceId }
+                $NetworkAdapter = Get-WmiObject Win32_NetworkAdapter |
+                    Where-Object { $_.AdapterTypeId -eq 0 } |
+                    Select-Object -First 1
+            }
+            else {
+                $NetworkAdapter = Get-WmiObject Win32_NetworkAdapter |
+                    Where-Object { $_.MACAddress -eq $MACAddress }
+            }
 
-			if (($IPAddress -ne "") -and ($IPNetmask -ne "")) {
-				Write-Log "Configuring IP address / netmask for '$($NetworkAdapter.Name)' ..."
-				
-				<#
-				for ($i = 0; $i -lt $AdapterConfig.IPAddress.Length; $i++)
-				{
-					if (($AdapterConfig.IPAddress[$i] -eq $IPAddress) -and ($AdapterConfig.IPSubnet[$i] -eq $IPNetmask))
-					{
-						Write-Log "There is an adapter with required configuration."
-						break SetIPAddress
-					}
-				}
-				#>
-				Write-Log "Setting IP address $IPAddress, netmask $IPNetmask"
-				$AdapterConfig.EnableStatic("$IPAddress", "$IPNetmask") | Out-Null
-				
-				Write-Log "IP address configured."
-			}
-			
-			if ($IPGateway.Count -gt 0) {
-				Write-Log "Configuring IP gateway for '$($NetworkAdapter.Name)' ..."
-				
-				$AdapterConfig.SetGateways($IPGateway) | Out-Null
-				
-				Write-Log "IP gateway configured."
-			}
-			
-			if ($DNSServer.Count -gt 0) {
-				Write-Log "Configuring DNS server(s) for '$($NetworkAdapter.Name)' ..."
-				
-				$AdapterConfig.SetDNSServerSearchOrder($DNSServer) | Out-Null
-				
-				Write-Log "DNS configured."
-			}
-		}
-	}
+            if ( $NetworkAdapter -eq $null ) {
+                Write-LogError "Network adapter with MAC = '$MACAddress' not found."
+                return
+            }
 
-	if ($Name -ne "") {
-		Write-Log "Changing adapter name '$($NetworkAdapter.NetConnectionId)' --> '$Name'"
-		$NetworkAdapter.NetConnectionId = "$Name"
-		$NetworkAdapter.Put() | Out-Null
-	}
+            $AdapterConfig = Get-WmiObject Win32_NetworkAdapterConfiguration |
+                Where-Object { $_.Index -eq $NetworkAdapter.DeviceId }
+
+            if (($IPAddress -ne "") -and ($IPNetmask -ne "")) {
+                Write-Log "Configuring IP address / netmask for '$($NetworkAdapter.Name)' ..."
+
+                <#
+                for ($i = 0; $i -lt $AdapterConfig.IPAddress.Length; $i++)
+                {
+                    if (($AdapterConfig.IPAddress[$i] -eq $IPAddress) -and ($AdapterConfig.IPSubnet[$i] -eq $IPNetmask))
+                    {
+                        Write-Log "There is an adapter with required configuration."
+                        break SetIPAddress
+                    }
+                }
+                #>
+                Write-Log "Setting IP address $IPAddress, netmask $IPNetmask"
+                $AdapterConfig.EnableStatic("$IPAddress", "$IPNetmask") | Out-Null
+
+                Write-Log "IP address configured."
+            }
+
+            if ($IPGateway.Count -gt 0) {
+                Write-Log "Configuring IP gateway for '$($NetworkAdapter.Name)' ..."
+
+                $AdapterConfig.SetGateways($IPGateway) | Out-Null
+
+                Write-Log "IP gateway configured."
+            }
+
+            if ($DNSServer.Count -gt 0) {
+                Write-Log "Configuring DNS server(s) for '$($NetworkAdapter.Name)' ..."
+
+                $AdapterConfig.SetDNSServerSearchOrder($DNSServer) | Out-Null
+
+                Write-Log "DNS configured."
+            }
+        }
+    }
+
+    if ($Name -ne "") {
+        Write-Log "Changing adapter name '$($NetworkAdapter.NetConnectionId)' --> '$Name'"
+        $NetworkAdapter.NetConnectionId = "$Name"
+        $NetworkAdapter.Put() | Out-Null
+    }
 }
 
 
@@ -352,36 +352,36 @@ Function tests the following conditions:
 Multiple checks are logically ANDed.
 #>
     [CmdletBinding()]
-	param (
-		[String] $ComputerName,
-		[String] $DomainName,
-		[String] $WorkgroupName,
-		[Switch] $PartOfDomain
-	)
-	process {
-    	$ComputerSystem = Get-WmiObject Win32_ComputerSystem
-    	
-    	if (($ComputerName -ne "") -and ($ComputerSystem.Name -ne "$ComputerName")) {
+    param (
+        [String] $ComputerName,
+        [String] $DomainName,
+        [String] $WorkgroupName,
+        [Switch] $PartOfDomain
+    )
+    process {
+        $ComputerSystem = Get-WmiObject Win32_ComputerSystem
+
+        if (($ComputerName -ne "") -and ($ComputerSystem.Name -ne "$ComputerName")) {
             Write-Error "ComputerName is not equal to '$ComputerName'"
-    		return $false
-    	}
-    	
-    	if (($DomainName -ne "") -and ($ComputerSystem.Domain -ne "$DomainName")) {
+            return $false
+        }
+
+        if (($DomainName -ne "") -and ($ComputerSystem.Domain -ne "$DomainName")) {
             Write-Error "DomainName is not equal to '$DomainName'"
-    		return $false
-    	}
-    	
-    	if (($WorkgroupName -ne "") -and ($ComputerSystem.Workgroup -ne "$WorkgroupName")) {
+            return $false
+        }
+
+        if (($WorkgroupName -ne "") -and ($ComputerSystem.Workgroup -ne "$WorkgroupName")) {
             Write-Error "WorkgroupName is not equal to '$WorkgroupName'"
-    		return $false
-    	}
-    	
-    	if (($PartOfDOmain -eq $true) -and ($ComputerSystem.PartOfDomain -eq $false)) {
+            return $false
+        }
+
+        if (($PartOfDOmain -eq $true) -and ($ComputerSystem.PartOfDomain -eq $false)) {
             Write-Error "Computer is not the part of any domain."
-    		return $false
-    	}
-    	
-    	return $true
+            return $false
+        }
+
+        return $true
     }
 }
 
@@ -391,21 +391,21 @@ Function Set-ComputerName {
     param (
         [String] $Name
     )
-    
-    
-	# Rename the computer
-	if ($Name -ne "") {
-		if (Test-ComputerName -ComputerName $Name) {
-			Stop-Execution -Success -ExitString "Computer name already configured"
-		}
-		else {
-			Write-Log "Renaming computer to '$Name'"
-				
-			Rename-Computer -NewName $NewName -Force -ErrorAction Stop
 
-			Stop-Execution -ExitCode 3010 -ExitString "Please restart the computer now"
-		}
-	}
+
+    # Rename the computer
+    if ($Name -ne "") {
+        if (Test-ComputerName -ComputerName $Name) {
+            Stop-Execution -Success -ExitString "Computer name already configured"
+        }
+        else {
+            Write-Log "Renaming computer to '$Name'"
+
+            Rename-Computer -NewName $NewName -Force -ErrorAction Stop
+
+            Stop-Execution -ExitCode 3010 -ExitString "Please restart the computer now"
+        }
+    }
 }
 
 
@@ -415,7 +415,7 @@ Function Resolve-LdapDnsName {
     param (
         [String] $DomainName
     )
-    
+
     Resolve-DNSName -Type "SRV" -Name "_ldap._tcp.dc._msdcs.$DomainName" |
         Where-Object { $_.Type -eq "A" } |
         Select-Object -Property Name,IPAddress
@@ -429,10 +429,10 @@ Function Wait-LdapServerAvailable {
         [Int] $PingSeqCountThreshold = 10,
         [Int] $PingSeqPerHostThreshold = 5
     )
-    
+
     $LdapServerList = @( Resolve-LdapDnsName $DomainName )
     Write-Log @( "Ldap server list:", ( $LdapServerList | Out-String ) )
-    
+
     :MainLoop foreach ($LdapServer in $LdapServerList) {
         $PingSeqCount = 0
         $PingSeqPerHost = 0
@@ -446,16 +446,16 @@ Function Wait-LdapServerAvailable {
                 $PingSeqCount = 0
                 $PingSeqPerHost++
             }
-            
+
             if ($PingSeqCount -ge $PingSeqCountThreshold) {
                 Write-Log "Returning true"
                 return $true
             }
-            
+
             Start-Sleep -Seconds 1
         }
     }
-    
+
     Write-Log "Returning false"
     return $false
 }
@@ -467,18 +467,18 @@ Function Get-ConfigDriveObject {
     param (
         [Parameter(ParameterSetName="MetaData")]
         [Switch] $MetaData,
-        
+
         [Parameter(ParameterSetName="UserData")]
         [Switch] $UserData,
-        
+
         [Parameter(ParameterSetName="CustomObject")]
         [String] $CustomObject,
-        
+
         [String] $Path = "openstack/latest"
     )
-    
+
     $ConfigDrivePrefix = "http://169.254.169.154/$Path"
-    
+
     try {
         switch($PSCmdlet.ParameterSetName) {
             "MetaData" {
@@ -510,7 +510,7 @@ Function Update-AgentConfig {
     param (
         [String] $RootPath = "C:\Murano\Agent"
     )
-    
+
     try {
         $MetaData = Get-ConfigDriveObject -MetaData -ErrorAction Stop
         if ($MetaData.meta -ne $null) {
@@ -535,9 +535,9 @@ Function Update-PsModulePath {
             @([Environment]::GetEnvironmentVariable("PsModulePath", [EnvironmentVariableTarget]::Machine) -split ";") + @($AddPath) `
             | Select-Object -Unique
         ) -join ';'
-    
+
     [Environment]::SetEnvironmentVariable("PsModulePath", $NewPsModulePath, [EnvironmentVariableTarget]::Machine)
-    
+
     Invoke-WMSettingsChange
 }
 
@@ -550,39 +550,39 @@ Function Get-ModuleHelp {
         [Switch] $File,
         [Int] $Width = 80
     )
-    
-	$sb = {
+
+    $sb = {
         $Module = Get-Module $ModuleName
-    	
-    	"`n"
+
+        "`n"
         "Module: $($Module.Name)"
-    	"Module version: $($Module.Version)"
-    	"`n"
+        "Module version: $($Module.Version)"
+        "`n"
         "{0} Module Description {0}" -f ('=' * 30)
         "`n"
-        
-    	Get-Help "about_$($Module.Name)" | Out-String -Width $Width
-    	
+
+        Get-Help "about_$($Module.Name)" | Out-String -Width $Width
+
         "{0} Exported Functions {0}" -f ('=' * 30)
         "`n"
-        	
-    	foreach ($CommandName in $Module.ExportedCommands.Keys) {
+
+        foreach ($CommandName in $Module.ExportedCommands.Keys) {
             '-' * 80
-    		Get-Help -Name $CommandName -Detailed | Out-String -Width $Width
-    	}
+            Get-Help -Name $CommandName -Detailed | Out-String -Width $Width
+        }
     }
-    
+
     if (($File) -and ($Path -eq "")) {
         $Path = [IO.Path]::GetTempFileName()
     }
-    
+
     if ($Path -ne "") {
         & $sb | Out-File -FilePath $Path -Force
     }
     else {
         & $sb | Out-Default
     }
-    
+
     if ($File) {
         notepad.exe "$Path"
     }
@@ -594,9 +594,9 @@ Function New-ModuleTemplate {
     param (
         [Parameter(Mandatory=$true)]
         [String] $Name,
-        
+
         [String] $Path = "$($Env:USERPROFILE)\Documents\WindowsPowerShell\Modules",
-        
+
         [Switch] $Force
     )
     if ([IO.Directory]::Exists("$Path\$Name")) {
@@ -608,26 +608,26 @@ Function New-ModuleTemplate {
             return
         }
     }
-    
-    
+
+
     [IO.Directory]::CreateDirectory("$Path\$Name")
     [IO.Directory]::CreateDirectory("$Path\$Name\en-US")
     [IO.Directory]::CreateDirectory("$Path\$Name\include")
-    
-    
+
+
     Set-Content -Path "$Path\$Name\en-US\about_$Name.help.txt" -Value @'
 '@
 
-    
+
     Set-Content -Path "$Path\$Name\Config.ps1" -Value @'
 $script:__ModulePath = $PsScriptRoot
 $script:__ModuleName = $PsScriptRoot.Split("\")[-1]
 $script:__DefaultLogPath = [IO.Path]::Combine([IO.Path]::GetTempPath(), "PowerShell_$__ModuleName.log")
 
 $global:__StopExecutionExitsSession__ = $false
-'@    
-    
-    
+'@
+
+
     Set-Content -Path "$Path\$Name\$Name.psm1" -Value @'
 # Import config first
 . "$PsScriptRoot\Config.ps1"
@@ -644,13 +644,13 @@ Initialize-Logger -ModuleName $__ModuleName -LogPath $__DefaultLogPath
 
 Write-Log "Module loaded from '$PsScriptRoot'"
 '@
-    
-    
+
+
     New-ModuleManifest `
         -Path "$Path\$Name\$Name.psd1" `
         -ModuleToProcess "$Name.psm1" `
         -RequiredModules "CoreFunctions"
-    
+
 }
 
 
@@ -668,14 +668,14 @@ function New-SqlServerConnection {
         if ($UserName -eq '') {
             throw "User name must be provided in order to create credentials object!"
         }
-        
+
         $Credentials = New-Credential -UserName $UserName -Password $Password
     }
 
     $Server = New-Object `
         -TypeName Microsoft.SqlServer.Management.Smo.Server `
         -ArgumentList $ServerName
-    
+
     $LoginName = $Credentials.UserName -replace("^\\", "")
 
     try {
@@ -733,7 +733,7 @@ http://msdn.microsoft.com/en-us/library/cc281962%28v=sql.105%29.aspx
         "Microsoft.SqlServer.Smo"
         "Microsoft.SqlServer.SmoExtended"
     )
-        
+
     foreach ($asm in $AssemblyList) {
         [System.Reflection.Assembly]::LoadWithPartialName($asm) | Out-Null
     }
@@ -765,13 +765,13 @@ function Import-SqlServerProvider {
     #
     Push-Location
     Set-Location $sqlpsPath
-    
+
     Add-PSSnapin SqlServerCmdletSnapin100
     Add-PSSnapin SqlServerProviderSnapin100
-    
-    Update-TypeData -PrependPath SQLProvider.Types.ps1xml 
-    Update-FormatData -PrependPath SQLProvider.Format.ps1xml 
-    
+
+    Update-TypeData -PrependPath SQLProvider.Types.ps1xml
+    Update-FormatData -PrependPath SQLProvider.Format.ps1xml
+
     Pop-Location
 }
 
