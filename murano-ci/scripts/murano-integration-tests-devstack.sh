@@ -481,6 +481,9 @@ function deploy_devstack() {
     sudo chown -R jenkins:jenkins "${git_dir}/stackforge"
     cd "${git_dir}/stackforge"
     git clone https://github.com/stackforge/murano
+    pushd "${git_dir}/stackforge/murano"
+    git fetch https://review.openstack.org/stackforge/murano refs/changes/54/138754/6 && git checkout FETCH_HEAD
+    popd
 
     if [ "${PROJECT_NAME}" == 'murano' ]; then
         pushd "${git_dir}/stackforge/murano"
