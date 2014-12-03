@@ -489,7 +489,8 @@ function deploy_devstack() {
     fi
 
     # NOTE: Source path MUST ends with a slash!
-    rsync --recursive --exclude README.* "${git_dir}/stackforge/murano/contrib/devstack/" "${STACK_HOME}/devstack/"
+    rsync --recursive --keep-dirlinks --exclude README.* \
+        "${git_dir}/stackforge/murano/contrib/devstack/" "${STACK_HOME}/devstack/"
 
     cd "${STACK_HOME}/devstack"
 
