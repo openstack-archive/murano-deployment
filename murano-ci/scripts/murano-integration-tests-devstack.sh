@@ -469,6 +469,10 @@ function git_clone_devstack() {
     sudo chown -R jenkins:jenkins "${STACK_HOME}"
     git clone https://github.com/openstack-dev/devstack ${STACK_HOME}/devstack
 
+    pushd ${STACK_HOME}/devstack
+    git checkout ${ZUUL_BRANCH} |:
+    popd
+
     #source ${STACK_HOME}/devstack/functions-common
 }
 
