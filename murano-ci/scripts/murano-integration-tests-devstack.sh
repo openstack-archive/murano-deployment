@@ -385,7 +385,10 @@ function collect_artifacts() {
     # Copy devstack logs:
     # * sleep for 1 minute to give devstack's log collector a chance to write all logs into files
     sleep 60
-    sudo ${rsync_cmd} --include='*.log' --exclude='*' ${STACK_HOME}/log/ ${dst}/devstack
+    ls -hal ${STACK_HOME}/log
+    cd ${STACK_HOME}/log | find ./ -type l | \
+        sudo rsync --verbose --files-from=- --copy-links ${STACK_HOME}/log ${dst}/devstack
+#    sudo ${rsync_cmd} --include='*.log' --exclude='*' ${STACK_HOME}/log/ ${dst}/devstack
 
     # Copy murano logs from /tmp
     sudo ${rsync_cmd} --include='murano*.log' --exclude='*' /tmp/ ${dst}/tmp
