@@ -80,6 +80,9 @@ ZUUL_PROJECT=${ZUUL_PROJECT:-'stackforge/murano'}
 APP_INCUBATOR_REPO=${APP_INCUBATOR_REPO:-https://github.com/murano-project/murano-app-incubator}
 APP_INCUBATOR_BRANCH=${APP_INCUBATOR_BRANCH:-'master'}
 
+DIB_MURANO_AGENT_REPO=${DIB_MURANO_AGENT_REPO:-git://git.openstack.org/stackforge/murano-agent.git}
+DIB_MURANO_AGENT_BRANCH=${DIB_MURANO_AGENT_BRANCH:-master}
+
 PROJECT_NAME=${ZUUL_PROJECT##*/}
 
 APT_PROXY_HOST=${APT_PROXY_HOST:-''}
