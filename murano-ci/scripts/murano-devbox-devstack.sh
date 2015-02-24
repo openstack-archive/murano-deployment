@@ -142,7 +142,7 @@ function get_floating_ip() {
     export OS_AUTH_URL="http://${HYPERVIZOR_HOST}:5000/v2.0"
     set -o xtrace
 
-    floating_ip_address=$(nova floating-ip-list | grep " ${found_ip_address} " | cut -d ' ' -f 2)
+    floating_ip_address=$(nova floating-ip-list | grep " ${found_ip_address} " | cut -d ' ' -f 4)
 
     if [ -z ""${floating_ip_address} ]; then
         exit 1
