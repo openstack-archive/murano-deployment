@@ -108,7 +108,6 @@ case "${PROJECT_NAME}" in
     ;;
     'python-muranoclient')
         PROJECT_DIR="${STACK_HOME}/python-muranoclient"
-        #PROJECT_TESTS_DIR="${PROJECT_DIR}/muranoclient/tests/functional"
         PROJECT_TESTS_DIR="${STACK_HOME}/murano-dashboard/muranodashboard/tests/functional"
     ;;
     'murano-agent')
@@ -281,7 +280,7 @@ function prepare_tests() {
             local section_name='murano'
         ;;
         'python-muranoclient')
-            local config_file="${PROJECT_TESTS_DIR}/engine/config.conf"
+            local config_file="${PROJECT_TESTS_DIR}/config/config.conf"
             local section_name='murano'
         ;;
         'murano-agent')
