@@ -217,6 +217,8 @@ function make_package() {
 function make_img_with_murano_agent() {
     local agent_dir='/opt/git/agent'
 
+    export DIB_DEBUG_TRACE=1
+
     sudo apt-get --yes update && sudo apt-get --yes upgrade
     sudo apt-get --yes install kpartx git qemu-utils python-pip
     sudo pip install dib-utils
@@ -233,6 +235,7 @@ function make_img_with_murano_agent() {
     popd
 
     export ELEMENTS_PATH=${agent_dir}/murano-agent/contrib/elements
+
     pushd ${agent_dir}
     ${agent_dir}/diskimage-builder/bin/disk-image-create vm ${DISTR_NAME} \
         murano-agent -o ${DISTR_NAME}${BUILD_NUMBER}-murano-agent.qcow2
