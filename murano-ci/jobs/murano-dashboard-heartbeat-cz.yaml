@@ -11,7 +11,7 @@
 
     parameters:
       - bool:
-        name: KEEP_VM_ALIVE
+            name: KEEP_VM_ALIVE
 
     properties:
       - zeromq-event
