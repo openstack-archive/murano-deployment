@@ -82,6 +82,7 @@ APP_INCUBATOR_BRANCH=${APP_INCUBATOR_BRANCH:-'master'}
 
 DIB_MURANO_AGENT_REPO=${DIB_MURANO_AGENT_REPO:-git://git.openstack.org/stackforge/murano-agent.git}
 DIB_MURANO_AGENT_BRANCH=${DIB_MURANO_AGENT_BRANCH:-master}
+DIB_MURANO_AGENT_REF=${DIB_MURANO_AGENT_REF:-''}
 
 PROJECT_NAME=${ZUUL_PROJECT##*/}
 
@@ -112,6 +113,9 @@ case "${PROJECT_NAME}" in
     ;;
     'murano-agent')
         PROJECT_TESTS_DIR="${STACK_HOME}/murano/murano/tests/functional"
+        DIB_MURANO_AGENT_REPO="${ZUUL_URL}/${ZUUL_PROJECT}"
+        DIB_MURANO_AGENT_BRANCH=${ZUUL_BRANCH}
+        DIB_MURANO_AGENT_REF=${ZUUL_REF}
         # tests for engine launch on iso with murano-agent
     ;;
     *)
