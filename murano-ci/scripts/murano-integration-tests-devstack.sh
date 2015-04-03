@@ -113,9 +113,9 @@ case "${PROJECT_NAME}" in
     ;;
     'murano-agent')
         PROJECT_TESTS_DIR="${STACK_HOME}/murano/murano/tests/functional"
-        DIB_MURANO_AGENT_REPO="${ZUUL_URL}/${ZUUL_PROJECT}"
-        DIB_MURANO_AGENT_BRANCH=${ZUUL_BRANCH}
-        DIB_MURANO_AGENT_REF=${ZUUL_REF}
+        export DIB_MURANO_AGENT_REPO="${ZUUL_URL}/${ZUUL_PROJECT}"
+        export DIB_MURANO_AGENT_BRANCH=${ZUUL_BRANCH}
+        export DIB_MURANO_AGENT_REF=${ZUUL_REF}
         # tests for engine launch on iso with murano-agent
     ;;
     *)
