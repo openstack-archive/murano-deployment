@@ -19,7 +19,7 @@
       - shell: |
           #!/bin/bash
           sudo ntpdate -u pool.ntp.org
-          git clone https://git.openstack.org/stackforge/murano-deployment .
+          git clone https://git.openstack.org/openstack/murano-deployment .
           bash -x murano-ci/scripts/murano-dashboard-integration-tests.sh
 
     publishers:

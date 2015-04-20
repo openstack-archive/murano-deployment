@@ -47,7 +47,7 @@ function do_cleanup()
 function prepare_component()
 {
     local retval=0
-    local git_url="https://git.openstack.org/stackforge/$COMPONENT_NAME"
+    local git_url="https://git.openstack.org/openstack/$COMPONENT_NAME"
     local component_clone_dir="${GIT_WORKING_DIR}/${COMPONENT_NAME}"
     if [ -d "$component_clone_dir" ]; then
         rm -rf $component_clone_dir
@@ -61,9 +61,9 @@ function prepare_component()
     # "noop" used only for clean install from git
     if [ "${ZUUL_REF}" != "noop" ] && [ "${ZUUL_URL}" != "noop" ]; then
         bash setup.sh uninstall >> /dev/null
-        $GIT_CMD fetch ${ZUUL_URL}/stackforge/${COMPONENT_NAME} ${ZUUL_REF}
+        $GIT_CMD fetch ${ZUUL_URL}/openstack/${COMPONENT_NAME} ${ZUUL_REF}
         if [ $? -ne 0 ]; then
-            echo "Error occured during git fetch ${ZUUL_URL}/stackforge/${COMPONENT_NAME} ${ZUUL_REF}!"
+            echo "Error occured during git fetch ${ZUUL_URL}/openstack/${COMPONENT_NAME} ${ZUUL_REF}!"
             return 1
         fi
         $GIT_CMD checkout FETCH_HEAD

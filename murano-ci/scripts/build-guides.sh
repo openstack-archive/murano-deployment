@@ -34,7 +34,7 @@ do
         guides="murano-manual murano-deployment-guide"
     fi
 
-    git clone git@github.com:stackforge/murano-docs.git docs-${version}
+    git clone git@github.com:openstack/murano-docs.git docs-${version}
 
     cd docs-${version}
 

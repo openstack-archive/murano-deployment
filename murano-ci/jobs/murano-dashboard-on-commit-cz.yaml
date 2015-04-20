@@ -38,9 +38,9 @@
           EOF
 
           export ZUUL_REF=${ZUUL_REF:-$ZUUL_REF_OPT}
-          export ZUUL_PROJECT=${ZUUL_PROJECT:-'stackforge/murano-dashboard'}
+          export ZUUL_PROJECT=${ZUUL_PROJECT:-'openstack/murano-dashboard'}
 
-          git clone https://git.openstack.org/stackforge/murano-deployment .
+          git clone https://git.openstack.org/openstack/murano-deployment .
 
           bash ./murano-ci/scripts/murano-integration-tests-devstack.sh
 

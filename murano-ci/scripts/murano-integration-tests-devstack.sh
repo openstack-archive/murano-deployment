@@ -75,12 +75,12 @@ STACK_HOME='/opt/stack'
 
 ZUUL_URL=${ZUUL_URL:-'https://git.openstack.org'}
 ZUUL_REF=${ZUUL_REF:-'master'}
-ZUUL_PROJECT=${ZUUL_PROJECT:-'stackforge/murano'}
+ZUUL_PROJECT=${ZUUL_PROJECT:-'openstack/murano'}
 
 APP_INCUBATOR_REPO=${APP_INCUBATOR_REPO:-https://github.com/murano-project/murano-app-incubator}
 APP_INCUBATOR_BRANCH=${APP_INCUBATOR_BRANCH:-'master'}
 
-DIB_MURANO_AGENT_REPO=${DIB_MURANO_AGENT_REPO:-git://git.openstack.org/stackforge/murano-agent.git}
+DIB_MURANO_AGENT_REPO=${DIB_MURANO_AGENT_REPO:-git://git.openstack.org/openstack/murano-agent.git}
 DIB_MURANO_AGENT_BRANCH=${DIB_MURANO_AGENT_BRANCH:-master}
 DIB_MURANO_AGENT_REF=${DIB_MURANO_AGENT_REF:-''}
 
@@ -489,20 +489,20 @@ function deploy_devstack() {
     # Assuming the script is run from 'jenkins' user
     local git_dir=/opt/git
 
-    sudo mkdir -p "${git_dir}/stackforge"
-    sudo chown -R jenkins:jenkins "${git_dir}/stackforge"
-    cd "${git_dir}/stackforge"
-    git clone https://github.com/stackforge/murano
+    sudo mkdir -p "${git_dir}/openstack"
+    sudo chown -R jenkins:jenkins "${git_dir}/openstack"
+    cd "${git_dir}/openstack"
+    git clone https://github.com/openstack/murano
 
     if [ "${PROJECT_NAME}" == 'murano' ]; then
-        pushd "${git_dir}/stackforge/murano"
+        pushd "${git_dir}/openstack/murano"
         git fetch ${ZUUL_URL}/${ZUUL_PROJECT} ${ZUUL_REF} && git checkout FETCH_HEAD
         popd
     fi
 
     # NOTE: Source path MUST ends with a slash!
     rsync --recursive --keep-dirlinks --exclude README.* \
-        "${git_dir}/stackforge/murano/contrib/devstack/" "${STACK_HOME}/devstack/"
+        "${git_dir}/openstack/murano/contrib/devstack/" "${STACK_HOME}/devstack/"
 
     cd "${STACK_HOME}/devstack"
 

@@ -85,13 +85,13 @@ STACK_HOME='/opt/stack'
 
 GIT_BASE=${GIT_BASE:-https://git.openstack.org}
 
-MURANO_REPO=${MURANO_REPO:-${GIT_BASE}/stackforge/murano}
+MURANO_REPO=${MURANO_REPO:-${GIT_BASE}/openstack/murano}
 MURANO_BRANCH=${MURANO_BRANCH:-master}
 
-MURANO_DASHBOARD_REPO=${MURANO_DASHBOARD_REPO:-${GIT_BASE}/stackforge/murano-dashboard}
+MURANO_DASHBOARD_REPO=${MURANO_DASHBOARD_REPO:-${GIT_BASE}/openstack/murano-dashboard}
 MURANO_DASHBOARD_BRANCH=${MURANO_DASHBOARD_BRANCH:-master}
 
-MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO:-${GIT_BASE}/stackforge/python-muranoclient}
+MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO:-${GIT_BASE}/openstack/python-muranoclient}
 MURANO_PYTHONCLIENT_BRANCH=${MURANO_PYTHONCLIENT_BRANCH:-master}
 
 MURANO_APP_INCUBATOR_REPO=${MURANO_APP_INCUBATOR_REPO:-https://github.com/murano-project/murano-app-incubator}

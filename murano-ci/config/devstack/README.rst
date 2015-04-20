@@ -26,7 +26,7 @@ As user 'stack', clone murano-deployment:
 .. code-block:: console
 
 	$ cd /opt/stack
-	$ git clone https://github.com/stackforge/murano-deployment
+	$ git clone https://github.com/openstack/murano-deployment
 	$ cd /opt/stack/murano-deployment/murano-ci/config/devstack
 ..
 

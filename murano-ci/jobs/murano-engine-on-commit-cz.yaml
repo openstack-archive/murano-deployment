@@ -39,7 +39,7 @@
 
           export ZUUL_REF=${ZUUL_REF:-$ZUUL_REF_OPT}
 
-          git clone https://git.openstack.org/stackforge/murano-deployment .
+          git clone https://git.openstack.org/openstack/murano-deployment .
 
           bash ./murano-ci/scripts/murano-integration-tests-devstack.sh
 

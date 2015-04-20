@@ -50,7 +50,7 @@ http://alexeytorkhov.blogspot.ru/2009/09/mounting-raw-and-qcow2-vm-disk-images.h
 ::
 
 	>$ cd ~
-	>$ git clone https://github.com/stackforge/murano-deployment.git
+	>$ git clone https://github.com/openstack/murano-deployment.git
 ..
 
 * Convert Cirros image into RAW format (skip arch which you don't need):

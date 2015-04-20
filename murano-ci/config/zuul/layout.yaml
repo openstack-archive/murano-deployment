@@ -20,10 +20,10 @@ pipelines:
         verified: 0
 
 projects:
-  - name: stackforge/murano
+  - name: openstack/murano
     check:
       - murano-engine-app-deployment-tests-ubuntu
-  - name: stackforge/murano-dashboard
+  - name: openstack/murano-dashboard
     check:
       - murano-dashboard-integration-tests-ubuntu
       - murano-dashboard-integration-tests-centos

@@ -9,7 +9,7 @@
 
     scm:
      - git:
-        url: https://git.openstack.org/stackforge/murano-deployment
+        url: https://git.openstack.org/openstack/murano-deployment
         branches:
           - "master"
 

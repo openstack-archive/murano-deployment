@@ -41,11 +41,11 @@
             UserKnownHostsFile=/dev/null
           EOF
 
-          export ZUUL_PROJECT='stackforge/murano'
+          export ZUUL_PROJECT='openstack/murano'
           export ZUUL_URL='https://git.openstack.org'
           export ZUUL_REF='master'
 
-          git clone https://git.openstack.org/stackforge/murano-deployment .
+          git clone https://git.openstack.org/openstack/murano-deployment .
           bash ./murano-ci/scripts/murano-integration-tests-devstack.sh
 
     publishers:
