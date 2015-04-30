@@ -84,6 +84,16 @@ DIB_MURANO_AGENT_REPO=${DIB_MURANO_AGENT_REPO:-git://git.openstack.org/openstack
 DIB_MURANO_AGENT_BRANCH=${DIB_MURANO_AGENT_BRANCH:-master}
 DIB_MURANO_AGENT_REF=${DIB_MURANO_AGENT_REF:-''}
 
+MURANO_REPO=${MURANO_REPO:-git://git.openstack.org/openstack/murano.git}
+MURANO_BRANCH=${ZUUL_BRANCH}
+
+MURANO_DASHBOARD_REPO=${MURANO_DASHBOARD_REPO:-git://git.openstack.org/openstack/murano-dashboard.git}
+MURANO_DASHBOARD_BRANCH=${ZUUL_BRANCH}
+
+MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO:-git://git.openstack.org/openstack/python-muranoclient.git}
+MURANO_PYTHONCLIENT_BRANCH=${ZUUL_BRANCH}
+
+
 PROJECT_NAME=${ZUUL_PROJECT##*/}
 
 APT_PROXY_HOST=${APT_PROXY_HOST:-''}
@@ -507,6 +517,28 @@ function deploy_devstack() {
 
     cd "${STACK_HOME}/devstack"
 
+    case "${PROJECT_NAME}" in
+        'murano')
+            MURANO_REPO=${ZUUL_URL}/${ZUUL_PROJECT}
+            MURANO_BRANCH=${ZUUL_REF}
+        ;;
+        'murano-dashboard')
+            MURANO_DASHBOARD_REPO=${ZUUL_URL}/${ZUUL_PROJECT}
+            MURANO_DASHBOARD_BRANCH=${ZUUL_REF}
+        ;;
+        'python-muranoclient')
+            MURANO_PYTHONCLIENT_REPO=${ZUUL_URL}/${ZUUL_PROJECT}
+            MURANO_PYTHONCLIENT_BRANCH=${ZUUL_REF}
+        ;;
+    esac
+    echo "MURANO_REPO=${MURANO_REPO}"
+    echo "MURANO_BRANCH=${MURANO_BRANCH}"
+    echo "MURANO_DASHBOARD_REPO=${MURANO_DASHBOARD_REPO}"
+    echo "MURANO_DASHBOARD_BRANCH=${MURANO_DASHBOARD_BRANCH}"
+    echo "MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO}"
+    echo "MURANO_PYTHONCLIENT_BRANCH=${MURANO_PYTHONCLIENT_BRANCH}"
+
+
     cat << EOF > local.conf
 [[local|localrc]]
 HOST_IP=${OPENSTACK_HOST}           # IP address of OpenStack lab
@@ -517,6 +549,12 @@ SERVICE_TOKEN=.                     # This value doesn't matter
 SERVICE_TENANT_NAME=${ADMIN_TENANT}
 MURANO_ADMIN_USER=${ADMIN_USERNAME}
 RABBIT_HOST=${floating_ip_address}
+MURANO_REPO=${MURANO_REPO}
+MURANO_BRANCH=${MURANO_BRANCH}
+MURANO_DASHBOARD_REPO=${MURANO_DASHBOARD_REPO}
+MURANO_DASHBOARD_BRANCH=${MURANO_DASHBOARD_BRANCH}
+MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO}
+MURANO_PYTHONCLIENT_BRANCH=${MURANO_PYTHONCLIENT_BRANCH}
 RABBIT_PASSWORD=guest
 MURANO_RABBIT_VHOST=/
 RECLONE=True
@@ -531,21 +569,6 @@ enable_service murano-api
 enable_service murano-engine
 enable_service murano-dashboard
 EOF
-
-    case "${PROJECT_NAME}" in
-        'murano')
-            echo "MURANO_REPO=${ZUUL_URL}/${ZUUL_PROJECT}" >> local.conf
-            echo "MURANO_BRANCH=${ZUUL_REF}" >> local.conf
-        ;;
-        'murano-dashboard')
-            echo "MURANO_DASHBOARD_REPO=${ZUUL_URL}/${ZUUL_PROJECT}" >> local.conf
-            echo "MURANO_DASHBOARD_BRANCH=${ZUUL_REF}" >> local.conf
-        ;;
-        'python-muranoclient')
-            echo "MURANO_PYTHONCLIENT_REPO=${ZUUL_URL}/${ZUUL_PROJECT}" >> local.conf
-            echo "MURANO_PYTHONCLIENT_BRANCH=${ZUUL_REF}" >> local.conf
-        ;;
-    esac
 
     sudo ./tools/create-stack-user.sh
     echo 'stack:swordfish' | sudo chpasswd
