@@ -158,7 +158,7 @@ function get_ip_from_iface() {
 
 
 function get_floating_ip() {
-    sudo pip install --upgrade python-novaclient
+    sudo pip install python-novaclient
 
     export OS_USERNAME=${ADMIN_USERNAME}
     export OS_PASSWORD=${ADMIN_PASSWORD}
