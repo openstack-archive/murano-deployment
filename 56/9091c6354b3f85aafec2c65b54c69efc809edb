@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Serg Melikyan <smelikyan@mirantis.com>
+Workflow+1: Serg Melikyan <smelikyan@mirantis.com>
+Code-Review+2: Ruslan Kamaldinov <rkamaldinov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 30 Apr 2015 16:48:00 +0000
+Reviewed-on: https://review.openstack.org/179156
+Project: openstack/murano-deployment
+Branch: refs/heads/master
