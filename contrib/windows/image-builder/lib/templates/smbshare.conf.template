@@ -1,0 +1,7 @@
+[image-builder-share]
+  path = /home/img-builder
+  browsable = yes
+  guest ok = yes
+  guest account = nobody
+  readonly = no
+  create mask = 0755

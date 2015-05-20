@@ -1,43 +1,173 @@
-Image builder
-=============
+MS Windows image builder for OpenStack Murano
+=============================================
 
-Use the 'make' utility to start build new Windows image.
+Introduction
+------------
 
-During build preparation this folder will be copied entirely to the **/opt/image-builder** folder. In this document we refer to that folder using variable **IMAGE_BUILDER_ROOT**.
+This repository contains MS Windows templates, powershell scripts and bash scripted logic that could used to create qcow2 images for QEMU/KVM based virtual machines used in OpenStack.
 
-config.ini
-----------
+MS Windows Versions
+-------------------
 
-Config file consists of the following sections:
-* Default section - Could be names as DEFAULT only. Only one section should be defined, and it should be the first section in the file. This section defines variables which are evaluated and exported as reqular env variables during scripts execution. These variables could be used in subsequent sections (as IMAGE_BUILDER_ROOT does).
-* Prerequisite sections - Could be named as you want. Any number of sections is allowed. These sections define options which allows to perform various tasks on dependencies, such as validating, renaming, downloading.
+Supported by builder versions with en_US localization:
 
-Dependency options
-""""""""""""""""""
+* Windows 2012 R2
+* Windows 2012 R2 Core
+* Windows 2008 R2
+* Windows 2008 R2 Core
 
-* name - file name for the dependency
-* url - URL which could be used to download missing dependency file
-* path - path where the file will be stored
-* mandatory - identifies the dependency as "must exists or die", allowed values are 'true' and 'false'
-* skip - skips section, helps when you need to skip a section and do not want to comment many lines :) Allowed values are 'true' and 'false'
+Getting Started
+---------------
 
-Prerequisites
--------------
-Files that **MUST** be placed under **$IMAGE_BUILDER_ROOT/libvirt/images** folder are defined in config file with "mandatory = 'true'" option.
+Trial versions of Windows 2008 R2 / 2012 R2 used by default. You could use these images for 180 days without activation. You could download evaluation versions from official Microsoft website:
 
-Files that **MUST** be placed under **$IMAGE_BUILDER_ROOT/share/files** are described in README file under **share/files** subfolder.
+* `[Windows 2012 R2 - download] <https://www.microsoft.com/en-us/download/details.aspx?id=11093>`_
+* `[Windows 2008 R2 - download] <https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2012-r2>`_
 
-Required steps
---------------
+System requirements
+~~~~~~~~~~~~~~~~~~~
 
-1. Run **install.sh** to install required prerequisites and configure system. This script will create folder structure, install required packages and configure Samba share required by build script.
-2. Run **make build-root** to update build root directory content.
-3. Copy prerequisite files to their folders.
-4. Run **make test-build-files** to ensure that all files are in place.
-5. Run **make** to show available image targets.
-6. Run **make <image target>** to build image.
-7. Image file should be saved under **$IMAGE_BUILDER_ROOT/libvirt/images** folder.
+* Debian based Linux distribution, like Ubuntu, Mint and so on.
+* Packages required:
+  ``qemu-kvm virt-manager virt-goodies virtinst bridge-utils libvirt-bin
+  uuid-runtime samba samba-common cifs-utils``
+* User should be able to run sudo without password prompt!
 
-* Run **make clean** to remove files produced by this makefile only. NOTE: 'static files' (prerequisites) will be kept.
-* Run **make clean-all** to run clean other files, that were prodiced by other makefiles.
+  .. code-block::
 
+    sudo echo "${USER}    ALL = NOPASSWD: ALL" > /etc/sudoers.d/${USER}
+    sudo chmod 440 /etc/sudoers.d/${USER}
+  ..
+
+* Free disk space > 50G on partition where script will spawn virtual machines because of ``40G`` required by virtual machine HDD image.
+* Internet connectivity.
+* Samba shared resource.
+
+Configuring builder
+~~~~~~~~~~~~~~~~~~~
+
+Configuration parameters to tweak:
+
+``[default]``
+
+* ``workdir`` - place where script would prepare all software required by build scenarios. By `default` is not set, i.e. script directory would used as root of working space.
+* ``vmsworkdir`` - must contain valid path, this parameter tells script where it should spawn virtual machines.
+* ``runparallel`` - *true* of *false*, **false** set by default. This parameter describes how to start virtual machines, one by one or in launch them in background.
+
+``[samba]``
+
+* ``mode`` - *local* or *remote*. In local mode script would try to install and configure Samba server locally. If set to remote, you should also provide information about connection.
+* ``host`` - in local mode - is 192.168.122.1, otherwise set proper ip address.
+* ``user`` - set to **guest** by default in case of guest rw access.
+* ``domain`` - Samba server user domain, if not set `host` value used.
+* ``password`` - Samba server user password.
+* ``image-builder-share`` - Samba server remote directory.
+
+MS Windows install preparation:
+
+``[win2k12r2]`` or ``[win2k8r2]`` - shortcuts for 2012 R2 and 2008 R2.
+
+* `enabled` - *true* of *false*, include or exclude release processing by script.
+* `editions` - standard, core or both(space used as delimiter).
+* `iso` - local path to iso file
+
+By default ``[win2k8r2]`` - disabled, if you need you can enable this release in *config.ini* file.
+
+Run
+---
+
+Preparation
+~~~~~~~~~~~
+
+Run ``chmod +x *.sh`` in builder directory to make script files executable.
+
+Command line parameters:
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+``runme.sh`` - the main script
+
+* ``--help`` - shows usage
+* ``--forceinstall-dependencies`` - Runs dependencies install.
+* ``--check-smb`` - Run checks or configuration of Samba server.
+* ``--download-requirements`` - Download all required and configures software except MS Windows ISO.
+* ``--show-configured`` - Shows configured and available to use MS Windows releases.
+* ``--run`` - normal run
+
+Experimental options:
+^^^^^^^^^^^^^^^^^^^^^
+
+* ``--config-file`` - Set configuration file location instead of default.
+
+Use cases
+---------
+
+All examples below describes changes in ``config.ini`` file
+
+1. I want to build one image for specific version and edition. For example: version - **2012 R2** and edition - **standard**. Steps to reach the goal:
+
+ * Disable ``[win2k8r2]`` from script processing.
+
+   .. code-block:: ini
+
+    [win2k8r2]
+    enabled=false
+   ..
+
+ - Update ``[win2k12r2]`` with desired edition(**standard**).
+
+   .. code-block:: ini
+
+     [win2k12r2]
+     enabled=true
+     editions=standard
+   ..
+
+ * Execute ``runme.sh --run``
+
+2. I want to build two images for specific version with all supported by script editions. For example: **2012 R2** and editions - **standard** and **core**. Steps to reach the goal:
+
+ * Disable `[win2k8r2]` from script processing.
+
+   .. code-block:: ini
+
+     [win2k8r2]
+     enabled=false
+   ..
+
+ * Update ``[win2k12r2]`` with desired editions(**standard** and **core**).
+
+   .. code-block:: ini
+
+     [win2k12r2]
+     enabled=true
+     editions=standard core
+   ..
+
+ * Execute ``runme.sh --run``
+
+3. I want to build two images for all supported by script versions with specific editions. For example: versions - **2012 R2** and **2008 R2** and edition - **core**. Steps to reach the goal:
+
+ * Update ``[win2k8r2]`` with desired edition(**core**).
+
+   .. code-block:: ini
+
+      [win2k8r2]
+      enabled=true
+      editions=core
+   ..
+
+ * Update ``[win2k12r2]`` with desired edition(**core**).
+
+   .. code-block:: ini
+
+      [win2k12r2]
+      enabled=true
+      editions=core
+   ..
+
+ * Execute ``runme.sh --run``
+
+Openstack Murano applications for MS Windows
+--------------------------------------------
+
+Applications for Murano could be obtained `[here] <https://github.com/murano-project/murano-app-incubator>`_

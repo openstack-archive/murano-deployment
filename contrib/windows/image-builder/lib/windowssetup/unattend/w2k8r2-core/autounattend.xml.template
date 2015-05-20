@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<unattend xmlns="urn:schemas-microsoft-com:unattend">
+    <settings pass="windowsPE">
+        <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <SetupUILanguage>
+                <UILanguage>en-US</UILanguage>
+            </SetupUILanguage>
+            <InputLocale>en-US</InputLocale>
+            <SystemLocale>en-US</SystemLocale>
+            <UILanguage>en-US</UILanguage>
+            <UserLocale>en-US</UserLocale>
+        </component>
+        <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <DiskConfiguration>
+                <Disk wcm:action="add">
+                    <CreatePartitions>
+                        <CreatePartition wcm:action="add">
+                            <Order>1</Order>
+                            <Size>350</Size>
+                            <Type>Primary</Type>
+                        </CreatePartition>
+                        <CreatePartition wcm:action="add">
+                            <Extend>true</Extend>
+                            <Order>2</Order>
+                            <Type>Primary</Type>
+                        </CreatePartition>
+                    </CreatePartitions>
+                    <ModifyPartitions>
+                        <ModifyPartition wcm:action="add">
+                            <Active>true</Active>
+                            <Label>System</Label>
+                            <Format>NTFS</Format>
+                            <Order>1</Order>
+                            <PartitionID>1</PartitionID>
+                        </ModifyPartition>
+                        <ModifyPartition wcm:action="add">
+                            <Format>NTFS</Format>
+                            <Label>Windows</Label>
+                            <Order>2</Order>
+                            <PartitionID>2</PartitionID>
+                            <Letter>C</Letter>
+                        </ModifyPartition>
+                    </ModifyPartitions>
+                    <DiskID>0</DiskID>
+                    <WillWipeDisk>true</WillWipeDisk>
+                </Disk>
+                <WillShowUI>OnError</WillShowUI>
+            </DiskConfiguration>
+            <ImageInstall>
+                <OSImage>
+                    <InstallFrom>
+                        <MetaData wcm:action="add">
+                            <Key>/IMAGE/NAME</Key>
+                            <Value>Windows Server 2008 R2 SERVERSTANDARDCORE</Value>
+                        </MetaData>
+                    </InstallFrom>
+                    <InstallToAvailablePartition>false</InstallToAvailablePartition>
+                    <WillShowUI>OnError</WillShowUI>
+                    <InstallTo>
+                        <DiskID>0</DiskID>
+                        <PartitionID>2</PartitionID>
+                    </InstallTo>
+                </OSImage>
+            </ImageInstall>
+            <UserData>
+                <AcceptEula>true</AcceptEula>
+                <FullName>User</FullName>
+                <Organization>Stack</Organization>
+            </UserData>
+            <EnableNetwork>true</EnableNetwork>
+            <LogPath>A:\</LogPath>
+        </component>
+        <component name="Microsoft-Windows-PnpCustomizationsWinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <DriverPaths>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="1">
+                    <Path>E:\viostor\2k8R2\amd64\</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="2">
+                    <Path>E:\NetKVM\2k8R2\amd64\</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="3">
+                    <Path>E:\Balloon\2k8R2\amd64\</Path>
+                </PathAndCredentials>
+                <PathAndCredentials wcm:action="add" wcm:keyValue="4">
+                    <Path>E:\vioserial\2k8R2\amd64\</Path>
+                </PathAndCredentials>
+            </DriverPaths>
+        </component>
+    </settings>
+    <settings pass="oobeSystem">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <AutoLogon>
+                <Enabled>true</Enabled>
+                <LogonCount>9</LogonCount>
+                <Username>administrator</Username>
+                <Password>
+                    <Value>UABhAHMAcwB3AG8AcgBkADEAUABhAHMAcwB3AG8AcgBkAA==</Value>
+                    <PlainText>false</PlainText>
+                </Password>
+            </AutoLogon>
+            <UserAccounts>
+                <AdministratorPassword>
+                    <Value>UABhAHMAcwB3AG8AcgBkADEAQQBkAG0AaQBuAGkAcwB0AHIAYQB0AG8AcgBQAGEAcwBzAHcAbwByAGQA</Value>
+                    <PlainText>false</PlainText>
+                </AdministratorPassword>
+            </UserAccounts>
+            <RegisteredOrganization>Company</RegisteredOrganization>
+            <RegisteredOwner>Windows User</RegisteredOwner>
+            <TimeZone>Pacific Standard Time</TimeZone>
+            <FirstLogonCommands>
+                 <SynchronousCommand wcm:action="add">
+                    <Order>1</Order>
+                    <RequiresUserInput>false</RequiresUserInput>
+                    <Description>Add dot Net2</Description>
+                    <CommandLine>%WINDIR%\System32\ocsetup.exe NetFx2-ServerCore</CommandLine>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>2</Order>
+                    <RequiresUserInput>false</RequiresUserInput>
+                    <Description>Add dot Net3</Description>
+                    <CommandLine>i%WINDIR%\System32\ocsetup.exe NetFx3-ServerCore</CommandLine>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>3</Order>
+                    <RequiresUserInput>false</RequiresUserInput>
+                    <Description>Add dot Net2</Description>
+                    <CommandLine>%WINDIR%\System32\ocsetup.exe NetFx2-ServerCore-WOW64</CommandLine>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>4</Order>
+                    <RequiresUserInput>false</RequiresUserInput>
+                    <Description>Add dot Net3</Description>
+                    <CommandLine>%WINDIR%\System32\ocsetup.exe NetFx3-ServerCore-WOW64</CommandLine>
+                </SynchronousCommand>
+                 <SynchronousCommand wcm:action="add">
+                    <Order>5</Order>
+                    <RequiresUserInput>false</RequiresUserInput>
+                    <Description>Add Powershell 2</Description>
+                    <CommandLine>%WINDIR%\System32\ocsetup.exe MicrosoftWindowsPowerShell</CommandLine>
+                </SynchronousCommand>
+                 <SynchronousCommand wcm:action="add">
+                    <Order>6</Order>
+                    <RequiresUserInput>false</RequiresUserInput>
+                    <Description>Add Powershell 2</Description>
+                    <CommandLine>%WINDIR%\System32\ocsetup.exe MicrosoftWindowsPowerShell-WOW64</CommandLine>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>7</Order>
+                    <RequiresUserInput>false</RequiresUserInput>
+                    <Description>Add cmdlets</Description>
+                    <CommandLine>%WINDIR%\System32\ocsetup.exe ServerManager-PSH-Cmdlets</CommandLine>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>8</Order>
+                    <RequiresUserInput>false</RequiresUserInput>
+                    <Description>Add cmdlets</Description>
+                    <CommandLine>%WINDIR%\System32\ocsetup.exe BestPractices-PSH-Cmdlets</CommandLine>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>9</Order>
+                    <CommandLine>%WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe Set-ExecutionPolicy Unrestricted -force</CommandLine>
+                    <Description>Set exec-policy</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>10</Order>
+                    <CommandLine>%WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe New-Item -Path  $env:systemdrive&apos;\Murano&apos; -Type Container;</CommandLine>
+                    <Description>Creating Murano folder in the sytem drive root</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>11</Order>
+                    <CommandLine>%WINDIR%\System32\net.exe use m: \\%_IMAGE_BUILDER_HOST_%\%_SHARE_PATH_% %_SHARE_CREDS_%</CommandLine>
+                    <Description>Mounting network share from HOST</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>12</Order>
+                    <CommandLine>%WINDIR%\System32\xcopy.exe m:\Files %HOMEDRIVE%\Murano\Files /s /i /y /q</CommandLine>
+                    <Description>Copying content to local folder</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>13</Order>
+                    <CommandLine>%WINDIR%\System32\xcopy.exe m:\Scripts %HOMEDRIVE%\Murano\Scripts /s /i /y /q</CommandLine>
+                    <Description>Copying content to local folder</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>14</Order>
+                    <CommandLine>%SYSTEMDRIVE%\murano\Files\dotNet4.0_offline.exe /q /norestart</CommandLine>
+                    <Description>Installing dotNet 4.0</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>15</Order>
+                    <CommandLine>%SYSTEMDRIVE%\murano\Files\dotNet4.5_offline.exe /q /norestart</CommandLine>
+                    <Description>Installing dotNet 4.5</Description>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>16</Order>
+                    <Description>Windows post install process with sysprep</Description>
+                    <CommandLine>%WINDIR%\System32\WindowsPowerShell\v1.0\powershell.exe -Command &quot;Start-Sleep -s 2; &amp; %SYSTEMDRIVE%\murano\scripts\w2k8r2-core\1.Windows-Post-Install.ps1&quot;</CommandLine>
+                </SynchronousCommand>
+                <SynchronousCommand wcm:action="add">
+                    <Order>17</Order>
+                    <CommandLine>%WINDIR%\System32\net.exe use m: /delete /y</CommandLine>
+                    <Description>Unmounting network share</Description>
+                </SynchronousCommand>
+            </FirstLogonCommands>
+        </component>
+    </settings>
+    <cpi:offlineImage cpi:source="catalog:c:/users/iyozhikov/documents/install_windows server 2012 serverstandard.clg" xmlns:cpi="urn:schemas-microsoft-com:cpi" />
+</unattend>
