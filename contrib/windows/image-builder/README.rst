@@ -4,7 +4,7 @@ MS Windows image builder for OpenStack Murano
 Introduction
 ------------
 
-This repository contains MS Windows templates, powershell scripts and bash scripted logic that could used to create qcow2 images for QEMU/KVM based virtual machines used in OpenStack.
+This repository contains MS Windows templates, powershell scripts and bash scripted logic used to create qcow2 images for QEMU/KVM based virtual machines used in OpenStack.
 
 MS Windows Versions
 -------------------
@@ -67,9 +67,9 @@ MS Windows install preparation:
 
 ``[win2k12r2]`` or ``[win2k8r2]`` - shortcuts for 2012 R2 and 2008 R2.
 
-* `enabled` - *true* of *false*, include or exclude release processing by script.
-* `editions` - standard, core or both(space used as delimiter).
-* `iso` - local path to iso file
+* ``enabled`` - *true* of *false*, include or exclude release processing by script.
+* ``editions`` - standard, core or both(space used as delimiter).
+* ``iso`` - local path to iso file
 
 By default ``[win2k8r2]`` - disabled, if you need you can enable this release in *config.ini* file.
 
