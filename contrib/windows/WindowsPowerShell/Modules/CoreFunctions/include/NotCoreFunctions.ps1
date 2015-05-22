@@ -105,10 +105,18 @@ It reports that reboot required if it is required, or restarts the computer.
 
     foreach ($Feature in $Name) {
         Write-Log "Installing feature '$Feature' ..."
-        $Action = Install-WindowsFeature `
-            -Name $Feature `
-            -IncludeManagementTools:$IncludeManagementTools `
-            -ErrorAction Stop
+
+        if (Get-Command -ErrorAction SilentlyContinue Install-WindowsFeature) {
+            $Action = Install-WindowsFeature `
+                -Name $Feature `
+                -IncludeManagementTools:$IncludeManagementTools `
+                -ErrorAction Stop
+        } else {
+            $Action = Add-WindowsFeature `
+                -Name $Feature `
+                -IncludeAllSubfeature:$IncludeManagementTools `
+                -ErrorAction Stop
+        }
 
         if ($Action.Success -eq $true) {
             if ($Action.FeatureResult.RestartNeeded -eq $true) {
