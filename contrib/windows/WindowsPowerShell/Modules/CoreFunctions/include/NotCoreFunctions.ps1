@@ -114,7 +114,6 @@ It reports that reboot required if it is required, or restarts the computer.
         } else {
             $Action = Add-WindowsFeature `
                 -Name $Feature `
-                -IncludeAllSubfeature:$IncludeManagementTools `
                 -ErrorAction Stop
         }
 
