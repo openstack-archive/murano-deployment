@@ -525,6 +525,7 @@ function deploy_devstack() {
         'murano-dashboard')
             MURANO_DASHBOARD_REPO=${ZUUL_URL}/${ZUUL_PROJECT}
             MURANO_DASHBOARD_BRANCH=${ZUUL_REF}
+            echo "MURANO_REPO_URL='http://${floating_ip_address}:8099'" >> /opt/stack/horizon/openstack_dashboard/settings.py
         ;;
         'python-muranoclient')
             MURANO_PYTHONCLIENT_REPO=${ZUUL_URL}/${ZUUL_PROJECT}
