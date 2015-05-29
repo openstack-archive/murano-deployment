@@ -518,7 +518,7 @@ function deploy_devstack() {
     cd "${STACK_HOME}/devstack"
 
     # this is set only for murano-dashboard tests
-    INC_MURANO_REPO_URL=""
+    MURANO_REPOSITORY_URL="http://storage.apps.openstack.org/"
     case "${PROJECT_NAME}" in
         'murano')
             MURANO_REPO=${ZUUL_URL}/${ZUUL_PROJECT}
@@ -527,22 +527,20 @@ function deploy_devstack() {
         'murano-dashboard')
             MURANO_DASHBOARD_REPO=${ZUUL_URL}/${ZUUL_PROJECT}
             MURANO_DASHBOARD_BRANCH=${ZUUL_REF}
-            INC_MURANO_REPO_URL="MURANO_REPO_URL=\"http://${floating_ip_address}:8099\""
+            MURANO_REPOSITORY_URL="http://${floating_ip_address}:8099"
         ;;
         'python-muranoclient')
             MURANO_PYTHONCLIENT_REPO=${ZUUL_URL}/${ZUUL_PROJECT}
             MURANO_PYTHONCLIENT_BRANCH=${ZUUL_REF}
         ;;
     esac
-    echo "MURANO_REPO_URL=${MURANO_REPO_URL}"
+    echo "MURANO_REPOSITORY_URL=${MURANO_REPOSITORY_URL}"
     echo "MURANO_REPO=${MURANO_REPO}"
     echo "MURANO_BRANCH=${MURANO_BRANCH}"
     echo "MURANO_DASHBOARD_REPO=${MURANO_DASHBOARD_REPO}"
     echo "MURANO_DASHBOARD_BRANCH=${MURANO_DASHBOARD_BRANCH}"
     echo "MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO}"
     echo "MURANO_PYTHONCLIENT_BRANCH=${MURANO_PYTHONCLIENT_BRANCH}"
-    echo "INC_MURANO_REPO_URL=${INC_MURANO_REPO_URL}"
-
 
     cat << EOF > local.conf
 [[local|localrc]]
@@ -560,7 +558,7 @@ MURANO_DASHBOARD_REPO=${MURANO_DASHBOARD_REPO}
 MURANO_DASHBOARD_BRANCH=${MURANO_DASHBOARD_BRANCH}
 MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO}
 MURANO_PYTHONCLIENT_BRANCH=${MURANO_PYTHONCLIENT_BRANCH}
-${INC_MURANO_REPO_URL}
+MURANO_REPOSITORY_URL=${MURANO_REPOSITORY_URL}
 RABBIT_PASSWORD=guest
 MURANO_RABBIT_VHOST=/
 RECLONE=True
