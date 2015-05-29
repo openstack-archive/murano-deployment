@@ -527,7 +527,7 @@ function deploy_devstack() {
         'murano-dashboard')
             MURANO_DASHBOARD_REPO=${ZUUL_URL}/${ZUUL_PROJECT}
             MURANO_DASHBOARD_BRANCH=${ZUUL_REF}
-            INC_MURANO_REPO_URL="MURANO_REPO_URL=\"http://${floating_ip_address}:8099\""
+            INC_MURANO_REPO_URL="MURANO_REPO_URL=http://127.0.0.1:8099"
         ;;
         'python-muranoclient')
             MURANO_PYTHONCLIENT_REPO=${ZUUL_URL}/${ZUUL_PROJECT}
