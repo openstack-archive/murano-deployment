@@ -1,0 +1,196 @@
+- job-template:
+    name: 'gate_{name}'
+    project-type: freestyle
+    defaults: global
+    description: '{name} gate job'
+    disabled: false
+    concurrent: true
+    node: precise-devstack-cz
+
+    parameters:
+      - bool:
+          name: KEEP_VM_ALIVE
+
+    properties:
+      - zeromq-event
+
+    builders:
+      - shell: |
+          #!/bin/bash
+
+          git clone https://git.openstack.org/openstack/murano-deployment .
+
+          bash ./murano-ci/scripts/start_gate.sh
+
+    publishers:
+      - collect-gate-artifacts
+      - archive-artifacts
+
+- job-template:
+    name: 'heartbeat_{name}'
+    project-type: freestyle
+    defaults: global
+    description: '{name} heartbeat job'
+    disabled: false
+    concurrent: true
+    node: precise-devstack-cz
+
+    triggers:
+      - timed: "H */3 * * *"
+
+    parameters:
+      - bool:
+          name: KEEP_VM_ALIVE
+      - string:
+          name: OVERRIDE_URL
+          default: https://git.openstack.org
+      - string:
+          name: OVERRIDE_BRANCH
+          default: master
+      - string:
+          name: OVERRIDE_PROJECT
+          default: '{repository}'
+
+    properties:
+      - zeromq-event
+
+    builders:
+      - shell: |
+          #!/bin/bash
+
+          git clone https://git.openstack.org/openstack/murano-deployment .
+
+          bash ./murano-ci/scripts/start_gate.sh
+
+    publishers:
+      - collect-heartbeat-artifacts
+      - archive-artifacts
+
+
+- job-template:
+    name: 'coverage_{name}'
+    project-type: freestyle
+    defaults: global
+    description: '{name} coverage job'
+    disabled: false
+    concurrent: true
+    node: precise-devstack-cz
+
+    triggers:
+      - timed: "H */3 * * *"
+
+    parameters:
+      - bool:
+          name: KEEP_VM_ALIVE
+      - string:
+          name: OVERRIDE_URL
+          default: https://git.openstack.org
+      - string:
+          name: OVERRIDE_BRANCH
+          default: master
+      - string:
+          name: OVERRIDE_PROJECT
+          default: '{repository}'
+      - string:
+          name: WITH_COVERAGE
+          default: 'true'
+
+    properties:
+      - zeromq-event
+
+    builders:
+      - shell: |
+          #!/bin/bash
+
+          git clone https://git.openstack.org/openstack/murano-deployment .
+
+          bash ./murano-ci/scripts/start_gate.sh
+
+    publishers:
+      - collect-coverage-artifacts
+      - archive-artifacts
+
+- job-template:
+    name: image_{distro}_{name}
+    project-type: freestyle
+    defaults: global
+    description: 'job for {name} image building'
+    disabled: false
+    concurrent: true
+    node: precise-devstack-cz
+
+    parameters:
+      - bool:
+          name: KEEP_VM_ALIVE
+      - string:
+          name: ZUUL_REF_OPT
+      - string:
+          name: BASE_DISTRO
+          default: '{distro}'
+      - string:
+          name: IMAGE_NAME
+          default: '{name}'
+      - string:
+          name: ELEMENTS
+          default: '{elements}'
+
+    properties:
+      - zeromq-event
+
+    builders:
+      - shell: |
+          #!/bin/bash
+
+          git clone https://git.openstack.org/openstack/murano-deployment .
+
+          bash ./murano-ci/scripts/build_image.sh
+
+
+    publishers:
+      - collect-gate-artifacts
+      - archive-artifacts
+
+- project:
+    name: murano
+    repository: openstack/murano
+    jobs:
+        - 'gate_{name}'
+        - 'heartbeat_{name}'
+        - 'coverage_{name}'
+
+- project:
+    name: murano-dashboard
+    repository: openstack/murano-dashboard
+    jobs:
+        - 'gate_{name}'
+        - 'heartbeat_{name}'
+
+- project:
+    name: murano-client
+    repository: openstack/python-muranoclient
+    jobs:
+        - 'gate_{name}'
+
+- project:
+    name: murano-agent
+    repository: openstack/murano-agent
+    jobs:
+        - 'gate_{name}'
+
+- project:
+    name: docker
+    elements: docker
+    distro:
+        - debian
+        - ubuntu
+    jobs:
+        - 'image_{distro}_{name}'
+
+- project:
+    name: k8s
+    elements: k8s
+    distro:
+        - debian
+        - ubuntu
+    jobs:
+        - 'image_{distro}_{name}'
