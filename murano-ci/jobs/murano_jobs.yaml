@@ -1,0 +1,163 @@
+- job-template:
+    name: 'gate_{name}_{distro}'
+    project-type: freestyle
+    defaults: global
+    description: '{name} {distro} gate job'
+    disabled: false
+    concurrent: true
+    node: precise-devstack-cz
+
+    parameters:
+      - bool:
+          name: KEEP_VM_ALIVE
+      - string:
+          name: MURANO_DEPLOYMENT_REF
+
+    properties:
+      - zeromq-event
+
+    builders:
+      - shell: |
+          #!/bin/bash
+
+          git clone https://git.openstack.org/openstack/murano-deployment .
+          if [[ -n "$MURANO_DEPLOYMENT_REF" ]]; then
+              git fetch https://review.openstack.org/openstack/murano-deployment $MURANO_DEPLOYMENT_REF && git checkout FETCH_HEAD
+          fi
+
+          export DISTR_NAME='{distro}'
+          export EXECUTE_TESTS_BY_TAG='{tests}'
+
+          bash ./murano-ci/scripts/start_gate.sh
+
+    publishers:
+      - collect-report
+      - collect-gate-artifacts
+      - archive-artifacts
+
+- job-template:
+    name: 'heartbeat_{name}_{distro}'
+    project-type: freestyle
+    defaults: global
+    description: '{name} {distro} heartbeat job'
+    disabled: false
+    concurrent: true
+    node: precise-devstack-cz
+
+    triggers:
+      - timed: "H */3 * * *"
+
+    parameters:
+      - bool:
+          name: KEEP_VM_ALIVE
+      - string:
+          name: MURANO_DEPLOYMENT_REF
+
+    properties:
+      - zeromq-event
+
+    builders:
+      - shell: |
+          #!/bin/bash
+
+          git clone https://git.openstack.org/openstack/murano-deployment .
+          if [[ -n "$MURANO_DEPLOYMENT_REF" ]]; then
+              git fetch https://review.openstack.org/openstack/murano-deployment $MURANO_DEPLOYMENT_REF && git checkout FETCH_HEAD
+          fi
+
+          export OVERRIDE_URL=https://git.openstack.org
+          export OVERRIDE_BRANCH=master
+          export OVERRIDE_PROJECT='{repository}'
+          export DISTR_NAME='{distro}'
+          export EXECUTE_TESTS_BY_TAG='{tests}'
+          export SAVE_IMAGE='yes'
+
+          bash ./murano-ci/scripts/start_gate.sh
+
+    publishers:
+      - collect-report
+      - collect-heartbeat-artifacts
+      - archive-artifacts
+
+
+- job-template:
+    name: 'coverage_{name}_{distro}'
+    project-type: freestyle
+    defaults: global
+    description: '{name} {distro} coverage job'
+    disabled: false
+    concurrent: true
+    node: precise-devstack-cz
+
+    triggers:
+      - timed: "H */3 * * *"
+
+    parameters:
+      - bool:
+          name: KEEP_VM_ALIVE
+      - string:
+          name: MURANO_DEPLOYMENT_REF
+
+    properties:
+      - zeromq-event
+
+    builders:
+      - shell: |
+          #!/bin/bash
+
+          git clone https://git.openstack.org/openstack/murano-deployment .
+          if [[ -n "$MURANO_DEPLOYMENT_REF" ]]; then
+              git fetch https://review.openstack.org/openstack/murano-deployment $MURANO_DEPLOYMENT_REF && git checkout FETCH_HEAD
+          fi
+
+          export OVERRIDE_URL=https://git.openstack.org
+          export OVERRIDE_BRANCH=master
+          export OVERRIDE_PROJECT='{repository}'
+          export DISTR_NAME='{distro}'
+          export EXECUTE_TESTS_BY_TAG='{tests}'
+          export WITH_COVERAGE='true'
+
+          bash ./murano-ci/scripts/start_gate.sh
+
+    publishers:
+      - collect-report
+      - collect-coverage-artifacts
+      - archive-artifacts
+
+- project:
+    name: murano
+    distro: ubuntu
+    repository: openstack/murano
+    tests: ''
+    jobs:
+        - 'gate_{name}_{distro}'
+        - 'heartbeat_{name}_{distro}'
+        - 'coverage_{name}_{distro}'
+
+- project:
+    name: murano-dashboard
+    distro: ubuntu
+    repository: openstack/murano-dashboard
+    tests: ''
+    jobs:
+        - 'gate_{name}_{distro}'
+        - 'heartbeat_{name}_{distro}'
+
+- project:
+    name: murano-agent
+    distro:
+        - ubuntu
+        - debian
+    repository: openstack/murano-agent
+    tests: 'gate'
+    jobs:
+        - 'gate_{name}_{distro}'
+        - 'heartbeat_{name}_{distro}'
+
+- project:
+    name: murano-client
+    distro: ubuntu
+    repository: openstack/python-muranoclient
+    tests: ''
+    jobs:
+        - 'gate_{name}_{distro}'
