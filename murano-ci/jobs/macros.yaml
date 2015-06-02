@@ -258,3 +258,84 @@
               source: '**/*subunit_log.txt.gz'
               keep-hierarchy: false
               copy-after-failure: true
+
+- publisher:
+    name: collect-report
+    publishers:
+      - postbuildscript:
+          builders:
+            - shell: |
+                #!/bin/bash
+                # Include of the common functions library file
+                source "${WORKSPACE}/murano-ci/scripts/common.inc"
+                #-----------------
+
+                source "${WORKSPACE}/murano-ci/scripts/collect_result.sh"
+                source "${WORKSPACE}/murano-ci/scripts/collect_logs.sh"
+
+- publisher:
+    name: collect-gate-artifacts
+    publishers:
+      - scp:
+          site: 'localhost'
+          files:
+            - target: 'logs/$LOG_PATH/'
+              source: 'artifacts/**'
+              copy-console: false
+              keep-hierarchy: true
+              copy-after-failure: true
+            - target: 'logs/$LOG_PATH/'
+              source: 'index.html'
+              copy-console: false
+              copy-after-failure: true
+            - target: 'logs/$LOG_PATH/'
+              source: ''
+              copy-console: true
+              copy-after-failure: true
+
+- publisher:
+    name: collect-heartbeat-artifacts
+    publishers:
+      - scp:
+          site: 'localhost'
+          files:
+            - target: 'logs/heartbeat/$JOB_NAME/$BUILD_NUMBER/'
+              source: 'artifacts/**'
+              copy-console: false
+              keep-hierarchy: true
+              copy-after-failure: true
+            - target: 'logs/heartbeat/$JOB_NAME/$BUILD_NUMBER/'
+              source: 'index.html'
+              copy-console: false
+              copy-after-failure: true
+            - target: 'logs/heartbeat/$JOB_NAME/$BUILD_NUMBER/'
+              source: ''
+              copy-console: true
+              copy-after-failure: true
+
+- publisher:
+    name: collect-coverage-artifacts
+    publishers:
+      - scp:
+          site: 'localhost'
+          files:
+            - target: 'logs/coverage/$JOB_NAME/$BUILD_NUMBER/'
+              source: 'artifacts/**'
+              copy-console: false
+              keep-hierarchy: true
+              copy-after-failure: true
+            - target: 'logs/coverage/$JOB_NAME/$BUILD_NUMBER/'
+              source: 'index.html'
+              copy-console: false
+              copy-after-failure: true
+            - target: 'logs/coverage/$JOB_NAME/$BUILD_NUMBER/'
+              source: ''
+              copy-console: true
+              copy-after-failure: true
+
+- publisher:
+    name: archive-artifacts
+    publishers:
+      - archive:
+          artifacts: 'artifacts/**'
+          allow-empty: 'true'
