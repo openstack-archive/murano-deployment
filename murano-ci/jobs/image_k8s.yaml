@@ -1,0 +1,49 @@
+- job:
+    name: image_k8s
+    project-type: freestyle
+    defaults: global
+    description: |
+        Experimental job for k8s image building
+    disabled: false
+    concurrent: true
+    node: precise-devstack-cz
+
+    parameters:
+      - bool:
+          name: KEEP_VM_ALIVE
+      - string:
+          name: ZUUL_REF_OPT
+
+    properties:
+      - zeromq-event
+
+    builders:
+      - shell: |
+          #!/bin/bash
+
+          git clone https://git.openstack.org/openstack/murano-deployment .
+
+          export ZUUL_REF=${ZUUL_REF:-$ZUUL_REF_OPT}
+
+          export BASE_DISTRO="ubuntu"
+          export IMAGE_NAME="k8s"
+          export ELEMENTS="docker kubernetes"
+
+          bash ./murano-ci/scripts/build_image.sh
+
+    publishers:
+      - scp:
+          site: 'localhost'
+          files:
+            - target: 'logs/$LOG_PATH'
+              source: 'artifacts/**'
+              copy-console: false
+              keep-hierarchy: true
+              copy-after-failure: true
+            - target: 'logs/$LOG_PATH/'
+              source: ''
+              copy-console: true
+              copy-after-failure: true
+      - archive:
+          artifacts: 'artifacts/**'
+          allow-empty: 'true'

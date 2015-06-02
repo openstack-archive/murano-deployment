@@ -1,0 +1,46 @@
+- job:
+    name: gate_murano-client
+    project-type: freestyle
+    defaults: global
+    description: |
+        Experimental murano gate job
+    disabled: false
+    concurrent: true
+    node: precise-devstack-cz
+
+    parameters:
+      - bool:
+          name: KEEP_VM_ALIVE
+
+    properties:
+      - zeromq-event
+
+    builders:
+      - shell: |
+          #!/bin/bash
+
+          git clone https://git.openstack.org/openstack/murano-deployment .
+
+          bash ./murano-ci/scripts/start_gate.sh
+
+
+    publishers:
+      - scp:
+          site: 'localhost'
+          files:
+            - target: 'logs/$LOG_PATH/'
+              source: 'artifacts/**'
+              copy-console: false
+              keep-hierarchy: true
+              copy-after-failure: true
+            - target: 'logs/$LOG_PATH/'
+              source: 'index.html'
+              copy-console: false
+              copy-after-failure: true
+            - target: 'logs/$LOG_PATH/'
+              source: ''
+              copy-console: true
+              copy-after-failure: true
+      - archive:
+          artifacts: 'artifacts/**'
+          allow-empty: 'true'

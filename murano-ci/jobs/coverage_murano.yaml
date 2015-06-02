@@ -1,0 +1,60 @@
+- job:
+    name: coverage_murano
+    project-type: freestyle
+    defaults: global
+    description: |
+        Experimental murano coverage job
+    disabled: false
+    concurrent: true
+    node: precise-devstack-cz
+
+    parameters:
+      - bool:
+          name: KEEP_VM_ALIVE
+      - string:
+          name: OVERRIDE_URL
+      - string:
+          name: OVERRIDE_BRANCH
+      - string:
+          name: OVERRIDE_PROJECT
+      - string:
+          name: WITH_COVERAGE
+          default: false
+
+    properties:
+      - zeromq-event
+
+    builders:
+      - shell: |
+          #!/bin/bash
+
+          git clone https://git.openstack.org/openstack/murano-deployment .
+
+          export OVERRIDE_URL=${OVERRIDE_URL:-'https://git.openstack.org'}
+          export OVERRIDE_BRANCH=${OVERRIDE_BRANCH:-'master'}
+          export OVERRIDE_PROJECT=${OVERRIDE_PROJECT:-'openstack/murano'}
+          export WITH_COVERAGE=${WITH_COVERAGE:-'true'}
+          export CUSTOM_TESTS_SCRIPT=${CUSTOM_TESTS_SCRIPT:-'run_coverage.sh'}
+
+          bash ./murano-ci/scripts/start_gate.sh
+
+    publishers:
+      - scp:
+          site: 'localhost'
+          files:
+            - target: 'logs/coverage/$JOB_NAME/$BUILD_NUMBER/'
+              source: 'artifacts/**'
+              copy-console: false
+              keep-hierarchy: true
+              copy-after-failure: true
+            - target: 'logs/coverage/$JOB_NAME/$BUILD_NUMBER/'
+              source: 'index.html'
+              copy-console: false
+              copy-after-failure: true
+            - target: 'logs/coverage/$JOB_NAME/$BUILD_NUMBER/'
+              source: ''
+              copy-console: true
+              copy-after-failure: true
+      - archive:
+          artifacts: 'artifacts/**'
+          allow-empty: 'true'

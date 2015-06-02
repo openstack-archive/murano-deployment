@@ -1,0 +1,65 @@
+- job:
+    name: deploy-devstack
+    project-type: freestyle
+    defaults: global
+    description: |
+        Devstack Deployment job
+    disabled: false
+    concurrent: true
+    node: precise-devstack-cz
+
+    parameters:
+      - bool:
+          name: KEEP_VM_ALIVE
+
+    properties:
+      - zeromq-event
+
+    builders:
+      - shell: |
+          #!/bin/bash
+
+          git clone https://git.openstack.org/openstack/murano-deployment .
+
+          EXIT_CODE=0
+
+          bash ./murano-ci/scripts/deploy_devstack.sh || EXIT_CODE=$?
+
+          if [[ $EXIT_CODE -eq 0 ]]; then
+              touch /tmp/keep_running
+
+              sudo touch /bin/finish
+              sudo chmod 777 /bin/finish
+              cat << EOF > /bin/finish
+          #!/bin/bash
+          sudo rm -f /tmp/keep_running
+          echo "You have 30 second to logout"
+          EOF
+
+              while [[ -f "/tmp/keep_running" ]]; do
+                  sleep 5
+              done
+
+              sleep 30
+          fi
+
+          bash ./murano-ci/scripts/collect_logs.sh $EXIT_CODE
+
+          exit $EXIT_CODE
+
+    publishers:
+      - scp:
+          site: 'localhost'
+          files:
+            - target: 'logs/$LOG_PATH'
+              source: 'artifacts/**'
+              copy-console: false
+              keep-hierarchy: true
+              copy-after-failure: true
+            - target: 'logs/$LOG_PATH/'
+              source: ''
+              copy-console: true
+              copy-after-failure: true
+      - archive:
+          artifacts: 'artifacts/**'
+          allow-empty: 'true'
