@@ -532,6 +532,7 @@ function deploy_devstack() {
         'python-muranoclient')
             MURANO_PYTHONCLIENT_REPO=${ZUUL_URL}/${ZUUL_PROJECT}
             MURANO_PYTHONCLIENT_BRANCH=${ZUUL_REF}
+            MURANO_REPOSITORY_URL="http://${floating_ip_address}:8099"
         ;;
     esac
     echo "MURANO_REPOSITORY_URL=${MURANO_REPOSITORY_URL}"
