@@ -168,8 +168,16 @@ function get_ip_from_iface() {
 
 
 function get_floating_ip() {
-    # temporary workaround to unblock stable/kilo
-    sudo pip install "python-novaclient>=2.22.0,<2.24.0"
+
+    case "$MURANO_BRANCH" in
+        'stable/kilo')
+        # workaround to unblock stable/kilo
+        sudo pip install "python-novaclient>=2.22.0,<2.24.0"
+        ;;
+        '*')
+        sudo pip install --upgrade "python-novaclient>=2.22.0"
+        ;;
+    esac
 
     export OS_USERNAME=${ADMIN_USERNAME}
     export OS_PASSWORD=${ADMIN_PASSWORD}
