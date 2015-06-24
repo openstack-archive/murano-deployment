@@ -174,7 +174,7 @@ function get_floating_ip() {
         # workaround to unblock stable/kilo
         sudo pip install "python-novaclient>=2.22.0,<2.24.0"
         ;;
-        '*')
+        *)
         sudo pip install --upgrade "python-novaclient>=2.22.0"
         ;;
     esac
