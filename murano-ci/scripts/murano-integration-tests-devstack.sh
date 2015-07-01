@@ -179,7 +179,7 @@ function get_floating_ip() {
     export OS_TENANT_NAME=${ADMIN_TENANT}
     export OS_AUTH_URL="http://${OPENSTACK_HOST}:5000/v2.0"
 
-    floating_ip_address=$(nova floating-ip-list | grep " ${found_ip_address} " | cut -d ' ' -f 4)
+    floating_ip_address=$(${tmp_venv}/bin/nova floating-ip-list | grep " ${found_ip_address} " | cut -d ' ' -f 4)
 
     if [ -z ""${floating_ip_address} ]; then
         exit 1
