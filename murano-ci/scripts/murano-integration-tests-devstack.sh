@@ -169,7 +169,10 @@ function get_ip_from_iface() {
 
 function get_floating_ip() {
 
-    sudo pip install "python-novaclient>=2.22.0"
+    sudo apt-get -y install python-virtualenv
+    local tmp_venv=$(mktemp -d)
+    virtualenv ${tmp_venv}
+    ${tmp_venv}/bin/pip install "python-novaclient>=2.22.0"
 
     export OS_USERNAME=${ADMIN_USERNAME}
     export OS_PASSWORD=${ADMIN_PASSWORD}
@@ -182,6 +185,8 @@ function get_floating_ip() {
         exit 1
     fi
 
+    rm -rf ${tmp_venv}
+    
     readonly floating_ip_address
 }
 
