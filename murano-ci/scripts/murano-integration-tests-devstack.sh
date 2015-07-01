@@ -185,6 +185,72 @@ function get_floating_ip() {
     readonly floating_ip_address
 }
 
+function clone_project() {
+    local project_root=$1
+    git clone ${ZUUL_URL}/${ZUUL_PROJECT} ${project_root}
+    pushd ${project_root}
+    git fetch ${ZUUL_URL}/${ZUUL_PROJECT} ${ZUUL_REF} && git checkout FETCH_HEAD
+    popd
+}
+
+function get_commit_message() {
+    local project_root=$1
+    pushd ${project_root}
+    git log --format=%B -n 1
+    popd
+}
+
+function get_dependencies() {
+    local commit_message=$1
+    IFS=$'\n'
+    for dependency in $(echo -e "${commit_message}" | grep -o "^Depends-On: .*$"); do
+        dependency=$(echo "${dependency}" | awk '{ print $2 }')
+        echo ${dependency}
+    done
+}
+
+function get_dependency_info() {
+    local dependency=$1
+
+    local metadata=$(curl https://review.openstack.org/changes/${dependency}/detail?o=CURRENT_REVISION 2> /dev/null)
+    local ref=$(echo -e "${metadata}" | grep -o '"ref": ".*"$' | awk -F'"' '{ print $4 }')
+    local project=$(echo -e "${metadata}" | grep -o '"project": ".*",' | awk -F'"' '{ print $4 }')
+
+    echo "${project}:${ref}"
+}
+
+function override_reference() {
+    local tmp_dir=$(mktemp -d)
+
+    clone_project ${tmp_dir}
+    local msg=$(get_commit_message ${tmp_dir})
+
+    for dependency in $(get_dependencies "${msg}"); do
+        local dep_info=$(get_dependency_info ${dependency})
+        local dep_project=$(echo ${dep_info} | awk -F':' '{ print $1 }')
+        local dep_ref=$(echo ${dep_info} | awk -F':' '{ print $2 }')
+
+        case ${dep_project} in
+            "openstack/murano")
+                MURANO_BRANCH=${dep_ref}
+            ;;
+            "openstack/murano-dashboard")
+                MURANO_DASHBOARD_BRANCH=${dep_ref}
+            ;;
+            "openstack/murano-agent")
+                DIB_MURANO_AGENT_REF=${dep_ref}
+            ;;
+            "openstack/python-muranoclient")
+                MURANO_PYTHONCLIENT_BRANCH=${dep_ref}
+            ;;
+            "*")
+                echo "Unsupported dependent project: ${dep_project}"
+            ;;
+        esac
+    done
+
+    rm -rf ${tmp_dir}
+}
 
 function prepare_murano_apps() {
     local start_dir=$1
@@ -678,6 +744,8 @@ get_os
 get_ip_from_iface eth0
 
 get_floating_ip
+
+override_reference
 
 cat << EOF
 ********************************************************************************
