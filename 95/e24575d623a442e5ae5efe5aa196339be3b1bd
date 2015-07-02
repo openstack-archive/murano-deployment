@@ -1,0 +1,14 @@
+Verified+2: Jenkins
+Code-Review+2: Serg Melikyan <smelikyan@mirantis.com>
+Workflow+1: Serg Melikyan <smelikyan@mirantis.com>
+Code-Review+1: Nikolay Starodubtsev <starodubcevna@gmail.com>
+Code-Review+2: Ekaterina Chernova <efedorova@mirantis.com>
+Code-Review+1: Igor Yozhikov <iyozhikov@mirantis.com>
+Code-Review+1: Denis Egorenko <degorenko@mirantis.com>
+Code-Review+1: Dmytro Dovbii <ddovbii@mirantis.com>
+Code-Review+1: Victor Ryzhenkin <vryzhenkin@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 02 Jul 2015 14:14:53 +0000
+Reviewed-on: https://review.openstack.org/197975
+Project: openstack/murano-deployment
+Branch: refs/heads/master
