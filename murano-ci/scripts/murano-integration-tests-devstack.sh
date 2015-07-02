@@ -252,10 +252,11 @@ function make_img_with_murano_agent() {
     git fetch ${ZUUL_URL}/${ZUUL_PROJECT} ${ZUUL_REF} && git checkout FETCH_HEAD
     popd
 
+    export DIB_CLOUD_INIT_DATASOURCES="Ec2, ConfigDrive, OpenStack"
     export ELEMENTS_PATH=${agent_dir}/murano-agent/contrib/elements
     pushd ${agent_dir}
     ${agent_dir}/diskimage-builder/bin/disk-image-create vm ${DISTR_NAME} \
-        murano-agent -o ${DISTR_NAME}${BUILD_NUMBER}-murano-agent.qcow2
+        cloud-init-datasources murano-agent -o ${DISTR_NAME}${BUILD_NUMBER}-murano-agent.qcow2
     popd
 
     pushd "${STACK_HOME}/devstack"
