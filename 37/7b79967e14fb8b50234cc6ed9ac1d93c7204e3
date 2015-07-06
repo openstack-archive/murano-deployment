@@ -1,0 +1,12 @@
+Verified+2: Jenkins
+Code-Review+1: Ekaterina Chernova <efedorova@mirantis.com>
+Code-Review+1: Alexander Tivelkov <ativelkov@mirantis.com>
+Code-Review+2: Filip Blaha <filip.blaha@hp.com>
+Workflow+1: Filip Blaha <filip.blaha@hp.com>
+Code-Review+2: Kirill Zaitsev <kzaitsev@mirantis.com>
+Code-Review+1: Clint Adams <clint@gcfm.net>
+Submitted-by: Jenkins
+Submitted-at: Mon, 06 Jul 2015 11:29:02 +0000
+Reviewed-on: https://review.openstack.org/197565
+Project: openstack/murano-deployment
+Branch: refs/heads/master
