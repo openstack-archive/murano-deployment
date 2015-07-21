@@ -573,6 +573,7 @@ function git_clone_devstack() {
 function deploy_devstack() {
     # Assuming the script is run from 'jenkins' user
     local git_dir=/opt/git
+    LIBS_FROM_GIT=""
 
     sudo mkdir -p "${git_dir}/openstack"
     sudo chown -R jenkins:jenkins "${git_dir}/openstack"
@@ -607,6 +608,7 @@ function deploy_devstack() {
             MURANO_PYTHONCLIENT_REPO=${ZUUL_URL}/${ZUUL_PROJECT}
             MURANO_PYTHONCLIENT_BRANCH=${ZUUL_REF}
             MURANO_REPOSITORY_URL="http://${floating_ip_address}:8099"
+            LIBS_FROM_GIT=${PROJECT_NAME}
         ;;
     esac
     echo "MURANO_REPOSITORY_URL=${MURANO_REPOSITORY_URL}"
@@ -634,6 +636,7 @@ MURANO_DASHBOARD_BRANCH=${MURANO_DASHBOARD_BRANCH}
 MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO}
 MURANO_PYTHONCLIENT_BRANCH=${MURANO_PYTHONCLIENT_BRANCH}
 MURANO_REPOSITORY_URL=${MURANO_REPOSITORY_URL}
+LIBS_FROM_GIT=${LIBS_FROM_GIT}
 RABBIT_PASSWORD=guest
 MURANO_RABBIT_VHOST=/
 RECLONE=True
