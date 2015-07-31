@@ -108,6 +108,8 @@ TZ_STRING='Europe/Moscow'
 
 DISTR_NAME=${DISTR_NAME:-'ubuntu'}
 
+LIBS_FROM_GIT=""
+
 case "${PROJECT_NAME}" in
     'murano')
         PROJECT_DIR="${STACK_HOME}/murano"
@@ -249,6 +251,7 @@ function override_reference() {
             ;;
             "openstack/python-muranoclient")
                 MURANO_PYTHONCLIENT_BRANCH=${dep_ref}
+                LIBS_FROM_GIT='python-muranoclient'
             ;;
             *)
                 echo "Unsupported dependent project: ${dep_project}"
@@ -573,7 +576,6 @@ function git_clone_devstack() {
 function deploy_devstack() {
     # Assuming the script is run from 'jenkins' user
     local git_dir=/opt/git
-    LIBS_FROM_GIT=""
 
     sudo mkdir -p "${git_dir}/openstack"
     sudo chown -R jenkins:jenkins "${git_dir}/openstack"
