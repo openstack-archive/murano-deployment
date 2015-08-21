@@ -387,7 +387,7 @@ function prepare_tests() {
     fi
 
     iniset "${section_name}" 'keystone_url' "$(shield_slashes http://${OPENSTACK_HOST}:5000/v2.0/)" "${config_file}"
-    iniset "${section_name}" 'horizon_url' "$(shield_slashes http://${found_ip_address}/)" "${config_file}"
+    iniset "${section_name}" 'horizon_url' "$(shield_slashes http://${found_ip_address}/dashboard/)" "${config_file}"
     iniset "${section_name}" 'murano_url' "$(shield_slashes http://${found_ip_address}:8082/)" "${config_file}"
     iniset "${section_name}" 'user' "${ADMIN_USERNAME}" "${config_file}"
     iniset "${section_name}" 'password' "${ADMIN_PASSWORD}" "${config_file}"
