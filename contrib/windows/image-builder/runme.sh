@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
-START_DIR="$(cd "$(dirname "${0}")" && pwd)"
+START_DIR=$(cd "$(dirname "${0}")" && pwd)
 WORK_DIR="${START_DIR}/workspace"
 CFG_FILE="${CFG_FILE:-$START_DIR/config.ini}"
 LOG_DIR="${START_DIR}/logs"
@@ -140,17 +140,17 @@ function init()
     local smbpasswd=''
     local smbcredsfile=''
     local smbsharename=''
-    wdir="$(iniget "${CFG_FILE}" "default" "workdir")"
-    vmswdir="$(iniget "${CFG_FILE}" "default" "vmsworkdir")"
-    prun="$(iniget "${CFG_FILE}" "default" "runparallel")"
-    reqsoft="$(iniget "${CFG_FILE}" "default" "requirements")"
-    winrels="$(iniget "${CFG_FILE}" "default" "available_win_versions")"
-    smbmode="$(iniget "${CFG_FILE}" "samba" "mode")"
-    smbhost="$(iniget "${CFG_FILE}" "samba" "host")"
-    smbuser="$(iniget "${CFG_FILE}" "samba" "user")"
-    smbdomain="$(iniget "${CFG_FILE}" "samba" "domain")"
-    smbpasswd="$(iniget "${CFG_FILE}" "samba" "password")"
-    smbsharename="$(iniget "${CFG_FILE}" "samba" "sharename")"
+    wdir=$(iniget "${CFG_FILE}" "default" "workdir")
+    vmswdir=$(iniget "${CFG_FILE}" "default" "vmsworkdir")
+    prun=$(iniget "${CFG_FILE}" "default" "runparallel")
+    reqsoft=$(iniget "${CFG_FILE}" "default" "requirements")
+    winrels=$(iniget "${CFG_FILE}" "default" "available_win_versions")
+    smbmode=$(iniget "${CFG_FILE}" "samba" "mode")
+    smbhost=$(iniget "${CFG_FILE}" "samba" "host")
+    smbuser=$(iniget "${CFG_FILE}" "samba" "user")
+    smbdomain=$(iniget "${CFG_FILE}" "samba" "domain")
+    smbpasswd=$(iniget "${CFG_FILE}" "samba" "password")
+    smbsharename=$(iniget "${CFG_FILE}" "samba" "sharename")
     if [ ! -z "${reqsoft}" ]; then Config["requirements"]="${reqsoft}"; fi
     if [ ! -z "${winrels}" ]; then Config["win_releases"]="${winrels}"; fi
     if [ ! -z "${prun}" ]; then Config["runparallel"]="${prun}"; fi
@@ -196,7 +196,7 @@ function check_free_space()
     local min_free_g="50"
     local sys_free=''
     log "Checking free space for ${Config["vmsworkdir"]} folder partition..."
-    sys_free="$(sudo df "${Config["vmsworkdir"]}" --total -k -h  --output=avail | head -n2 | tail -n1)"
+    sys_free=$(sudo df "${Config["vmsworkdir"]}" --total -k -h  --output=avail | head -n2 | tail -n1)
     if [ "${sys_free/G/}" -lt "${min_free_g}" ]; then
         log "Err: You have not enough free space ${sys_free} at ${Config["vmsworkdir"]}, required - ${min_free_g}G!"
         exit 2
@@ -237,7 +237,7 @@ function prepare_local_sambaserver()
             share_path="${WORK_DIR}/smbshare"
             sudo mkdir -p "${share_path}" || return $?
             sudo chown -R nobody:nogroup "${share_path}"
-            sharename="$(iniget "${CFG_FILE}" "samba" "sharename")"
+            sharename=$(iniget "${CFG_FILE}" "samba" "sharename")
             iniset_sudo ${smbconf_path} "${sharename}" 'comment' 'Image Builder Share'
             iniset_sudo ${smbconf_path} "${sharename}" 'path' "${share_path}"
             iniset_sudo ${smbconf_path} "${sharename}" 'browsable' "yes"
@@ -289,7 +289,7 @@ function prepare_corefunctions_ps()
 {
     local cf_src_dir=''
     local cf_zipfile=''
-    cf_src_dir="$(cd "${START_DIR}"/../WindowsPowerShell && pwd)"
+    cf_src_dir=$(cd "${START_DIR}"/../WindowsPowerShell && pwd)
     cd "${cf_src_dir}" && make all >> /dev/null 2>&1
     if [ "$?" -ne 0 ]; then
         log "Err: Can't build powershell CoreFunctions !"
@@ -312,11 +312,11 @@ function downloadrequirements()
     local sw_download_as_fullpath=''
     for requirement in ${Config["requirements"]}
     do
-        sw_required="$(iniget "${CFG_FILE}" "${requirement}" "required")"
+        sw_required=$(iniget "${CFG_FILE}" "${requirement}" "required")
         if [ "${sw_required}" == true ]; then
-            sw_download_as="$(iniget "${CFG_FILE}" "${requirement}" "saveas")"
-            sw_download_from="$(iniget "${CFG_FILE}" "${requirement}" "url")"
-            sw_redownload="$(iniget "${CFG_FILE}" "${requirement}" "redownload")"
+            sw_download_as=$(iniget "${CFG_FILE}" "${requirement}" "saveas")
+            sw_download_from=$(iniget "${CFG_FILE}" "${requirement}" "url")
+            sw_redownload=$(iniget "${CFG_FILE}" "${requirement}" "redownload")
             if [ "${requirement}" == "virtio_iso" ]; then
                 sw_download_as_fullpath="${WORK_DIR}/${sw_download_as}"
                 Config["virtio_iso"]="${sw_download_as_fullpath}"
@@ -341,12 +341,12 @@ function show_configured_win_releases()
     local rel_edits=''
     for release in ${Config["win_releases"]}
     do
-        rel_enabled="$(iniget "${CFG_FILE}" "${release}" "enabled")"
+        rel_enabled=$(iniget "${CFG_FILE}" "${release}" "enabled")
         if [ "${rel_enabled}" == true ]; then
-            rel_iso="$(iniget "${CFG_FILE}" "${release}" "iso")"
+            rel_iso=$(iniget "${CFG_FILE}" "${release}" "iso")
             if [ -f "${rel_iso}" ]; then
-                rel_desc="$(iniget "${CFG_FILE}" "${release}" "description")"
-                rel_edits="$(iniget "${CFG_FILE}" "${release}" "editions")"
+                rel_desc=$(iniget "${CFG_FILE}" "${release}" "description")
+                rel_edits=$(iniget "${CFG_FILE}" "${release}" "editions")
                 log "[${release}] - ${rel_desc}(${rel_edits/ /,})"
             else
                 log "Err: Can't access ${rel_iso}, please check ${CFG_FILE} [${release}] section!"
@@ -458,12 +458,12 @@ function process_windows()
     local rel_vms_temp_dir=''
     for release in ${Config["win_releases"]}
     do
-        rel_enabled="$(iniget "${CFG_FILE}" "${release}" "enabled")"
+        rel_enabled=$(iniget "${CFG_FILE}" "${release}" "enabled")
         if [ "${rel_enabled}" == true ]; then
-            rel_desc="$(iniget "${CFG_FILE}" "${release}" "description")"
-            rel_iso="$(iniget "${CFG_FILE}" "${release}" "iso")"
-            rel_edits="$(iniget "${CFG_FILE}" "${release}" "editions")"
-            rel_unattend_templ_prefix="$(iniget "${CFG_FILE}" "${release}" "unattend_template_prefix")"
+            rel_desc=$(iniget "${CFG_FILE}" "${release}" "description")
+            rel_iso=$(iniget "${CFG_FILE}" "${release}" "iso")
+            rel_edits=$(iniget "${CFG_FILE}" "${release}" "editions")
+            rel_unattend_templ_prefix=$(iniget "${CFG_FILE}" "${release}" "unattend_template_prefix")
             if [ -z "${rel_unattend_templ_prefix}" ]; then
                 rel_unattend_templ_prefix="${release}"
             fi
