@@ -1,0 +1,97 @@
+- job:
+    name: jobs-updater
+    node: master
+    project-type: freestyle
+    description: "<b>This job is managed by Jenkins Job Builder, do not edit it through WebUI.\
+                  \n<p>Please use this repository to make changes: <a href=\"https://git.openstack.org/openstack/murano-deployment\">https://git.openstack.org/openstack/murano-deployment</a></b>\
+                  \n<p><b>Title</b>: Jenkins Jobs Update job <br/>\
+                  \n<b>Description</b>: This job updates all other jobs from murano-deployment repo. <br/>\
+                  \n<b>Maintainer</b>: Alexey Deryugin<br/>"
+    defaults: global
+    disabled: false
+    concurrent: false
+
+    scm:
+     - git:
+        url: https://git.openstack.org/openstack/murano-deployment
+        branches:
+          - "master"
+
+    triggers:
+      - pollscm: "* * * * * "
+
+    builders:
+      - shell:  "jenkins-jobs update murano-ci/jobs"
+
+- job:
+    name: gate-murano-deployment
+    project-type: freestyle
+    defaults: global
+    description: "<b>This job is managed by Jenkins Job Builder, do not edit it through WebUI.\
+                  \n<p>Please use this repository to make changes: <a href=\"https://git.openstack.org/openstack/murano-deployment\">https://git.openstack.org/openstack/murano-deployment</a></b>\
+                 \n<p>This job check syntax in *.yaml, *.sh files"
+    disabled: false
+    concurrent: false
+    node: master
+
+    builders:
+      - shell: |
+          #!/bin/bash
+
+          rm -rf murano-deployment
+          git clone https://git.openstack.org/openstack/murano-deployment
+          git fetch https://review.openstack.org/openstack/murano-deployment $ZUUL_REF && git checkout FETCH_HEAD
+
+          bash ./murano-deployment/murano-ci/scripts/syntax_check.sh
+
+    publishers:
+      - console-log
+
+- job:
+    name: update-config
+    node: master
+    project-type: freestyle
+    description: "<b>This job is managed by Jenkins Job Builder, do not edit it through WebUI.\
+                  \n<p>Please use this repository to make changes: <a href=\"https://git.openstack.org/openstack/murano-deployment\">https://git.openstack.org/openstack/murano-deployment</a></b>\
+                  \n<p><b>Title</b>: Update job for Zuul and Nodepool <br/>\
+                  \n<b>Description</b>: This job updates Zuul configs from murano-deployment repo. <br/>\
+                  \n<b>Maintainer</b>: Alexey Deryugin<br/>"
+    defaults: global
+    disabled: false
+    concurrent: false
+
+    scm:
+     - git:
+        url: https://git.openstack.org/openstack/murano-deployment
+        branches:
+          - "master"
+
+    triggers:
+      - pollscm: "* * * * * "
+
+    builders:
+      - shell:  "$WORKSPACE/murano-ci/tools/update_config.sh"
+
+- job:
+    name: update-pool
+    node: master
+    project-type: freestyle
+    description: "<b>This job is managed by Jenkins Job Builder, do not edit it through WebUI.\
+                  \n<p>Please use this repository to make changes: <a href=\"https://git.openstack.org/openstack/murano-deployment\">https://git.openstack.org/openstack/murano-deployment</a></b>\
+                  \n<p><b>Title</b>: Update Pool <br/>\
+                  \n<b>Description</b>: This job updates vm pool using Nodepool. <br/>\
+                  \n<b>Maintainer</b>: Alexey Deryugin<br/>"
+    defaults: global
+    disabled: false
+    concurrent: false
+
+    properties:
+      - build-blocker:
+          blocking-jobs:
+             - ".*"
+
+    triggers:
+      - timed: '0 6 * * *'
+
+    builders:
+      - shell:  "/opt/bin/update_pool.sh"
