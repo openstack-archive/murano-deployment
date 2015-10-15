@@ -580,7 +580,7 @@ function deploy_devstack() {
     sudo mkdir -p "${git_dir}/openstack"
     sudo chown -R jenkins:jenkins "${git_dir}/openstack"
     cd "${git_dir}/openstack"
-    git clone https://github.com/openstack/murano
+    git clone https://git.openstack.org/openstack/murano
 
     if [ "${PROJECT_NAME}" == 'murano' ]; then
         pushd "${git_dir}/openstack/murano"
@@ -590,7 +590,7 @@ function deploy_devstack() {
 
     # NOTE: Source path MUST ends with a slash!
     rsync --recursive --keep-dirlinks --exclude README.* \
-        "${git_dir}/openstack/murano/contrib/devstack/" "${STACK_HOME}/devstack/"
+        "${git_dir}/openstack/murano/devstack/" "${STACK_HOME}/devstack/"
 
     cd "${STACK_HOME}/devstack"
 

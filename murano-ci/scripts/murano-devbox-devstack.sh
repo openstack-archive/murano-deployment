@@ -223,7 +223,7 @@ function deploy_devstack() {
     cd "${STACK_HOME}/murano"
     git fetch ${MURANO_REPO} ${MURANO_BRANCH} && git checkout FETCH_HEAD
     # NOTE: Source path MUST ends with a slash!
-    rsync --recursive --exclude README.* "./contrib/devstack/" "${STACK_HOME}/devstack/"
+    rsync --recursive --exclude README.* "./devstack/" "${STACK_HOME}/devstack/"
     git checkout master
 
     cd "${STACK_HOME}/devstack"
