@@ -8,28 +8,39 @@ pipelines:
       gerrit:
         - event: patchset-created
         - event: comment-added
-          comment_filter: (?i)^(Patch Set [0-9]+:\n\n)?\s*recheck(( (?:bug|lp)[\s#:]*(\d+))|( no bug)|( murano-ci))\s*$
+          comment_filter: (?i)^(Patch Set [0-9]+:\n\n)?\s*retrigger(( (?:bug|lp)[\s#:]*(\d+))|( no bug)|( murano-ci))\s*$
     start:
       gerrit:
         verified: 0
     success:
       gerrit:
-        verified: 0
+        verified: 1
     failure:
       gerrit:
-        verified: 0
+        verified: -1
 
 projects:
   - name: openstack/murano
     check:
-      - murano-engine-app-deployment-tests-ubuntu
+      - gate_murano_ubuntu
   - name: openstack/murano-dashboard
     check:
-      - murano-dashboard-integration-tests-ubuntu
-      - murano-dashboard-integration-tests-centos
+      - gate_murano-dashboard_ubuntu
+  - name: openstack/murano-agent
+    check:
+      - gate_murano-agent_ubuntu
+      - gate_murano-agent_debian
+  - name: openstack/python-muranoclient
+    check:
+      - gate_murano-client_ubuntu
+  - name: openstack/murano-deployment
+    check:
+      - gate-murano-deployment
 
 jobs:
   - name: ^.*$
     parameter-function: single_use_node
-  - name: murano-engine-app-deployment-tests-centos
+  - name: ^gate_.*$
+    voting: true
+  - name: ^gate_murano-agent_debian$
     voting: false
