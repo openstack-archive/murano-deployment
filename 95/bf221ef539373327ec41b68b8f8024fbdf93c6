@@ -1,0 +1,12 @@
+Verified+2: Jenkins
+Code-Review+2: Nikolay Starodubtsev <starodubcevna@gmail.com>
+Code-Review+1: Ekaterina Chernova <efedorova@mirantis.com>
+Code-Review+1: Denis Egorenko <degorenko@mirantis.com>
+Code-Review+1: Victor Ryzhenkin <vryzhenkin@mirantis.com>
+Code-Review+2: Kirill Zaitsev <kzaitsev@mirantis.com>
+Workflow+1: Kirill Zaitsev <kzaitsev@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Mon, 02 Nov 2015 10:26:58 +0000
+Reviewed-on: https://review.openstack.org/234855
+Project: openstack/murano-deployment
+Branch: refs/heads/master
