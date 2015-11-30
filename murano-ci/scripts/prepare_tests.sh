@@ -135,8 +135,15 @@ function prepare_tests() {
         touch "${config_file}"
     fi
 
+    if [ "$ZUUL_BRANCH" == "stable/kilo" ]; then
+        DASHBOARD_PATH=""
+    else
+        DASHBOARD_PATH="dashboard/"
+    fi
+
+    set_config "${section_name}" 'horizon_url' "$(shield_slashes http://${FOUND_IP_ADDRESS}/$DASHBOARD_PATH)" "${config_file}"
+
     set_config "${section_name}" 'keystone_url' "$(shield_slashes http://${OPENSTACK_HOST}:5000/v2.0/)" "${config_file}"
-    set_config "${section_name}" 'horizon_url' "$(shield_slashes http://${FOUND_IP_ADDRESS}/dashboard/)" "${config_file}"
     set_config "${section_name}" 'murano_url' "$(shield_slashes http://${FOUND_IP_ADDRESS}:8082/)" "${config_file}"
     set_config "${section_name}" 'user' "${ADMIN_USERNAME}" "${config_file}"
     set_config "${section_name}" 'password' "${ADMIN_PASSWORD}" "${config_file}"
