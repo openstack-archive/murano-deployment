@@ -50,9 +50,12 @@ function deploy_devstack() {
     fi
 
     # TODO(aderyugin): Switch to DevStack plugin
-    cp -Rv ${git_dir}/openstack/murano/contrib/devstack/extras.d/* "${STACK_HOME}/devstack/extras.d/"
-    cp -Rv ${git_dir}/openstack/murano/contrib/devstack/lib/* "${STACK_HOME}/devstack/lib/"
-    cp -Rv ${git_dir}/openstack/murano/contrib/devstack/files/apts/* "${STACK_HOME}/devstack/files/apts/"
+
+    if [[ ${ZUUL_BRANCH} =~ "kilo" ]]; then
+        cp -Rv ${git_dir}/openstack/murano/contrib/devstack/extras.d/* "${STACK_HOME}/devstack/extras.d/"
+        cp -Rv ${git_dir}/openstack/murano/contrib/devstack/lib/* "${STACK_HOME}/devstack/lib/"
+        cp -Rv ${git_dir}/openstack/murano/contrib/devstack/files/apts/* "${STACK_HOME}/devstack/files/apts/"
+    fi
 
     cd "${STACK_HOME}/devstack"
 
@@ -79,6 +82,15 @@ function deploy_devstack() {
     echo "MURANO_DASHBOARD_BRANCH=${MURANO_DASHBOARD_BRANCH}"
     echo "MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO}"
     echo "MURANO_PYTHONCLIENT_BRANCH=${MURANO_PYTHONCLIENT_BRANCH}"
+
+    if [[ ${ZUUL_BRANCH} =~ "kilo" ]]; then
+        export DEVSTACK_LOCAL_CONF="enable_service murano"
+        export DEVSTACK_LOCAL_CONF+=$'\n'"enable_service murano-api"
+        export DEVSTACK_LOCAL_CONF+=$'\n'"enable_service murano-engine"
+        export DEVSTACK_LOCAL_CONF+=$'\n'"enable_service murano-dashboard"
+    else
+        export DEVSTACK_LOCAL_CONF="enable_plugin murano git://git.openstack.org/openstack/murano"
+    fi
 
     cat << EOF > local.conf
 [[local|localrc]]
@@ -107,10 +119,7 @@ ENABLED_SERVICES=
 enable_service mysql
 enable_service rabbit
 enable_service horizon
-enable_service murano
-enable_service murano-api
-enable_service murano-engine
-enable_service murano-dashboard
+${DEVSTACK_LOCAL_CONF}
 EOF
 
     sudo ./tools/create-stack-user.sh
