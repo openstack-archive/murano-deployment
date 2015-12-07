@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Code-Review+2: Stan Lagun <slagun@mirantis.com>
+Code-Review+2: Ekaterina Chernova <efedorova@mirantis.com>
+Workflow+1: Ekaterina Chernova <efedorova@mirantis.com>
+Verified+1: Murano CI
+Submitted-by: Jenkins
+Submitted-at: Mon, 07 Dec 2015 08:57:03 +0000
+Reviewed-on: https://review.openstack.org/253525
+Project: openstack/murano-deployment
+Branch: refs/heads/master
