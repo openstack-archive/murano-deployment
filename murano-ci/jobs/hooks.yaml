@@ -1,0 +1,6 @@
+- job-template:
+    name: 'hook-{name}-rtfd'
+    node: 'precise-devstack-cz'
+
+    builders:
+      - shell: 'curl -X POST https://readthedocs.org/build/{name} >/dev/null'

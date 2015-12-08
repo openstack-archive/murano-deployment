@@ -135,6 +135,7 @@
     repository: openstack/murano
     tests: 'gate'
     jobs:
+        - 'hook-{name}-rtfd'
         - 'gate-{name}-{distro}'
         - 'heartbeat-{name}-{distro}'
         - 'coverage-{name}-{distro}'
