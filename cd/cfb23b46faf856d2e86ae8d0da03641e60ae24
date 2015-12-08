@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Nikolay Starodubtsev <starodubcevna@gmail.com>
+Workflow+1: Nikolay Starodubtsev <starodubcevna@gmail.com>
+Code-Review+2: Kirill Zaitsev <kzaitsev@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 08 Dec 2015 19:10:34 +0000
+Reviewed-on: https://review.openstack.org/254855
+Project: openstack/murano-deployment
+Branch: refs/heads/master
