@@ -19,8 +19,24 @@ pipelines:
       gerrit:
         verified: -1
 
+  - name: post
+    description: This pipeline runs jobs that operate after each change is merged.
+    manager: IndependentPipelineManager
+    source: gerrit
+    precedence: low
+    trigger:
+      gerrit:
+        - event: ref-updated
+          ref: ^(?!refs/).*$
+
+project-templates:
+  - name: docs-on-rtfd
+    post: 'hook-{name}-rtfd'
+
 projects:
   - name: openstack/murano
+    template:
+      - name: docs-on-rtfd
     check:
       - gate_murano_ubuntu
   - name: openstack/murano-dashboard
