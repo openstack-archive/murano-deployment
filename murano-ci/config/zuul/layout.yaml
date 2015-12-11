@@ -22,7 +22,6 @@ pipelines:
   - name: post
     description: This pipeline runs jobs that operate after each change is merged.
     manager: IndependentPipelineManager
-    source: gerrit
     precedence: low
     trigger:
       gerrit:
