@@ -49,9 +49,11 @@ function deploy_devstack() {
         popd
     fi
 
-    # TODO(aderyugin): Switch to DevStack plugin
 
-    if [[ ${ZUUL_BRANCH} =~ "kilo" ]]; then
+    # NOTE(freerunner): This commit https://review.openstack.org/#/c/233106/2
+    # exists only in master branch now. So, we should use libs for liberty
+    # branch.
+    if [[ ${ZUUL_BRANCH} =~ kilo || ${ZUUL_BRANCH} =~ liberty ]]; then
         cp -Rv ${git_dir}/openstack/murano/contrib/devstack/extras.d/* "${STACK_HOME}/devstack/extras.d/"
         cp -Rv ${git_dir}/openstack/murano/contrib/devstack/lib/* "${STACK_HOME}/devstack/lib/"
         cp -Rv ${git_dir}/openstack/murano/contrib/devstack/files/apts/* "${STACK_HOME}/devstack/files/apts/"
@@ -83,7 +85,7 @@ function deploy_devstack() {
     echo "MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO}"
     echo "MURANO_PYTHONCLIENT_BRANCH=${MURANO_PYTHONCLIENT_BRANCH}"
 
-    if [[ ${ZUUL_BRANCH} =~ "kilo" ]]; then
+    if [[ ${ZUUL_BRANCH} =~ kilo || ${ZUUL_BRANCH} =~ liberty ]]; then
         export DEVSTACK_LOCAL_CONF="enable_service murano"
         export DEVSTACK_LOCAL_CONF+=$'\n'"enable_service murano-api"
         export DEVSTACK_LOCAL_CONF+=$'\n'"enable_service murano-engine"
