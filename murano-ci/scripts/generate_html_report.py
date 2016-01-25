@@ -44,6 +44,8 @@ STATS = {
 
 REPORT = {}
 
+et.set_default_parser(et.XMLParser(huge_tree=True))
+
 tree = et.parse(sys.argv[1])
 root = tree.getroot()
 
