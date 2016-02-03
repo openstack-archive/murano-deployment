@@ -83,73 +83,101 @@
             <td>Error</td>
             <td>Skip</td>
         </tr>
-        </thead>
-        <tbody>
-            {% for class, group in report.items() %}
-            <tr class="test_class_status_{{ group.result }} test_class_row" id="{{ group.uuid }}">
-                <td class="test_class">{{ class }}</td>
-                <td>{{ group.result }}</td>
-                <td>{{ group.stats.total }}</td>
-                <td>{{ group.stats.success }}</td>
-                <td>{{ group.stats.failure }}</td>
-                <td>{{ group.stats.error }}</td>
-                <td>{{ group.stats.skip }}</td>
-            </tr>
-            {% for test in group.tests %}
-            <tr class="test_status_{{ test.result }} {{ group.uuid }}_child parent_{{ group_result }}">
-                <td>
-                    <div class="test_name">
-                        <a href="#" class="expand_button" id="{{ test.uuid }}">{{ test.name }}</a>
-                        {% if test.screenshot %}
-                        (<a href="{{ test.screenshot }}">screenshot</a>)
-                        {% endif %}
+    </thead>
+    <tbody>
+        {% for class, group in report.items() %}
+        <tr class="test_class_status_{{ group.result }} test_class_row" id="{{ group.uuid }}">
+            <td class="test_class">{{ class }}</td>
+            <td>{{ group.result }}</td>
+            <td>{{ group.stats.total }}</td>
+            <td>{{ group.stats.success }}</td>
+            <td>{{ group.stats.failure }}</td>
+            <td>{{ group.stats.error }}</td>
+            <td>{{ group.stats.skip }}</td>
+        </tr>
+        {% for test in group.tests %}
+        <tr class="test_status_{{ test.result }} {{ group.uuid }}_child parent_{{ group_result }}">
+            <td>
+                <div class="test_name">
+                    <a href="#" class="expand_button" id="{{ test.uuid }}">{{ test.name }}</a>
+                    {% if test.screenshot %}
+                    (<a href="{{ test.screenshot }}">screenshot</a>)
+                    {% endif %}
+                </div>
+                <div id="info_{{ test.uuid }}" style="display: none;">
+                    {% if test.output %}
+                    <div class="info_header">
+                        Output:
                     </div>
-                    <div id="info_{{ test.uuid }}" style="display: none;">
-                        {% if test.output %}
-                        <div class="info_header">
-                            Output:
-                        </div>
-                        <div class="info_content">
-                            {{ test.output }}
-                        </div>
-                        {% endif %}{% if test.exc_type %}
-                        <div class="info_header">
-                            {{ test.exc_type }}:
-                        </div>
-                        <div class="info_content">
-                            {{ test.exc_message }}
-                        </div>
-                        {% endif %}{% if test.traceback %}
-                        <div class="info_header">
-                            Traceback:
-                        </div>
-                        <div class="info_content">
-                            {{ test.tb }}
-                        </div>
-                        {% endif %}
+                    <div class="info_content">
+                        {{ test.output }}
                     </div>
-                </td>
-                <td>{{ test.result }}</td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-            </tr>
-            {% endfor %}
-            {% endfor %}
-        </tbody>
-        <tfoot>
-            <tr id='total_row'>
-                <td>Total</td>
-                <td>{% if stats.failure + stats.error > 0 %}failure{% else %}success{% endif %}</td>
-                <td>{{ stats.total }}</td>
-                <td>{{ stats.success }}</td>
-                <td>{{ stats.failure }}</td>
-                <td>{{ stats.error }}</td>
-                <td>{{ stats.skip }}</td>
-            </tr>
-        </tfoot>
-    </table>
+                    {% endif %}{% if test.exc_type %}
+                    <div class="info_header">
+                        {{ test.exc_type }}:
+                    </div>
+                    <div class="info_content">
+                        {{ test.exc_message }}
+                    </div>
+                    {% endif %}{% if test.traceback %}
+                    <div class="info_header">
+                        Traceback:
+                    </div>
+                    <div class="info_content">
+                        {{ test.tb }}
+                    </div>
+                    {% endif %}
+                </div>
+           </td>
+           <td>{{ test.result }}</td>
+           <td></td>
+           <td></td>
+           <td></td>
+           <td></td>
+           <td></td>
+        </tr>
+        {% endfor %}
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr id='total_row'>
+            <td>Total</td>
+            <td>{% if stats.failure + stats.error > 0 %}failure{% else %}success{% endif %}</td>
+            <td>{{ stats.total }}</td>
+            <td>{{ stats.success }}</td>
+            <td>{{ stats.failure }}</td>
+            <td>{{ stats.error }}</td>
+            <td>{{ stats.skip }}</td>
+        </tr>
+    </tfoot>
+</table>
+
+{% for log, log_records in errors.items() %}
+{% if log_records|length > 0 %}
+
+<h4>{{ log }}</h4>
+
+<table id='errors_{{ log }}' class='display compact'>
+    <thead>
+        <tr>
+            <td>Level</td>
+            <td>Time</td>
+            <td>Package</td>
+            <td>Message</td>
+        </tr>
+    </thead>
+    </tbody>
+        {% for log_record in log_records %}
+        <tr class"test_status_failure">
+            <td>{{ log_record.level }}</td>
+            <td>{{ log_record.date }} {{ log_record.time }}</td>
+            <td>{{ log_record.package }}</td>
+            <td><pre>{{ log_record.log }}</pre></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endfor %}
 </body>
 </html>

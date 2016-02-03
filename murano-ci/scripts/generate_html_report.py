@@ -21,6 +21,7 @@ import lxml.etree as et
 import uuid
 import sys
 import os
+import re
 
 if not __name__ == "__main__":
     sys.exit(1)
@@ -29,10 +30,43 @@ if not len(sys.argv) >= 3:
 if not os.path.exists(sys.argv[1]):
     sys.exit(1)
 
+LOG_LINE_PATTERN = "^(?P<date>20[0-9]{2}\-[0-9]{2}\-[0-9]{2}) (?P<time>[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]+) (?P<pid>[0-9]+) (?P<level>[A-Z]+) (?P<package>.*?) \[\-\](?P<log>.*?)$"
+
 
 def get_attr(element, attr):
     return element.attrib[attr] if attr in element.attrib.keys() else None
 
+
+def parse_log_file(log_file_path):
+    LOG_RECORDS = []
+    LAST_LOG_ENTRY = None
+
+    with open(log_file_path, 'r') as log_file:
+        for line in log_file.readlines():
+            match = re.match(LOG_LINE_PATTERN, line, re.S)
+            if match:
+                LAST_LOG_ENTRY = {
+                    'date': match.group('date'),
+                    'time': match.group('time'),
+                    'pid': match.group('pid'),
+                    'level': match.group('level'),
+                    'package': match.group('package'),
+                    'log': match.group('log')
+                }
+
+                LOG_RECORDS.append(LAST_LOG_ENTRY)
+            elif LAST_LOG_ENTRY is not None:
+                LAST_LOG_ENTRY['log'] += line
+
+    return [log_record for log_record in LOG_RECORDS if log_record['level'] == "ERROR"]
+
+
+LOG_PATH = os.path.join(os.environ.get("STACK_HOME"), "log")
+
+ERRORS = {
+    'murano-engine.log': parse_log_file(os.path.join(LOG_PATH, "murano-engine.log")),
+    'murano-api.log': parse_log_file(os.path.join(LOG_PATH, "murano-api.log")),
+}
 
 STATS = {
     'total': 0,
@@ -122,19 +156,20 @@ for case in root:
         else:
             REPORT[class_name]['result'] = 'success'
 
-    jinja = Environment(
-        loader=FileSystemLoader(os.path.join(
-            os.path.dirname(__file__), 'templates')
-        )
+jinja = Environment(
+    loader=FileSystemLoader(os.path.join(
+        os.path.dirname(__file__), 'templates')
     )
+)
 
-    with open(sys.argv[2], 'w') as report_file:
-        report_file.write(jinja.get_template(
-            os.path.basename('report.template')
-        ).render(
-            report=REPORT,
-            stats=STATS,
-            coverage=os.path.exists(
-                os.path.join(os.environ.get('WORKSPACE'), 'artifacts/coverage')
-            )
-        ))
+with open(sys.argv[2], 'w') as report_file:
+    report_file.write(jinja.get_template(
+        os.path.basename('report.template')
+    ).render(
+        report=REPORT,
+        stats=STATS,
+        coverage=os.path.exists(
+            os.path.join(os.environ.get('WORKSPACE'), 'artifacts/coverage')
+        ),
+        errors=ERRORS
+    ))
