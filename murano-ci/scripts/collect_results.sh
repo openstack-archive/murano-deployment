@@ -40,7 +40,7 @@ function generate_html_report() {
     if [[ -f "${WORKSPACE}/artifacts/report/test_report.xml" ]]; then
         sudo pip install jinja2 lxml
 
-        $(which python) "${WORKSPACE}/murano-ci/scripts/generate_html_report.py" "${xml_report}" "${html_report}"
+        STACK_HOME='/opt/stack' $(which python) "${WORKSPACE}/murano-ci/scripts/generate_html_report.py" "${xml_report}" "${html_report}"
         cp "${WORKSPACE}/artifacts/report/test_report.html" "${WORKSPACE}/index.html"
     fi
 }
