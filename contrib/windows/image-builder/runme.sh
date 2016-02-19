@@ -509,7 +509,7 @@ function run_normal()
     prepare_corefunctions_ps
     downloadrequirements
     preparemirror
-    prepare_local_sambaserver
+    prepare_local_sambaserver true false
     if [ "$?" -eq 0 ]; then
         checkmountremote
         mountremote
