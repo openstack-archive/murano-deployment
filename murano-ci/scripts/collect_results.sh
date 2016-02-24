@@ -49,8 +49,16 @@ function collect_coverage() {
     if [ -f "${WORKSPACE}/.with_coverage" ]; then
         pushd "${WORKSPACE}"
 
-        kill "$(ps hf -C python | grep murano-api | awk '{ print $1; exit }')"
-        kill "$(ps hf -C python | grep murano-engine | awk '{ print $1; exit }')"
+        local api_pid="$(ps hf -C python | grep murano-api | awk '{ print $1; exit }')"
+        local engine_pid="$(ps hf -C python | grep murano-engine | awk '{ print $1; exit }')"
+
+        if [ -n "${api_pid}" ]; then
+            kill "${api_pid}"
+        fi
+
+        if [ -n "${engine_pid}" ]; then
+            kill "${engine_pid}"
+        fi
 
         sleep 10
 
