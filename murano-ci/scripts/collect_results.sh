@@ -49,8 +49,10 @@ function collect_coverage() {
     if [ -f "${WORKSPACE}/.with_coverage" ]; then
         pushd "${WORKSPACE}"
 
-        kill "$(ps hf -C python | grep murano-api | awk '{ print $1; exit }')"
-        kill "$(ps hf -C python | grep murano-engine | awk '{ print $1; exit }')"
+        set +e
+        pkill -TERM -o -f 'murano-api'
+        pkill -TERM -o -f 'murano-engine'
+        set -e
 
         sleep 10
 
