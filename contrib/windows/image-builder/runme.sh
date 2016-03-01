@@ -103,7 +103,7 @@ function check_sys_packages()
 {
     local forceinstall="${1:-false}"
     local retval=0
-    local packages="qemu-kvm virt-manager virt-goodies virtinst bridge-utils libvirt-bin uuid-runtime samba samba-common cifs-utils"
+    local packages="qemu-kvm virt-manager virt-goodies virtinst bridge-utils libvirt-bin uuid-runtime samba samba-common cifs-utils zip"
     if [ ! -f "/etc/debian_version" ] || ! lsb_release -a 2>/dev/null | grep -qE '(Mint|Ubuntu|Debian)'; then
         log "Err: Ubuntu like distros only supported for now !"
         exit 2
