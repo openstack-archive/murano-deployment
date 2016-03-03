@@ -193,11 +193,13 @@ function init()
 # check disk space
 function check_free_space()
 {
+    #directory should have at least 50G of free space
     local min_free_g="50"
+    let min_free=${min_free_g}*1024*1024
     local sys_free=''
     log "Checking free space for ${Config["vmsworkdir"]} folder partition..."
-    sys_free=$(sudo df "${Config["vmsworkdir"]}" --total -k -h  --output=avail | head -n2 | tail -n1)
-    if [ "${sys_free/G/}" -lt "${min_free_g}" ]; then
+    sys_free=$(sudo df "${Config["vmsworkdir"]}" --total -k --output=avail | head -n2 | tail -n1)
+    if [ "${sys_free}" -lt "${min_free}" ]; then
         log "Err: You have not enough free space ${sys_free} at ${Config["vmsworkdir"]}, required - ${min_free_g}G!"
         exit 2
     fi
