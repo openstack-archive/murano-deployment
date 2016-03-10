@@ -1,0 +1,19 @@
+#
+# LDAP Defaults
+#
+
+# See ldap.conf(5) for details
+# This file should be world readable but not world writable.
+
+URI <%= @ldap_uri %>
+BASE <%= @ldap_base %>
+TLS_CACERTDIR <%= @tls_cacertdir %>
+
+pam_password <%= @pam_password %>
+pam_filter <%= @pam_filter %>
+sudoers_base <%= @sudoers_base %>
+uri <%= @ldap_uri %>
+bind_policy <%= @bind_policy %>
+<% if @ldap_ignore_users %>
+nss_initgroups_ignoreusers <%= @ldap_ignore_users %>
+<% end %>

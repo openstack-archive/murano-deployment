@@ -1,0 +1,12 @@
+---
+  !ruby/sym backends:
+    - yaml
+  !ruby/sym hierarchy:
+    - config
+    - users
+    - globals
+  !ruby/sym yaml:
+    !ruby/sym datadir: /etc/hiera
+  !ruby/sym logger: noop
+  !ruby/sym merge_behavior: deeper
+
