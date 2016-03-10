@@ -28,26 +28,22 @@ pipelines:
         - event: ref-updated
           ref: ^(?!refs/).*$
 
-project-templates:
-  - name: docs-on-rtfd
-    post: 'hook-{name}-rtfd'
-
 projects:
   - name: openstack/murano
-    template:
-      - name: docs-on-rtfd
     check:
-      - gate_murano_ubuntu
+      - gate-murano-ubuntu
+    post: 
+      - hook-murano-rtfd
   - name: openstack/murano-dashboard
     check:
-      - gate_murano-dashboard_ubuntu
+      - gate-murano-dashboard-ubuntu
   - name: openstack/murano-agent
     check:
-      - gate_murano-agent_ubuntu
-      - gate_murano-agent_debian
+      - gate-murano-agent-ubuntu
+      #- gate-murano-agent-debian
   - name: openstack/python-muranoclient
     check:
-      - gate_murano-client_ubuntu
+      - gate-murano-client-ubuntu
   - name: openstack/murano-deployment
     check:
       - gate-murano-deployment
@@ -55,7 +51,9 @@ projects:
 jobs:
   - name: ^.*$
     parameter-function: single_use_node
-  - name: ^gate_.*$
+  - name: ^gate-.*$
     voting: true
-  - name: ^gate_murano-agent_debian$
+  - name: ^gate-murano-agent-debian$
+    voting: false
+  - name: ^gate-murano-deployment$
     voting: false

@@ -5,7 +5,7 @@
     description: '{name} {distro} gate job'
     disabled: false
     concurrent: true
-    node: precise-devstack-cz
+    node: trusty-devstack-cz5608 || trusty-devstack-cz5680
 
     parameters:
       - bool:
@@ -47,7 +47,7 @@
     description: '{name} {distro} heartbeat job'
     disabled: false
     concurrent: true
-    node: precise-devstack-cz
+    node: trusty-devstack-cz5608 || trusty-devstack-cz5680
 
     triggers:
       - timed: "H */3 * * *"
@@ -92,7 +92,7 @@
     description: '{name} {distro} coverage job'
     disabled: false
     concurrent: true
-    node: precise-devstack-cz
+    node: trusty-devstack-cz5608 || trusty-devstack-cz5680
 
     triggers:
       - timed: "H */3 * * *"

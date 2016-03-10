@@ -1,0 +1,65 @@
+script-dir: /etc/nodepool/scripts
+dburi: 'mysql://nodepool:nodepool_sql@localhost/nodepool'
+
+cron:
+  check: '*/1 * * * *'
+
+zmq-publishers:
+  - tcp://127.0.0.1:8888
+
+gearman-servers:
+  - host: 127.0.0.1
+
+labels:
+  - name: trusty-devstack-cz5608
+    image: trusty-devstack-cz5608
+    min-ready: 6
+    providers:
+      - name: cilab-1
+  - name: trusty-devstack-cz5680
+    image: trusty-devstack-cz5680
+    min-ready: 6
+    providers:
+      - name: cilab-2
+
+
+providers:
+  - name: cilab-1
+    username: 'ci-user'
+    password: 'swordfish'
+    auth-url: 'http://172.16.41.132:5000/v2.0'
+    project-name: 'ci'
+    max-servers: 6
+    boot-timeout: 1800
+    pool: 'Public'
+
+    networks:
+      - net-id: 'CILAB-1_PRIVATE_NET_ID'
+
+    images:
+      - name: trusty-devstack-cz5608
+        base-image: 'trusty-server-cloudimg-amd64-disk1'
+        min-ram: 2048
+        private-key: '/home/nodepool/.ssh/id_rsa'
+        setup: prepare_node_murano_devstack.sh
+  - name: cilab-2
+    username: 'ci-user'
+    password: 'swordfish'
+    auth-url: 'http://172.16.41.134:5000/v2.0'
+    project-name: 'ci'
+    max-servers: 6
+    boot-timeout: 1800
+    pool: 'Public'
+
+    networks:
+      - net-id: 'CILAB-2_PRIVATE_NET_ID'
+
+    images:
+      - name: trusty-devstack-cz5680
+        base-image: 'trusty-server-cloudimg-amd64-disk1'
+        min-ram: 2048
+        private-key: '/home/nodepool/.ssh/id_rsa'
+        setup: prepare_node_murano_devstack.sh
+
+targets:
+  - name: murano-gate
