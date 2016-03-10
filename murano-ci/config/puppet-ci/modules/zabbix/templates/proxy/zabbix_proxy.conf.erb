@@ -1,0 +1,56 @@
+AllowRoot=<%= @allow_root ? 1 : 0 %>
+CacheSize=<%= @cache_size %>
+ConfigFrequency=<%= @config_frequency %>
+<% if @db_host %>DBHost=<%= @db_host %><% end %>
+DBName=<%= @db_name %>
+DBPassword=<%= @db_password %>
+<% if @db_port %>DBPort=<%= @db_port %><% end %>
+DBUser=<%= @db_user %>
+<% if @db_socket %>DBSocket=<%= @db_socket %><% end %>
+DebugLevel=<%= @debug_level %>
+#EnableSNMPBulkRequests=<% @enable_snmp_bulk_requests ? 1 : 0 %>
+<% if @external_scripts %>ExternalScripts=<%= @external_scripts %><% end %>
+Fping6Location=<%= @fping6_location %>
+FpingLocation=<%= @fping_location %>
+HeartbeatFrequency=<%= @heartbeat_frequency %>
+HistoryCacheSize=<%= @history_cache_size %>
+HistoryTextCacheSize=<%= @history_text_cache_size %>
+Hostname=<%= @hostname %>
+HostnameItem=<%= @hostname_item %>
+HousekeepingFrequency=<%= @housekeeping_frequency %>
+<% if @include %>Include=<%= @include %><% end %>
+ListenIP=<%= @listen_ip %>
+ListenPort=<%= @listen_port %>
+<% if @load_module %>LoadModule=<%= @load_module %><% end %>
+<% if @load_module_path %>LoadModulePath=<%= @load_module_path %><% end %>
+LogFile=<%= @log_file %>
+LogFileSize=<%= @log_file_size %>
+LogSlowQueries=<%= @log_slow_queries ? 1 : 0 %>
+PidFile=<%= @pid_file %>
+ProxyLocalBuffer=<%= @proxy_local_buffer %>
+ProxyMode=<%= @proxy_mode == 'active' ? 0 : 1 %>
+ProxyOfflineBuffer=<%= @proxy_offline_buffer %>
+ServerPort=<%= @server_port %>
+<% if @server %>Server=<%= @server %><% end %>
+SNMPTrapperFile=<%= @snmp_trapper_file %>
+<% if @source_ip %>SourceIP=<%= @source_ip %><% end %>
+<% if @ssh_key_location %>SSHKeyLocation=<%= @ssh_key_location %><% end %>
+StartDBSyncers=<%= @start_db_syncers %>
+StartDiscoverers=<%= @start_discoverers %>
+StartHTTPPollers=<%= @start_http_pollers %>
+StartIPMIPollers=<%= @start_ipmi_pollers %>
+StartJavaPollers=<%= @start_java_pollers %>
+StartPingers=<%= @start_pingers %>
+StartPollers=<%= @start_pollers %>
+StartPollersUnreachable=<%= @start_pollers_unreachable %>
+StartSNMPTrapper=<%= @start_snmp_trapper ? 1 : 0 %>
+StartTrappers=<%= @start_trappers %>
+StartVMwareCollectors=<%= @start_vmware_collectors %>
+Timeout=<%= @timeout %>
+TmpDir=<%= @tmp_dir %>
+TrapperTimeout=<%= @trapper_timeout %>
+UnavailableDelay=<%= @unavailable_delay %>
+UnreachableDelay=<%= @unreachable_delay %>
+UnreachablePeriod=<%= @unreachable_period %>
+VMwareCacheSize=<%= @vmware_cache_size %>
+VMwareFrequency=<%= @vmware_frequency %>

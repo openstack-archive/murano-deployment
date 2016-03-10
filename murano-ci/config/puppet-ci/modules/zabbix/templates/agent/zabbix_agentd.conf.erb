@@ -1,0 +1,25 @@
+PidFile=/var/run/zabbix/zabbix_agentd.pid
+LogFile=<%= @log_file %>
+LogFileSize=0
+DebugLevel=<%= @debug_level %>
+EnableRemoteCommands=<%= @enable_remote_commands ? 1 : 0 %>
+LogRemoteCommands=<%= @log_remote_commands ? 1 : 0 %>
+
+Server=<%= @zabbix_server %>, 127.0.0.1
+ListenPort=<%= @listen_port %>
+ListenIP=<%= @listen_address %>
+StartAgents=<%= @start_agents %>
+<% if @server_active %>
+ServerActive=<%= @server_active %>
+RefreshActiveChecks=<%= @refresh_active_checks %>
+<% end %>
+Hostname=<%= @hostname %>
+HostnameItem=<%= @hostname_item %>
+
+MaxLinesPerSecond=<%= @max_lines_per_second %>
+AllowRoot=<%= @allow_root ? 1 : 0 %>
+Timeout=<%= @timeout %>
+
+Include=<%= @include %>
+
+UnsafeUserParameters=<%= @unsafe_user_parameters ? 1 : 0 %>

@@ -1,0 +1,25 @@
+<?php
+
+require_once('/etc/zabbix/zabbix.conf.php');
+
+if($DB['TYPE'] == 'MYSQL') {
+  $dbh = mysql_connect($DB['SERVER'], $DB['USER'], $DB['PASSWORD']);
+  mysql_select_db($DB['DATABASE']);
+
+  mysql_query('SELECT (1);');
+}
+
+$fp = fopen('/tmp/ping_check', 'w');
+fwrite($fp, '1');
+fclose($fp);
+
+$pid = `pgrep zabbix_server`;
+if(strlen($pid) > 0) {
+  header('HTTP/1.0 200 Ok');
+  print 'ok';
+} else {
+  header('HTTP/1.0 500 Internal Error');
+  print 'error';
+}
+
+?>
