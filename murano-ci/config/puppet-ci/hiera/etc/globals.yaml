@@ -1,0 +1,49 @@
+---
+hostname: "murano-ci-tst.vm.mirantis.net"
+admin_email: "admin@murano-ci-tst.vm.mirantis.net"
+dns:
+    dns_servers:
+        OpenDNS1:
+            ip: "208.67.222.222"
+            uptest: "query"
+            timeout: 10
+        OpenDNS2:
+            ip: "208.67.220.220"
+            uptest: "query"
+            timeout: 10
+        GoogleDNS1:
+            ip: "8.8.8.8"
+            uptest: "exec"
+            timeout: 10
+    listen_addr: "127.0.0.1"
+    manage_resolvconf: "true"
+ntp_servers: "0.cz.pool.ntp.org, 1.cz.pool.ntp.org, 2.cz.pool.ntp.org, 3.cz.pool.ntp.org"
+project_config:
+    repository: "https://github.com/openstack/murano-deployment"
+    revision: "master"
+    base: "murano-ci/"
+custom_config:
+    jenkins_use_proxy: true
+    jenkins_default_config: "puppet:///modules/muranoci-extras/jenkins.default"
+    builds_archive_dir: "/opt/logs"
+    clean_old_archives_cron: true
+    custom_vhost: true
+git_source:
+    jenkins_job_builder:
+        repository: "https://github.com/openstack-infra/jenkins-job-builder"
+        revision: "master"
+    nodepool:
+        repository: "https://github.com/openstack-infra/nodepool"
+        revision: "master"
+    zuul:
+        repository: "https://github.com/openstack-infra/zuul"
+        revision: "master"
+mysql:
+    root_password: "CHANGEME"
+ssh:
+    password_authentication: false
+monitoring:
+    agent_start_agents: 2
+    agent_timeout: 5
+    agent_zabbix_server: "127.0.0.1"
+    agent_zabbix_repo: "http://mirror.fuel-infra.org/devops/ubuntu/"

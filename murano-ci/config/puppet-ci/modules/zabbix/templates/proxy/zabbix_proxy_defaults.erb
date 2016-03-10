@@ -1,0 +1,14 @@
+# defaults file for zabbix-proxy-mysql
+
+# Start the Zabbix proxy from the init.d script?
+# (Possible values: "yes" or "no")
+#
+# This is by default set to "no" because a MySQL database needs to be prepared
+# and configured before you can start the Zabbix proxy for the first time.
+#
+# Instructions on how to set up the database can be found in
+# /usr/share/doc/zabbix-proxy-mysql/README.Debian
+START=yes
+
+# Absolute path to the configuration file
+CONFIG_FILE="<%= @config %>"
