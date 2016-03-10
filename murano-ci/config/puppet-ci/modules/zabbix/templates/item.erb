@@ -1,0 +1,5 @@
+<% if @raw_content %>
+<%= @raw_content %>
+<% else %>
+<% @items.each do |item| %>UserParameter=<%= item.join '[*],' %><% end %>
+<% end %>
