@@ -1,0 +1,96 @@
+<VirtualHost *:80>
+  ServerName <%= @vhost_name %>
+  ServerAdmin <%= @serveradmin %>
+  #DocumentRoot /var/lib/zuul/www
+
+  <Directory /var/lib/zuul/www>
+      <IfVersion >= 2.4>
+          Require all granted
+      </IfVersion>
+      <IfVersion < 2.4>
+          Order deny,allow
+          Allow from all
+      </IfVersion>
+  </Directory>
+  <Directory /usr/lib/git-core>
+      <IfVersion >= 2.4>
+          Require all granted
+      </IfVersion>
+      <IfVersion < 2.4>
+          Order deny,allow
+          Allow from all
+      </IfVersion>
+  </Directory>
+
+  ErrorLog ${APACHE_LOG_DIR}/<%= @vhost_name %>-error.log
+
+  LogLevel warn
+
+  CustomLog ${APACHE_LOG_DIR}/<%= @vhost_name %>-access.log combined
+
+  RewriteEngine on
+    RewriteRule ^/zuul/status.json$ http://127.0.0.1:8001/status.json [P]
+  RewriteRule ^/zuul/status/(.*) http://127.0.0.1:8001/status/$1 [P]
+  
+  Alias /zuul /var/lib/zuul/www
+
+  <% if @builds_archive_dir != '' %>
+  Alias /logs <%= @builds_archive_dir %>  
+
+  <Directory <%= @builds_archive_dir %>>
+      <IfVersion >= 2.4>
+          Require all granted
+          Options +Indexes
+      </IfVersion>
+      <IfVersion < 2.4>
+          Order deny,allow
+          Allow from all
+          Options +Indexes
+      </IfVersion>
+  </Directory>
+  <% end %>
+
+  AddType text/plain .log
+  Alias /icons/ "/usr/share/apache2/icons/"
+
+  <Directory "/usr/share/apache2/icons">
+      <IfVersion >= 2.4>
+          Require all granted
+          Options FollowSymlinks
+          AllowOverride None
+      </IfVersion>
+      <IfVersion < 2.4>
+          Options FollowSymlinks
+          AllowOverride None
+          Order allow,deny
+          Allow from all
+      </IfVersion>      
+  </Directory>
+
+  AddOutputFilterByType DEFLATE application/json
+
+  SetEnv GIT_PROJECT_ROOT /var/lib/zuul/git/
+  SetEnv GIT_HTTP_EXPORT_ALL
+
+  AliasMatch ^/p/(.*/objects/[0-9a-f]{2}/[0-9a-f]{38})$ /var/lib/zuul/git/$1
+  AliasMatch ^/p/(.*/objects/pack/pack-[0-9a-f]{40}.(pack|idx))$ /var/lib/zuul/git/$1
+  ScriptAlias /p/ /usr/lib/git-core/git-http-backend/
+
+  <IfModule mod_cache.c>
+    CacheDefaultExpire 5
+    <IfModule mod_mem_cache.c>
+      CacheEnable mem /status.json
+      # 12MByte total cache size.
+      MCacheSize 12288
+      MCacheMaxObjectCount 10
+      MCacheMinObjectSize 1
+      # 8MByte max size per cache entry
+      MCacheMaxObjectSize 8388608
+      MCacheMaxStreamingBuffer 8388608
+    </IfModule>
+    <IfModule mod_cache_disk.c>
+      CacheEnable disk /status.json
+      CacheRoot /var/cache/apache2/mod_cache_disk
+    </IfModule>
+  </IfModule>
+</VirtualHost>
