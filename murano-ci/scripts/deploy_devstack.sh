@@ -83,6 +83,21 @@ function deploy_devstack() {
         ;;
     esac
 
+    # NOTE(freerunner): We need to ensure repositories have requested branches
+    # and fallback to master branch for any repo which haven't.
+    if ! git ls-remote "${MURANO_REPO}" | grep "${MURANO_BRANCH}"; then
+        echo "Branch ${MURANO_BRANCH} is not exist in ${MURANO_REPO}. Using ${DEVSTACK_BRANCH}"
+        MURANO_BRANCH="${DEVSTACK_BRANCH}";
+    fi
+    if ! git ls-remote "${MURANO_DASHBOARD_REPO}" | grep "${MURANO_DASHBOARD_BRANCH}"; then
+        echo "Branch ${MURANO_DASHBOARD_BRANCH} is not exist in ${MURANO_DASHBOARD_REPO}. Using ${DEVSTACK_BRANCH}"
+        MURANO_DASHBOARD_BRANCH="${MURANO_DASHBOARD_BRANCH}";
+    fi
+    if ! git ls-remote "${MURANO_PYTHONCLIENT_REPO}" | grep "${MURANO_PYTHONCLIENT_BRANCH}"; then
+        echo "Branch ${MURANO_PYTHONCLIENT_BRANCH} is not exist in ${MURANO_PYTHONCLIENT_REPO}. Using ${DEVSTACK_BRANCH}"
+        MURANO_PYTHONCLIENT_BRANCH="${MURANO_PYTHONCLIENT_BRANCH}";
+    fi
+
     echo "MURANO_REPO=${MURANO_REPO}"
     echo "MURANO_BRANCH=${MURANO_BRANCH}"
     echo "MURANO_REPOSITORY_URL=${APPS_REPOSITORY_URL}"
