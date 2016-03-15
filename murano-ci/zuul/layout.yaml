@@ -9,6 +9,8 @@ pipelines:
         - event: patchset-created
         - event: comment-added
           comment_filter: (?i)^(Patch Set [0-9]+:\n\n)?\s*retrigger(( (?:bug|lp)[\s#:]*(\d+))|( no bug)|( murano-ci))\s*$
+        - event: comment-added
+          comment_filter: recheck
     start:
       gerrit:
         verified: 0
@@ -18,6 +20,7 @@ pipelines:
     failure:
       gerrit:
         verified: -1
+    failure-message: To re-run the job please post a comment with `retrigger murano-ci`
 
   - name: post
     description: This pipeline runs jobs that operate after each change is merged.
