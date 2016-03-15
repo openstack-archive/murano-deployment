@@ -8,7 +8,7 @@ pipelines:
       gerrit:
         - event: patchset-created
         - event: comment-added
-          comment_filter: (?i)^(Patch Set [0-9]+:\n\n)?\s*retrigger(( (?:bug|lp)[\s#:]*(\d+))|( no bug)|( murano-ci))\s*$
+          comment_filter: (?i)^(Patch Set [0-9]+:\n\n)?\s*recheck(( (?:bug|lp)[\s#:]*(\d+))|( no bug)|( murano-ci))\s*$
     start:
       gerrit:
         verified: 0
