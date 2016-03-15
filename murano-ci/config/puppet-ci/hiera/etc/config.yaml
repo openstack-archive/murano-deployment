@@ -1,0 +1,70 @@
+---
+jenkins:
+    vhost: "JENKINS_VHOST"
+    email: "admin@murano-ci"
+    logo: ""
+    user: "JENKINS_ADMIN_USERNAME"
+    password: "JENKINS_ADMIN_TOKEN"
+    jobs:
+        jenkins_url: "http://127.0.0.1:8080/jenkins"
+    ssl:
+        cert: ""
+        key: ""
+    ssh:
+        private_key: |
+          -----BEGIN RSA PRIVATE KEY-----
+
+          -----END RSA PRIVATE KEY-----
+        public_key: "JENKINS_PUBLIC_KEY"
+zuul:
+    vhost: "ZUUL_VHOST"
+    gearman: "127.0.0.1"
+    zuul_url: "URL FOR ZUUL GIT REPOS"
+    status_url: ""
+    known_hosts: "review.openstack.org,104.130.159.134 REVIEW_PUBLIC_KEY"
+    url_pattern: "URL RETURNED TO GERRIT"
+    job_name_in_report: true
+    git_email: "GIT USER EMAIL for zuul-merger"
+    git_name: "GIT USER NAME for zuul-merger"
+    gerrit:
+        server: "review.openstack.org"
+        user: "murano-ci"
+        private_key: |
+          -----BEGIN RSA PRIVATE KEY-----
+
+          -----END RSA PRIVATE KEY-----
+    swift:
+        auth_url: ""
+        auth_version: ""
+        user: ""
+        key: ""
+        tenant: ""
+        region: ""
+        default_container: ""
+        default_logserver_prefix: ""
+        default_expiry: 7200
+    ssl:
+        cert: ""
+        key: ""
+        chain: ""
+    smtp:
+        host: "murano-ci-tst.vm.mirantis.net"
+        port: 25
+        from: "zuul@murano-ci-tst.vm.mirantis.net"
+        to: "user@murano-ci-tst.vm.mirantis.net"
+nodepool:
+    vhost: ""
+    private_key: |
+          -----BEGIN RSA PRIVATE KEY-----
+
+          -----END RSA PRIVATE KEY-----
+    image_log_enabled: false
+    image_log_dir: ""
+    env:
+        NODEPOOL_SSH_KEY: ""
+    jenkins:
+        - name: "murano-gate"
+          url: "http://127.0.0.1:8080/jenkins"
+          user: "JENKINS_ADMIN_USERNAME"
+          apikey: "JENKINS_ADMIN_TOKEN"
+          credentials: "JENKINS_SSH_CREDENTIALS_ID"

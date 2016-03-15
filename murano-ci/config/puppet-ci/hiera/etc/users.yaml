@@ -1,0 +1,20 @@
+---
+#Change this config according to your environment, this is just example:
+users:
+  root:
+    password: "$6$EYXyyAdZdof6Ra4X$Gg0pQqcboEj16IXLaXZEoS7YeM.478EStNehGACiXjyjyoc1/F2q4B4iSfMWjvVwIfgS94HLwg6rzvtyAQjF61"
+  engineer:
+    ensure: "present"
+    managehome: true
+    home: "/home/engineer"
+    shell: "/bin/bash"
+    groups:
+      - "sudo"
+    password: "$6$IDel3DloQ5fqEfYk$1xIwNAffyt.KpEIxDKA0C4qjF1FtfUDUhMQ6NgbLJGAzOS9cKB8x1Mmpc7lub49jcY7/UbMszXALFztIQBioE0"
+
+auth_keys:
+  engineer_key:
+    user: "engineer"
+    ensure: "present"
+    type: "ssh-rsa"
+    key: "AAAAB3NzaC1yc2EAAAADAQABAAACAQCkAJLoqir42by2E2nWxR7sy66LeaaFYFqjyUwVR0XEcZy/NBj8FWAKGNLJ5om4lYz4kyHoI9bg62VhDBbcA1ggdg6iV1Usb7eV7bzCXe6VsS9doBCvfHmAIsnwNDChiVE5aWO0RrvF49dKr193QFl5G/6nasCbZtj8c0RddIdrlrYO1gHxaiP23N9XcvAcLOD64K9kPyh7T6DsWw6fbP2ibef3Kep7GbADj2fTKxyikGRiKyK3psbbrjtXaIP7SfuRFrjS0ZGw8HbuUoEQTIgJaWCsr1joNaOnJDwqk8an9eslvzIZ6wBle310Pe1voME+QGe9DFqx4PYetHKggQ8zq/kk1ZQnb3N6A7ou6yFEjeDZj3pYGe1atoRXB7ll0ogp3Y26KDm8gSdE4me0hKowhZa58sjA2l/+jr8FosAczjz8TR3nXTrQ+WZAtkxSZ73XHmTePQFqr6AJg9Iif9+GizhSDZLFxmQ1zd5awcr3whVAVYJrsWyoOwW1U8UAJ5Y11eHmqB6b7lrOM/sQ9wDA0quSpKHv5E3dXkz+0R9gJUrN1rAXvgdZu8txv621YIYhE6kPccFiOrF2bQPYYOam/+VvOzJpWIjryeRKmc8qbyzQ4DEQVE3hkbm3tKehtK9ORTvTtoC8tNctWYq6TzEtMnNStqTDqxeYRRPD5jydFQ=="
