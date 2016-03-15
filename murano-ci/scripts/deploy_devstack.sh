@@ -91,11 +91,11 @@ function deploy_devstack() {
     fi
     if ! git ls-remote "${MURANO_DASHBOARD_REPO}" | grep "${MURANO_DASHBOARD_BRANCH}"; then
         echo "Branch ${MURANO_DASHBOARD_BRANCH} does not exist in ${MURANO_DASHBOARD_REPO}. Using ${DEVSTACK_BRANCH}"
-        MURANO_DASHBOARD_BRANCH="${MURANO_DASHBOARD_BRANCH}";
+        MURANO_DASHBOARD_BRANCH="${DEVSTACK_BRANCH}";
     fi
     if ! git ls-remote "${MURANO_PYTHONCLIENT_REPO}" | grep "${MURANO_PYTHONCLIENT_BRANCH}"; then
         echo "Branch ${MURANO_PYTHONCLIENT_BRANCH} does not exist in ${MURANO_PYTHONCLIENT_REPO}. Using ${DEVSTACK_BRANCH}"
-        MURANO_PYTHONCLIENT_BRANCH="${MURANO_PYTHONCLIENT_BRANCH}";
+        MURANO_PYTHONCLIENT_BRANCH="${DEVSTACK_BRANCH}";
     fi
 
     echo "MURANO_REPO=${MURANO_REPO}"
