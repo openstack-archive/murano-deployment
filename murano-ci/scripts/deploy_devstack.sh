@@ -33,6 +33,7 @@ function git_clone_devstack() {
 }
 
 function deploy_devstack() {
+    local DEVSTACK_BRANCH=${DEVSTACK_BRANCH:=master}
     local git_dir=/opt/git
 
     sudo mkdir -p "${git_dir}/openstack"
@@ -45,7 +46,12 @@ function deploy_devstack() {
         popd
     else
         pushd "${git_dir}/openstack/murano"
+        {
         git checkout "${ZUUL_BRANCH}"
+        } || {
+        # Override devstack branch, if ZUUL_BRANCH doesn't exists on devstack repo
+        git checkout "${DEVSTACK_BRANCH}"
+        }
         popd
     fi
 
