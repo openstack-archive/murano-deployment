@@ -1,0 +1,49 @@
+
+global {
+    perm_cache=<%= @perm_cache %>;
+    cache_dir=<%= @cache_dir %>;
+    run_as="pdnsd";
+    server_ip = <%= @server_ip %>;
+    verbosity = 3;
+    debug = on;
+    status_ctl = on;
+    query_method=udp_tcp;
+    min_ttl=60m;                    # Retain cached entries at least 60 minutes.
+    max_ttl=1w;                     # One week.
+    timeout=30;                     # Global timeout option (seconds).
+    neg_domain_pol=on;
+    udpbufsize=1024;                # Upper limit on the size of UDP messages.
+}
+
+# The following section is most appropriate if you have a fixed connection to
+# the Internet and an ISP which provides good DNS servers.
+
+<% @preferred_servers.each_pair do |label, server| %>
+server {
+    label=<%= label %>;
+    ip=<%= server['ip'] %>;                 # Put your DNS-server address(es) here.
+    timeout=<%= server['timeout'] %>;       # Server timeout.
+    <% if server['uptest'] -%>
+    uptest=<%= server['uptest'] %>;
+    <% end -%>
+    <% if server['uptest'] == "exec" -%>
+    uptest_cmd="dig @<%= server['ip'] %> google.com";
+    <% end -%>
+    interval=5m;                            # Check every 5 minutes.
+    purge_cache=off;                        # Keep stale cache entries in case the DNS goes down
+}
+<% end %>
+
+source {
+    owner=localhost;
+#   serve_aliases=on;
+    file="/etc/hosts";
+}
+
+rr {
+    name=localhost;
+    reverse=on;
+    a=127.0.0.1;
+    owner=localhost;
+    soa=localhost,root.localhost,42,86400,900,86400,86400;
+}
