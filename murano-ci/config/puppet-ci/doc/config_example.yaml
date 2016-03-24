@@ -1,0 +1,145 @@
+---
+jenkins:
+    vhost: ""
+    email: "admin@murano-ci"
+    logo: ""
+    user: "admin"
+    password: "b6bd1ea3ba398429e0221e929c41b787"
+    jobs:
+        jenkins_url: "http://127.0.0.1:8080/jenkins"
+    ssl:
+        cert: ""
+        key: ""
+    ssh:
+        private_key: |
+          -----BEGIN RSA PRIVATE KEY-----
+          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
+          -----END RSA PRIVATE KEY-----
+        public_key: "AAAAB3NzaC1yc2EAAAADAQABAAACAQCggybUgm8wxhHM9iCVsCjvsJ9gfCyI0sLPWBI7OH2FPsuoU6PC0vR/uYvCU//e7eF+nzuAx8NSltw5loM8IQgieGcRCLO3y69aL1SFw5yujYCYKMG3xf9uD4mNXDcu2rrh8T0hwYEn57MRCFYc5ZYis36AufzJxzObY8D/1+nx4zHH9L0Mu84MPwxjwW+crGFNc7mbDDsIfIrDb/Wnk54ZDpaxl5bFogpIixhLyNDEazSlpMbRIQ4ap6ZP45KLdPXOJpPbevv4HpdDuqmwX/GKLZgvh5JpWSdWzVjgDgR7FVGvGNJPw8i/wGDmoNeIIy1qKDnydjF67aljRzDNuQfKeUDS+DSgAImUyzZKeTceraFCxeWmBv90AM0p632nKDpOU4/adJIkW9a8PxLiGuCvvxj4C/ZNWZZ7NM4UW9gHLJHzbebFFOzr88PXBZUG/Sh3wEySSk88l7PZ5gIk0783+pbUcFvbocbbdcLVcAxDoGOah0R8EuakIfs5Pa+qRbx3tQ8Hf2DgutifajiHtfIBASMDmKMA75Lg3hnHPwmRsY2o1hkAwVOBINF3s8+eUYUimqQ0mAiuGOQrjHY1/x3AuNw3RldXT3r5Ee6peW++VkBAtVuhPkZ/8383AcusPnue+CCktLwTs7YVCCH5aoV5I2Ff+HAcrob6csEbT1NG+w=="
+zuul:
+    vhost: "murano-ci.domain.tld"
+    gearman: "127.0.0.1"
+    zuul_url: "http://murano-ci.domain.local/p"
+    status_url: ""
+    known_hosts: "review.domain.tld,1.2.3.4 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDJlhVidNpZXUS0C7cDBVMO8WFbButs8phnyz+aHXpSTYUUgHx1NRE85hu1f3tBn/1X6LYrnAJSiQ20iZ05c/kYMJbmFgVr7ImIuNpHvXXv9Q+IkTaWJNTDlgFj66/FnJ0wBfbOwBFM9K/JU10TfGKqBbFrrDa5aaF/trB70eFlP8FX989gaWLRkPWDStZiVsGpHQjdJSd8YZWMeIm23negrC6GxCHl/jicZgkWp+i8yh/h1S08ukabVVix4nUhUxRfsLb/gedE4j2LL0EK0To4Kiu6Cl8SmHAg5FHHFxKvGViR/ybZLhCrRxrJwhpWl"
+    url_pattern: "http://murano-ci.domain.tld/logs/{build.parameters[LOG_PATH]}"
+    job_name_in_report: true
+    git_email: "ci@murano.ci"
+    git_name: "Murano CI"
+    gerrit:
+        server: "review.domain.tld"
+        user: "muranoci"
+        private_key: |
+          -----BEGIN RSA PRIVATE KEY-----
+          MIIEowIBAAKCAQEAzZ2HsfSivQflbCYAb/SDEUB2/t/GT6Cfgkh+By66HuQ2NDS7
+          Vinb0lH80hQxPuTJ1ZeCOBEYJvnxBWIzyj7q8apF9ZHgDF9xGK+erb0XbOkpxMuz
+          JRf1h/1FNKqhRcNi0nnbnq/Pi5AGseXH9KTmuOY198pozwEe0XRHet6mlYFx/2Vt
+          6XJE6YrJZ83MrEeYmqckKpxQQ5wl7a39PPHSRqJNrPsUWavoYnxug8xYWlvuX6m8
+          ERzUUq5HeruF2Y4mjBln8rzsYJ4W85BdnO/5lvS6WizuXyiRkRND26SzbiC90BiR
+          5YPjlcc73sZySiiHHXiF3riW7TA+hNZJY/1JXwIDAQABAoIBAGGDaTxbYea2XPba
+          WvC9jH9dDFI5/En9Ski2aparcXd/EbnWnFXzyh3H5lgXXXePd61FimteqA6sEMNV
+          0XQPxbnq38ldMdMJ9T7xa8F95VJskT9b9T9ft/USczSR2M4936FwIC69sPYdKCnf
+          b7yYaP3XtfJCxTlavdBz0vUCgYATDNup718EKO2gW+l0CxQ2iso4zfX8Bo/wpW/f
+          mtyoJCfLdYNFYt0Ne9NARC5TEew74U2RtpLzlIwRcuu9/qa8spoqnPoNuf6MBzPr
+          eR0NqrUS5bx62NoAzmXS0Of0t9PnQ1JeEgnmbceMbrqQIle+KPZFPIpOr3gXYLEo
+          +E4G4QKBgGANPSZ0huDamFvFZASX7GD/He6inGJG3qSM4SAyGHwzhlTT6TVvo4eM
+          1WOgfsevOwt+oOjn4/cx1ZoFa1mvYZdbkaLzn8sSad/zhvo3ApzgD2ZWGgGIwkTJ
+          lYeQk/5aD1lCcaQcX5XjwY1lniOthpA/5DoEGcgzL6Imv5cBVmyQ
+          -----END RSA PRIVATE KEY-----
+    swift:
+        auth_url: ""
+        auth_version: ""
+        user: ""
+        key: ""
+        tenant: ""
+        region: ""
+        default_container: ""
+        default_logserver_prefix: ""
+        default_expiry: 7200
+    ssl:
+        cert: ""
+        key: ""
+        chain: ""
+    smtp:
+        host: "murano-ci-tst.vm.mirantis.net"
+        port: 25
+        from: "zuul@murano-ci-tst.vm.mirantis.net"
+        to: "user@murano-ci-tst.vm.mirantis.net"
+nodepool:
+    vhost: ""
+    private_key: |
+          -----BEGIN RSA PRIVATE KEY-----
+          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
+          -----END RSA PRIVATE KEY-----
+    image_log_enabled: false
+    image_log_dir: ""
+    env:
+        NODEPOOL_SSH_KEY: ""
+    jenkins:
+        - name: "murano-gate"
+          url: "http://127.0.0.1:8080/jenkins"
+          user: "admin"
+          apikey: "b6bd1ea3ba398429e0221e929c41b787"
+          credentials: "806cf593-3c2b-4f9b-90c4-3a5384598f3c"
