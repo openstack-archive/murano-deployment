@@ -138,6 +138,7 @@ LIBS_FROM_GIT=${LIBS_FROM_GIT}
 RECLONE=True
 SCREEN_LOGDIR=/opt/stack/log/
 LOGFILE=\$SCREEN_LOGDIR/stack.sh.log
+LOG_COLOR=False
 ENABLED_SERVICES=
 enable_service mysql
 enable_service rabbit

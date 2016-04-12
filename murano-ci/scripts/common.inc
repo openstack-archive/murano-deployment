@@ -79,6 +79,8 @@ SAVE_IMAGE=${SAVE_IMAGE:-'no'}
 
 LIBS_FROM_GIT=""
 
+LOG_COLOR=False
+
 # Commands used in script
 #------------------------
 NOSETESTS_CMD="$(which nosetests)"
