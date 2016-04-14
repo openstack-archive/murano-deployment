@@ -1,0 +1,11 @@
+Verified+1: Murano CI
+Code-Review+2: Kirill Zaitsev <kzaitsev@mirantis.com>
+Code-Review+1: Mykyta Karpin <mkarpin@mirantis.com>
+Code-Review+2: Victor Ryzhenkin <vryzhenkin@mirantis.com>
+Workflow+1: Victor Ryzhenkin <vryzhenkin@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Thu, 14 Apr 2016 11:41:12 +0000
+Reviewed-on: https://review.openstack.org/305722
+Project: openstack/murano-deployment
+Branch: refs/heads/master
