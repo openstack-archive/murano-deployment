@@ -31,19 +31,36 @@ pipelines:
         - event: ref-updated
           ref: ^(?!refs/).*$
 
+  - name: heartbeat
+    manager: IndependentPipelineManager
+    trigger:
+      timer:
+        - time: '0 */2 * * * *'
+    failure:
+      smtp:
+        to: nstarodubtsev@mirantis.com, kzaitsev@mirantis.com 
+        from: zuul@murano.mirantis.com
+        subject: '[murano][heartbeat] Heartbeat job failed'
+
 projects:
   - name: openstack/murano
     check:
       - gate-murano-ubuntu
     post: 
       - hook-murano-rtfd
+    heartbeat:
+      - heartbeat-murano-ubuntu
   - name: openstack/murano-dashboard
     check:
       - gate-murano-dashboard-ubuntu
+    heartbeat:
+      - heartbeat-murano-dashboard-ubuntu
   - name: openstack/murano-agent
     check:
       - gate-murano-agent-ubuntu
       #- gate-murano-agent-debian
+    heartbeat:
+      - heartbeat-murano-agent-ubuntu
   - name: openstack/python-muranoclient
     check:
       - gate-murano-client-ubuntu
