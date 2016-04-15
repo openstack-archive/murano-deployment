@@ -49,9 +49,6 @@
     concurrent: true
     node: trusty-devstack-cz5608 || trusty-devstack-cz5680
 
-    triggers:
-      - timed: "H */3 * * *"
-
     parameters:
       - bool:
           name: KEEP_VM_ALIVE
@@ -84,6 +81,17 @@
       - collect-heartbeat-artifacts
       - archive-artifacts
 
+
+- job-template:
+    name: 'pulse'
+    project-type: freestyle
+    defaults: global
+    description: "Pulse job to track zuul condition"
+    disabled: false
+    concurrent: true
+    node: trusty-devstack-cz5608 || trusty-devstack-cz5680
+    properties:
+      - zeromq-event
 
 - job-template:
     name: 'coverage-{name}-{distro}'
