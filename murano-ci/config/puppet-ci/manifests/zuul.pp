@@ -46,7 +46,7 @@ $project_config_rev             = pick_default($project_config_hash['revision'],
 $git_email                      = pick_default($zuul_hash['git_email'], "zuul@${vhost_name}")
 $git_name                       = pick_default($zuul_hash['git_name'], 'Zuul')
 
-$smtp_host                      = pick_default($smtp_hash['host'], 'localhost')
+$smtp_host                      = pick_default('127.0.0.1')
 $smtp_port                      = pick_default($smtp_hash['port'], 25)
 $smtp_default_from              = pick_default($smtp_hash['from'], "zuul@${::fqdn}")
 $smtp_default_to                = pick_default($smtp_hash['to'], "zuul.reports@${::fqdn}")
