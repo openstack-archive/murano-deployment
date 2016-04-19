@@ -15,53 +15,53 @@ fi
 
 # Setup ci tenant and ci users
 #-----------------------------
-CI_TENANT_ID=$(keystone tenant-create \
+CI_TENANT_ID=$(openstack project create \
     --name ci \
     --description 'CI tenant' \
     | grep ' id ' | get_field 2)
-CI_USER_ID=$(keystone user-create \
+CI_USER_ID=$(openstack user create \
     --name ci-user \
-    --tenant_id $CI_TENANT_ID \
-    --pass swordfish \
+    --project $CI_TENANT_ID \
+    --password swordfish \
     | grep ' id ' | get_field 2)
 
-ADMIN_USER_ID=$(keystone user-list | grep admin |  get_field 1)
+ADMIN_USER_ID=$(openstack user list | grep admin |  get_field 1)
 
-ADMIN_ROLE_ID=$(keystone role-list | grep admin | get_field 1)
-MEMBER_ROLE_ID=$(keystone role-list | grep Member | get_field 1)
-_MEMBER_ROLE_ID=$(keystone role-list | grep _member_ | get_field 1)
-HEAT_STACK_OWNER_ROLE_ID=$(keystone role-list \
+ADMIN_ROLE_ID=$(openstack role list | grep admin | get_field 1)
+MEMBER_ROLE_ID=$(openstack role list | grep Member | get_field 1)
+_MEMBER_ROLE_ID=$(openstack role list | grep _member_ | get_field 1)
+HEAT_STACK_OWNER_ROLE_ID=$(openstack role list \
     | grep heat_stack_owner | get_field 1)
 
-keystone user-role-add \
+openstack user role add \
     --user $CI_USER_ID \
     --role $MEMBER_ROLE_ID \
-    --tenant $CI_TENANT_ID
+    --project $CI_TENANT_ID
 
-keystone user-role-add \
+openstack user role add \
     --user $CI_USER_ID \
     --role $HEAT_STACK_OWNER_ROLE_ID \
-    --tenant $CI_TENANT_ID
+    --project $CI_TENANT_ID
 
-keystone user-role-add \
+openstack user role add \
     --user $ADMIN_USER_ID \
     --role $MEMBER_ROLE_ID \
-    --tenant $CI_TENANT_ID
+    --project $CI_TENANT_ID
 
-keystone user-role-add \
+openstack user role add \
     --user $ADMIN_USER_ID \
     --role $_MEMBER_ROLE_ID \
-    --tenant $CI_TENANT_ID
+    --project $CI_TENANT_ID
 
-keystone user-role-add \
+openstack user role add \
     --user $CI_USER_ID \
     --role $ADMIN_ROLE_ID \
-    --tenant $CI_TENANT_ID
+    --project $CI_TENANT_ID
 
-keystone user-role-add \
+openstack user role add \
     --user $ADMIN_USER_ID \
     --role $ADMIN_ROLE_ID \
-    --tenant $CI_TENANT_ID
+    --project $CI_TENANT_ID
 #-----------------------------
 
 
