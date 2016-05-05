@@ -48,7 +48,7 @@ zuul:
         key: ""
         chain: ""
     smtp:
-        host: "murano-ci-tst.vm.mirantis.net"
+        host: "127.0.0.1"
         port: 25
         from: "zuul@murano-ci-tst.vm.mirantis.net"
         to: "user@murano-ci-tst.vm.mirantis.net"
