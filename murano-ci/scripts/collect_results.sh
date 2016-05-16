@@ -49,12 +49,14 @@ function collect_coverage() {
     if [ -f "${WORKSPACE}/.with_coverage" ]; then
         pushd "${WORKSPACE}"
 
+        sleep 1800
+
         set +e
         pkill -TERM -o -f 'murano-api'
         pkill -TERM -o -f 'murano-engine'
         set -e
 
-        sleep 10
+        sleep 1800
 
         coverage combine
 
