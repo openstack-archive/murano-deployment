@@ -54,7 +54,7 @@ function collect_coverage() {
         pkill -TERM -o -f 'murano-engine'
         set -e
 
-        sleep 10
+        sleep 1800
 
         coverage combine
 
