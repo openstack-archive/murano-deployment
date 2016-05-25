@@ -24,7 +24,7 @@ function create_artifacts_dir() {
 }
 
 function collect_screenshots() {
-    if [ "$PROJECT_NAME" == 'murano-dashboard' ]; then
+    if [ "$PROJECT_NAME" == 'murano-dashboard' ] || [ "$PROJECT_NAME" == "python-muranoclient" ] ; then
         set +o errexit
         # Copy screenshots for failed tests
         mkdir -p "${dst}/screenshots"
