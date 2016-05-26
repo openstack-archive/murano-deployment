@@ -30,7 +30,7 @@ cd ${instances_mount_point} && sudo rm -rf *
 cd /opt/stack
 
 echo "Unmounting SSD drive ..."
-if [ -z "$(mount | grep '${instances_mount_point}')" ]; then
+if [ -z "$(mount | grep ${instances_mount_point})" ]; then
     echo "'${instances_mount_point}' is not mounted"
 else
     timeout=60
