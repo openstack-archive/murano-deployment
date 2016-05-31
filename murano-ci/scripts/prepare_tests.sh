@@ -143,13 +143,13 @@ function prepare_tests() {
 
     set_config "${section_name}" 'horizon_url' "$(shield_slashes http://${FOUND_IP_ADDRESS}/$DASHBOARD_PATH)" "${config_file}"
 
-    set_config "${section_name}" 'keystone_url' "$(shield_slashes http://${OPENSTACK_HOST}:5000/v2.0/)" "${config_file}"
+    set_config "${section_name}" 'keystone_url' "$(shield_slashes http://${OPENSTACK_HOST}:5000)" "${config_file}"
     set_config "${section_name}" 'murano_url' "$(shield_slashes http://${FOUND_IP_ADDRESS}:8082/)" "${config_file}"
     set_config "${section_name}" 'user' "${ADMIN_USERNAME}" "${config_file}"
     set_config "${section_name}" 'password' "${ADMIN_PASSWORD}" "${config_file}"
     set_config "${section_name}" 'tenant' "${ADMIN_TENANT}" "${config_file}"
     set_config "${section_name}" 'linux_image' "${LINUX_IMAGE}" "${config_file}"
-    set_config "${section_name}" 'auth_url' "$(shield_slashes http://${OPENSTACK_HOST}:5000/v2.0/)" "${config_file}"
+    set_config "${section_name}" 'auth_url' "$(shield_slashes http://${OPENSTACK_HOST}:5000)" "${config_file}"
 
     prepare_murano_apps "${PROJECT_TESTS_DIR}"
 
