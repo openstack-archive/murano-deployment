@@ -115,6 +115,11 @@ function deploy_devstack() {
         export DEVSTACK_LOCAL_CONF="enable_plugin murano git://git.openstack.org/openstack/murano"
     fi
 
+# Set KEYSTONE_DEPLOY to "uwsgi" as far as it will be set to "mod_wsgi" by default.
+# For more information take a look at:
+# * https://review.openstack.org/#/c/193894/
+# * https://review.openstack.org/#/c/312238/
+
     cat << EOF > local.conf
 [[local|localrc]]
 HOST_IP=${OPENSTACK_HOST}           # IP address of OpenStack lab
@@ -124,6 +129,7 @@ SERVICE_PASSWORD=${ADMIN_PASSWORD}  # Password of service user
 SERVICE_TOKEN=.                     # This value doesn't matter
 SERVICE_PROJECT_NAME=${ADMIN_TENANT}
 SERVICE_TENANT_NAME=${ADMIN_TENANT}
+KEYSTONE_DEPLOY=uwsgi
 MURANO_ADMIN_USER=${ADMIN_USERNAME}
 RABBIT_HOST=${FLOATING_IP_ADDRESS}
 MURANO_REPO=${MURANO_REPO}
