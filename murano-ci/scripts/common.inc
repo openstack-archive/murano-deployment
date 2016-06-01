@@ -63,6 +63,13 @@ APT_PROXY_HOST=${APT_PROXY_HOST:-''}
 
 OPENSTACK_HOST=${OPENSTACK_HOST:-$KEYSTONE_URL}
 
+# Set KEYSTONE_DEPLOY to "uwsgi" as far as it will be set to "mod_wsgi" by default.
+# For more information take a look at:
+# * https://review.openstack.org/#/c/193894/
+# * https://review.openstack.org/#/c/312238/
+
+export KEYSTONE_DEPLOY="uwsgi"
+
 WITH_COVERAGE=${WITH_COVERAGE:-'false'}
 
 DO_NOT_COLLECT_ARTIFACTS=${DO_NOT_COLLECT_ARTIFACTS:-false}
