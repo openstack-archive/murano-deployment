@@ -55,7 +55,7 @@ function run_nosetests() {
     local tests=$*
     local retval=0
 
-    $NOSETESTS_CMD -s -v \
+    $NOSETESTS_CMD -v \
         --with-xunit \
         --xunit-file="${WORKSPACE}/artifacts/report/test_report.xml" \
         $tests || retval=$?
