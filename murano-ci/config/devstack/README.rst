@@ -10,6 +10,8 @@ As 'root' prepare your host for devstack:
 
 .. code-block:: console
 
+	# apt-get install openvswitch-switch
+	# ovs-vsctl add-br br0
 	# apt-get install git
 	# mkdir /opt/stack
 	# cd /opt/stack
@@ -37,6 +39,7 @@ Open **local.conf** and replace variables, enclosed into % signs to valid values
 * %DMZ_ROUTER_IP%
 * %DMZ_NETWORK_START_IP%
 * %DMZ_NETWORK_END_IP%
+* %DMZ_NETWORK_INTERFACE%
 
  When done, copy config file into devstack's folder and start installation:
 
