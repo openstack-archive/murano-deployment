@@ -35,9 +35,10 @@ cd $GIT_PATH
 sudo pip install nose selenium testtools testresources unittest2 pyrabbit==1.0.1
 
 if [ -e /etc/os-release ]; then
-    sudo wget http://sourceforge.net/projects/ubuntuzilla/files/mozilla/apt/pool/main/f/firefox-mozilla-build/firefox-mozilla-build_27.0-0ubuntu1_amd64.deb/download -O firefox27.deb
-    sudo dpkg -i firefox27.deb
-    sudo rm -f firefox27.deb
+    sudo wget http://sourceforge.net/projects/ubuntuzilla/files/mozilla/apt/pool/main/f/firefox-mozilla-build/firefox-mozilla-build_46.0.1-0ubuntu1_amd64.deb/download -O firefox46.deb
+    sudo apt-get -y purge firefox
+    sudo dpkg -i firefox46.deb
+    sudo rm -f firefox46.deb
 
     sudo apt-get update
     sudo apt-get install -y \
