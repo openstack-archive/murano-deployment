@@ -33,7 +33,7 @@ else
     LOG_DIR=/var/log
     stack_logs[cinder]=''
     stack_logs[glance]=''
-    stack_logs[heat]='heat/heat-api.log heat/heat-engine.log'
+    stack_logs[heat] = 'heat/heat-api.log heat/heat-engine.log'
     stack_logs[horizon]=''
     stack_logs[keystone]='keystone/keystone.log'
     stack_logs[neutron]='neutron/server.log'
