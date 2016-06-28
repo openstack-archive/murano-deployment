@@ -154,6 +154,8 @@ ${DEVSTACK_LOCAL_CONF}
 # Disable neutron services because its unused on CI workers.
 disable_service neutron
 disable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering
+# Disable heat services because its unused on CI workers.
+disable_service heat h-api h-api-cfn h-api-cw h-eng
 EOF
 
     sudo ./tools/create-stack-user.sh
