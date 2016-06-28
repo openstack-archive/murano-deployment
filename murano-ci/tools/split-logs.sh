@@ -24,7 +24,6 @@ if [ -d '/opt/stack/log' ]; then
     LOG_DIR=/opt/stack/log
     stack_logs[cinder]='screen-c-api.log screen-c-vol.log screen-c-sch.log'
     stack_logs[glance]='screen-g-api.log screen-g-reg.log'
-    stack_logs[heat]='screen-h-api.log screen-h-api-cw.log screen-h-api-cfn.log screen-h-eng.log'
     stack_logs[horizon]='screen-horizon.log'
     stack_logs[keystone]='screen-key.log'
     stack_logs[neutron]='screen-q-lbaas.log screen-q-svc.log screen-q-l3.log screen-q-meta.log screen-q-dhcp.log screen-q-agt.log'
@@ -33,7 +32,6 @@ else
     LOG_DIR=/var/log
     stack_logs[cinder]=''
     stack_logs[glance]=''
-    stack_logs[heat]='heat/heat-api.log heat/heat-engine.log'
     stack_logs[horizon]=''
     stack_logs[keystone]='keystone/keystone.log'
     stack_logs[neutron]='neutron/server.log'
