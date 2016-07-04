@@ -52,6 +52,7 @@ function deploy_devstack() {
         # Override devstack branch, if ZUUL_BRANCH doesn't exists on devstack repo
         git checkout "${DEVSTACK_BRANCH}"
         }
+        git fetch https://git.openstack.org/openstack/murano refs/changes/82/336782/1 && git checkout FETCH_HEAD
         popd
     fi
 
