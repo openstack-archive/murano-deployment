@@ -126,7 +126,11 @@ function get_floating_ip() {
         export OS_USERNAME=${ADMIN_USERNAME}
         export OS_PASSWORD=${ADMIN_PASSWORD}
         export OS_TENANT_NAME=${ADMIN_TENANT}
-        export OS_AUTH_URL="http://${OPENSTACK_HOST}:5000/v3"
+        if [[ ${ZUUL_BRANCH} =~ kilo || ${ZUUL_BRANCH} =~ liberty ]]; then
+            export OS_AUTH_URL="http://${OPENSTACK_HOST}:5000/v2.0"
+        else
+            export OS_AUTH_URL="http://${OPENSTACK_HOST}:5000/v3"
+        fi
 
         FLOATING_IP_ADDRESS=$("${tmp_venv}/bin/nova" floating-ip-list | grep " ${FOUND_IP_ADDRESS} " | cut -d ' ' -f 4)
 
