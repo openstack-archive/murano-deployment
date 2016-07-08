@@ -16,13 +16,13 @@ function rotate() {
             mv "${link_name}.${i}" "${link_name}.${j}"
         fi
     done
-    popd
 
     mv "${link_target}" "${LOG_DIR}/${link_name}.1"
     touch "${link_target}"
+    popd
 }
 
-
-for item in $(find ${LOG_DIR} -type l -name 'screen*'); do
-    rotate ${item}
+#rotate Openstack services log files but not stack.sh.log
+find ${LOG_DIR} -type l -name '*.log' ! -name 'stack.sh.log' | while read file; do
+    rotate "$file"
 done
