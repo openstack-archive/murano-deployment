@@ -140,10 +140,14 @@ LINUX_IMAGE=cloud-fedora-v3
 sudo su - jenkins -c "echo '
 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC5dNhJBQf1jURAvq8Mf8II3MDPShriQp203JRxSJzS64NzrNGSwXIAd+9lWgj4aPGhGKuHF6A97Jn4O2btBZCmZmzR97BUgFYbk77b+ANfd1C02QT164/oQxRPAoZvKK3btYtZWGiE9Dh6PXAADn3HDl2fVgaP+IcXWnj7/U55h7b2EerWgBsyfZlgDG1y9n9s/V+LmBGTyjgk1kKjqgd/VTaJNzMif1Z/gNB6wmd6oVrQKbIj7nA0oOwgDFdc2lFLB91LwDzrc7+X+ggYu19gIaX1IrJ9KVDOOrnLYpfCbGtWhP5nqiTAfsMmUfUKlsn/L3+0KBENjSHcnYwKxRLp jenkins@murano-ci' >> /home/jenkins/.ssh/authorized_keys"
 
+
+if [ -n "${NODEPOOL_SSH_KEY}" ]; then
+    sudo su - jenkins -c "echo '${NODEPOOL_SSH_KEY}' >> /home/jenkins/.ssh/authorized_keys"
+fi
+
 if [ -n "${JENKINS_PUBLIC_KEY}" ]; then
     sudo su - jenkins -c "echo '${JENKINS_PUBLIC_KEY}' >> /home/jenkins/.ssh/authorized_keys.bak"
 fi
-
 
 sync
 sleep 5
