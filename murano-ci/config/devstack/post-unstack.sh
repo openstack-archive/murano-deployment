@@ -26,11 +26,11 @@ echo "Remove route ..."
 sudo route del -net ${FIXED_RANGE} dev ${OVS_PHYSICAL_BRIDGE}
 
 echo "Cleaning directory with instances ..."
-cd ${instances_mount_point} && sudo rm -rf *
+cd ${instances_mount_point} && sudo rm -rf ./*
 cd /opt/stack
 
 echo "Unmounting SSD drive ..."
-if [ -z "$(mount | grep ${instances_mount_point})" ]; then
+if ! mount | grep -q ${instances_mount_point} ; then
     echo "'${instances_mount_point}' is not mounted"
 else
     timeout=60

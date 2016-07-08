@@ -29,21 +29,24 @@
     defaults: global
     description: "<b>This job is managed by Jenkins Job Builder, do not edit it through WebUI.\
                   \n<p>Please use this repository to make changes: <a href=\"https://git.openstack.org/openstack/murano-deployment\">https://git.openstack.org/openstack/murano-deployment</a></b>\
-                 \n<p>This job check syntax in *.yaml, *.sh files"
+                 \n<p>This job checks syntax in jenkins jobs, shell scripts"
     disabled: false
     concurrent: false
-    node: master
+    #In Jenkins v1.642.1 jobs triggered by zuul cannot be run on master
+    node: trusty-devstack-cz5608 || trusty-devstack-cz5680
 
     builders:
       - shell: |
           #!/bin/bash
 
+          sudo pip install jenkins-job-builder
+          sudo apt-get install shellcheck
+
           rm -rf murano-deployment
           git clone https://git.openstack.org/openstack/murano-deployment
-          git fetch https://review.openstack.org/openstack/murano-deployment $ZUUL_REF && git checkout FETCH_HEAD
-
-          bash ./murano-deployment/murano-ci/scripts/syntax_check.sh
-
+          cd murano-deployment
+          git fetch $ZUUL_URL/openstack/murano-deployment $ZUUL_REF && git checkout FETCH_HEAD
+          bash ./murano-ci/scripts/syntax_check.sh
     publishers:
       - console-log
 
