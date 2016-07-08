@@ -49,6 +49,6 @@ CI_ROOT_DIR=$(cd $(dirname "$0") && cd .. && pwd)
 jenkins-jobs -l debug test -r -o $WORKSPACE $CI_ROOT_DIR/jenkins/jobs
 
 # Validate shell scripts
-for script in $(find ${CI_ROOT_DIR} -name *.sh); do
-  shellcheck $script -e SC2086,SC2016,SC2034,SC2046,SC2140
+find "${CI_ROOT_DIR}" -name "*.sh" | while read file; do
+  shellcheck $file -e SC2086,SC2016,SC2034,SC2046,SC2140
 done
