@@ -11,7 +11,7 @@ to_date=${3}   # $(date +'%Y-%m-%d')
 to_time=${4}   # '00:00:00'
 
 shift 4
-stack_components=$@
+stack_components=$*
 
 
 BUILD_TAG=${BUILD_TAG:-.}
