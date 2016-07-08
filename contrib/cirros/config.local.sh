@@ -15,7 +15,7 @@ split_multipart() {
 		tail -n +$((${1} + 1)) "${udf}" | head -n $((${2} - ${1} - 1)) | \
 		  awk "//{if(f2==1){print \$0;next}} /^$/{if(f2==0){f1=1;next}} //{if(f1==1){f2=1;print \$0}}" > "${udf}.part.${n}"
 		echo ${n}
-		n=$((${n} + 1))
+		n=$((n + 1))
 		shift
 	done
 }

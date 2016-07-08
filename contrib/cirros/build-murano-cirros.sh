@@ -50,7 +50,7 @@ qemu-img convert -O raw $IBR/cirros.img $IBR/cirros.raw
 
 mkdir /mnt/image |:
 
-[ -n "$(losetup --all | grep $LOOP_DEV)" ] && \
+losetup --all | grep -q $LOOP_DEV && \
 	die "Device /dev/$LOOP_DEV already exists."
 
 
