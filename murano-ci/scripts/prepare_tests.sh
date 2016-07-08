@@ -25,10 +25,9 @@ function prepare_murano_apps() {
     if [[ "${PROJECT_NAME}" == 'murano' || "${PROJECT_NAME}" == 'murano-agent' ]]; then
         git clone --branch ${APPS_BRANCH} -- ${APPS_REPO} ${clone_dir}
 
-        local manifest
         cd "${clone_dir}"
-        for manifest in $(find . -type f -name manifest.yaml); do
-            local package=$(dirname "$manifest")
+        find . -type f -name manifest.yaml | while read file; do
+            local package=$(dirname "$file")
             make_package "${package}" "${start_dir}"
         done
     fi
@@ -45,8 +44,8 @@ function prepare_old_murano_apps() {
 
         local manifest
         cd "${clone_dir}"
-        for manifest in $(find . -type f -name manifest.yaml); do
-            local package=$(dirname "$manifest")
+        find . -type f -name manifest.yaml | while read file; do
+            local package=$(dirname "$file")
             make_package "${package}" "${clone_dir}"
         done
     fi

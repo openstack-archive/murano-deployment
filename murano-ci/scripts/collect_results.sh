@@ -49,7 +49,7 @@ function collect_coverage() {
     if [ -f "${WORKSPACE}/.with_coverage" ]; then
         pushd "${WORKSPACE}"
 
-        while [ ! -z "$(pgrep -f murano-api)" ] || [ ! -z "$(pgrep -f murano-engine)" ]; do
+        while pgrep -f murano-api || pgrep -f murano-engine ; do
 
         sleep 10
 
