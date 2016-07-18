@@ -11,6 +11,7 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
+import re
 
 
 def set_log_url(item, job, params):
@@ -32,3 +33,20 @@ def set_log_url(item, job, params):
 def single_use_node(item, job, params):
     set_log_url(item, job, params)
     params['OFFLINE_NODE_WHEN_COMPLETE'] = '1'
+
+
+def set_params(item, job, params):
+    single_use_node(item, job, params)
+    # every time we are changing murano-deployment, we need to run
+    # other dependent jobs with this change to be sure they are not broken
+    if params['ZUUL_PROJECT'] == 'openstack/murano-deployment':
+        if job.name != 'gate-murano-deployment':
+            if 'murano-client' in job.name:
+                project_name = 'python-muranoclient'
+            else:
+                project_name = re.sub("^\w+-|-\w+$|-\w+-nv|-nv", '', job.name)
+            deployment_ref = params['ZUUL_CHANGES'].rpartition(':')[2]
+            params['MURANO_DEPLOYMENT_REF'] = deployment_ref
+            params['ZUUL_REF'] = params.get('ZUUL_BRANCH', 'master')
+            params['ZUUL_URL'] = 'https://git.openstack.org'
+            params['ZUUL_PROJECT'] = "openstack/%s" % project_name
