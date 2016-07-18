@@ -1,5 +1,5 @@
 - job-template:
-    name: 'gate-{name}-{distro}'
+    name: 'gate-{name}-{distro}{job-suffix}'
     project-type: freestyle
     defaults: global
     description: '{name} {distro} gate job'
@@ -86,7 +86,7 @@
 
 
 - job-template:
-    name: 'coverage-{name}-{distro}'
+    name: 'coverage-{name}-{distro}{job-suffix}'
     project-type: freestyle
     defaults: global
     description: '{name} {distro} coverage job'
@@ -132,21 +132,27 @@
 - project:
     name: murano
     distro: ubuntu
+    job-suffix:
+        - ''
+        - '-nv'
     repository: openstack/murano
     tests: 'gate'
     jobs:
         - 'hook-{name}-rtfd'
-        - 'gate-{name}-{distro}'
+        - 'gate-{name}-{distro}{job-suffix}':
         - 'heartbeat-{name}-{distro}'
-        - 'coverage-{name}-{distro}'
+        - 'coverage-{name}-{distro}{job-suffix}':
 
 - project:
     name: murano-dashboard
     distro: ubuntu
+    job-suffix:
+        - ''
+        - '-nv'
     repository: openstack/murano-dashboard
     tests: ''
     jobs:
-        - 'gate-{name}-{distro}'
+        - 'gate-{name}-{distro}{job-suffix}':
         - 'heartbeat-{name}-{distro}'
 
 - project:
@@ -154,16 +160,22 @@
     distro:
         - ubuntu
         - debian
+    job-suffix:
+        - ''
+        - '-nv'
     repository: openstack/murano-agent
     tests: 'gate'
     jobs:
-        - 'gate-{name}-{distro}'
+        - 'gate-{name}-{distro}{job-suffix}'
         - 'heartbeat-{name}-{distro}'
 
 - project:
     name: murano-client
     distro: ubuntu
+    job-suffix:
+        - ''
+        - '-nv'
     repository: openstack/python-muranoclient
     tests: ''
     jobs:
-        - 'gate-{name}-{distro}'
+        - 'gate-{name}-{distro}{job-suffix}'

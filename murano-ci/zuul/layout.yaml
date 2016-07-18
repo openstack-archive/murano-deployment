@@ -50,10 +50,18 @@ projects:
   - name: openstack/murano-deployment
     check:
       - gate-murano-deployment
+      - gate-murano-ubuntu-nv
+      - gate-murano-dashboard-ubuntu-nv
+      - gate-murano-agent-ubuntu-nv
+      - gate-murano-client-ubuntu-nv
+      - coverage-murano-ubuntu-nv
 
 jobs:
   - name: ^.*$
-    parameter-function: single_use_node
+    parameter-function: set_params
+  # -nv jobs are never voting.
+  - name: ^.*-nv$
+    voting: false
   - name: ^gate-.*$
     voting: true
   - name: ^gate-murano-agent-debian$
