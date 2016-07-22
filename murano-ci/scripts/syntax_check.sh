@@ -45,6 +45,21 @@ set -o xtrace
 
 CI_ROOT_DIR=$(cd $(dirname "$0") && cd .. && pwd)
 
+# Validate yaml syntax
+find "${CI_ROOT_DIR}" -name "*.yaml" | while read file; do
+  ruby -e "require 'yaml'; YAML.load_file('${file}')"
+done
+
+# Validate puppet templates syntax
+find "${CI_ROOT_DIR}" -name "*.erb" | while read file; do
+  erb -P -x -T '-' $file | ruby -c
+done
+
+# Validate puppet scripts syntax
+find "${CI_ROOT_DIR}" -name "*.pp" | while read file; do
+  puppet parser validate $file
+done
+
 # Check Jenkins Job syntax
 jenkins-jobs -l debug test -r -o $WORKSPACE $CI_ROOT_DIR/jenkins/jobs
 
