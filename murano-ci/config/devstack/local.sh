@@ -158,11 +158,15 @@ neutron router-gateway-set ${MURANO_ROUTER_ID} ${EXT_NET_ID}
 # Update user quotas
 #-------------------
 openstack quota set \
-    --instances 20 \
-    --cores 40 \
-    --secgroups 20 \
-    --subnets 20 \
-    --routers 20 \
+    --instances 40 \
+    --cores 80 \
+    --ram 75000 \
+    --floating-ips 80 \
+    --secgroups 100 \
+    --secgroup-rules 200 \
+    --key-pairs 100 \
+    --subnets 100 \
+    --routers 100 \
     ${CI_TENANT_ID}
 
 #-------------------
