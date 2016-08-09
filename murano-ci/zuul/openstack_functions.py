@@ -44,7 +44,16 @@ def set_params(item, job, params):
             if 'murano-client' in job.name:
                 project_name = 'python-muranoclient'
             else:
-                project_name = re.sub("^\w+-|-\w+$|-\w+-nv|-nv", '', job.name)
+                # NOTE(kzaitsev) Remove leading prefix (gate, heartbeat, etc.)
+                # and distro name together with everything that follows (note
+                # no '$' at the end). This should leave project's name
+                result = re.search("^\w+-(?P<proj_name>.*)-(?:ubuntu|debian)",
+                                   job.name)
+                if not result:
+                    raise ValueError("Couldn't parse job name {}".format(
+                                     job.name))
+                project_name = result.group('proj_name')
+
             deployment_ref = params['ZUUL_CHANGES'].rpartition(':')[2]
             params['MURANO_DEPLOYMENT_REF'] = deployment_ref
             params['ZUUL_REF'] = params.get('ZUUL_BRANCH', 'master')
