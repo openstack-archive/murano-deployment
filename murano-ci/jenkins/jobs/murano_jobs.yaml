@@ -1,8 +1,8 @@
 - job-template:
-    name: 'gate-{name}-{distro}{job-suffix}'
+    name: 'gate-{name}-{distro}{pkg-service}{job-suffix}'
     project-type: freestyle
     defaults: global
-    description: '{name} {distro} gate job'
+    description: '{name} {pkg-service} {distro} gate job'
     disabled: false
     concurrent: true
     node: trusty-devstack-cz5608 || trusty-devstack-cz5680
@@ -26,6 +26,7 @@
           fi
 
           export DISTR_NAME='{distro}'
+          export PACKAGE_SERVICE='{pkg-service}'
 
           if [[ $ZUUL_REF =~ "juno" || $ZUUL_REF =~ "kilo" ]]; then
               echo 'Using old CI strategy'
@@ -135,11 +136,14 @@
     job-suffix:
         - ''
         - '-nv'
+    pkg-service:
+        - ''
+        - '-glare'
     repository: openstack/murano
     tests: 'gate'
     jobs:
         - 'hook-{name}-rtfd'
-        - 'gate-{name}-{distro}{job-suffix}'
+        - 'gate-{name}-{distro}{pkg-service}{job-suffix}'
         - 'heartbeat-{name}-{distro}'
         - 'coverage-{name}-{distro}'
 
@@ -151,12 +155,16 @@
         - '-nv'
     repository: openstack/murano-dashboard
     tests: ''
+    pkg-service:
+        - ''
+        - '-glare'
     jobs:
-        - 'gate-{name}-{distro}{job-suffix}'
+        - 'gate-{name}-{distro}{pkg-service}{job-suffix}'
         - 'heartbeat-{name}-{distro}'
 
 - project:
     name: murano-agent
+    pkg-service: ''
     distro:
         - ubuntu
         - debian
@@ -166,7 +174,7 @@
     repository: openstack/murano-agent
     tests: 'gate'
     jobs:
-        - 'gate-{name}-{distro}{job-suffix}'
+        - 'gate-{name}-{distro}{pkg-service}{job-suffix}'
         - 'heartbeat-{name}-{distro}'
 
 - project:
@@ -175,7 +183,10 @@
     job-suffix:
         - ''
         - '-nv'
+    pkg-service:
+        - ''
+        - '-glare'
     repository: openstack/python-muranoclient
     tests: ''
     jobs:
-        - 'gate-{name}-{distro}{job-suffix}'
+        - 'gate-{name}-{distro}{pkg-service}{job-suffix}'
