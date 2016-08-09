@@ -35,26 +35,36 @@ projects:
   - name: openstack/murano
     check:
       - gate-murano-ubuntu
-    post: 
+      - gate-murano-ubuntu-glare-nv
+    post:
       - hook-murano-rtfd
+
   - name: openstack/murano-dashboard
     check:
       - gate-murano-dashboard-ubuntu
+      - gate-murano-dashboard-ubuntu-glare-nv
+
   - name: openstack/murano-agent
     check:
       - gate-murano-agent-ubuntu
       - gate-murano-agent-debian
+
   - name: openstack/python-muranoclient
     check:
       - gate-murano-client-ubuntu
+      - gate-murano-client-ubuntu-glare-nv
+
   - name: openstack/murano-deployment
     check:
       - gate-murano-deployment
       - gate-murano-ubuntu-nv
+      - gate-murano-ubuntu-glare-nv
       - gate-murano-dashboard-ubuntu-nv
+      - gate-murano-dashboard-ubuntu-glare-nv
       - gate-murano-agent-ubuntu-nv
       - gate-murano-agent-debian-nv
       - gate-murano-client-ubuntu-nv
+      - gate-murano-client-ubuntu-glare-nv
       - coverage-murano-ubuntu
 
 jobs:
