@@ -107,12 +107,12 @@ function deploy_devstack() {
     echo "MURANO_PYTHONCLIENT_BRANCH=${MURANO_PYTHONCLIENT_BRANCH}"
 
     if [[ ${ZUUL_BRANCH} =~ kilo || ${ZUUL_BRANCH} =~ liberty ]]; then
-        export DEVSTACK_LOCAL_CONF="enable_service murano"
+        export DEVSTACK_LOCAL_CONF+=$'\n'"enable_service murano"
         export DEVSTACK_LOCAL_CONF+=$'\n'"enable_service murano-api"
         export DEVSTACK_LOCAL_CONF+=$'\n'"enable_service murano-engine"
         export DEVSTACK_LOCAL_CONF+=$'\n'"enable_service murano-dashboard"
     else
-        export DEVSTACK_LOCAL_CONF="enable_plugin murano git://git.openstack.org/openstack/murano"
+        export DEVSTACK_LOCAL_CONF+=$'\n'"enable_plugin murano git://git.openstack.org/openstack/murano"
     fi
 
 # Set KEYSTONE_DEPLOY to "uwsgi" as far as it will be set to "mod_wsgi" by default.

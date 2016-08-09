@@ -1,8 +1,8 @@
 - job-template:
-    name: 'gate-{name}-{distro}{job-suffix}'
+    name: 'gate-{name}-{mode}-{distro}{job-suffix}'
     project-type: freestyle
     defaults: global
-    description: '{name} {distro} gate job'
+    description: '{name} {mode} {distro} gate job'
     disabled: false
     concurrent: true
     node: trusty-devstack-cz5608 || trusty-devstack-cz5680
@@ -31,6 +31,11 @@
               echo 'Using old CI strategy'
           else
               export EXECUTE_TESTS_BY_TAG='{tests}'
+          fi
+
+          if [ "{mode}" = "glare" ]; then
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service g-glare"
+              export DEVSTACK_LOCAL_CONFIG+=$'\n'"MURANO_USE_GLARE=True"
           fi
 
           bash ./murano-ci/scripts/start_gate.sh
@@ -135,11 +140,14 @@
     job-suffix:
         - ''
         - '-nv'
+    mode:
+        - noglare
+        - glare
     repository: openstack/murano
     tests: 'gate'
     jobs:
         - 'hook-{name}-rtfd'
-        - 'gate-{name}-{distro}{job-suffix}'
+        - 'gate-{name}-{mode}-{distro}{job-suffix}'
         - 'heartbeat-{name}-{distro}'
         - 'coverage-{name}-{distro}'
 
@@ -151,12 +159,16 @@
         - '-nv'
     repository: openstack/murano-dashboard
     tests: ''
+    mode:
+        - noglare
+        - glare
     jobs:
-        - 'gate-{name}-{distro}{job-suffix}'
+        - 'gate-{name}-{mode}-{distro}{job-suffix}'
         - 'heartbeat-{name}-{distro}'
 
 - project:
     name: murano-agent
+    mode: noglare
     distro:
         - ubuntu
         - debian
@@ -166,7 +178,7 @@
     repository: openstack/murano-agent
     tests: 'gate'
     jobs:
-        - 'gate-{name}-{distro}{job-suffix}'
+        - 'gate-{name}-{mode}-{distro}{job-suffix}'
         - 'heartbeat-{name}-{distro}'
 
 - project:
@@ -175,7 +187,10 @@
     job-suffix:
         - ''
         - '-nv'
+    mode:
+        - noglare
+        - glare
     repository: openstack/python-muranoclient
     tests: ''
     jobs:
-        - 'gate-{name}-{distro}{job-suffix}'
+        - 'gate-{name}-{mode}-{distro}{job-suffix}'

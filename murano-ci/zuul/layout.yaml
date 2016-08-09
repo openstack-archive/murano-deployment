@@ -34,27 +34,37 @@ pipelines:
 projects:
   - name: openstack/murano
     check:
-      - gate-murano-ubuntu
-    post: 
+      - gate-murano-noglare-ubuntu
+      - gate-murano-glare-ubuntu
+    post:
       - hook-murano-rtfd
+
   - name: openstack/murano-dashboard
     check:
-      - gate-murano-dashboard-ubuntu
+      - gate-murano-dashboard-noglare-ubuntu
+      - gate-murano-dashboard-glare-ubuntu
+
   - name: openstack/murano-agent
     check:
-      - gate-murano-agent-ubuntu
-      - gate-murano-agent-debian
+      - gate-murano-agent-noglare-ubuntu
+      - gate-murano-agent-noglare-debian
+
   - name: openstack/python-muranoclient
     check:
-      - gate-murano-client-ubuntu
+      - gate-murano-client-noglare-ubuntu
+      - gate-murano-client-glare-ubuntu
+
   - name: openstack/murano-deployment
     check:
       - gate-murano-deployment
-      - gate-murano-ubuntu-nv
-      - gate-murano-dashboard-ubuntu-nv
-      - gate-murano-agent-ubuntu-nv
-      - gate-murano-agent-debian-nv
-      - gate-murano-client-ubuntu-nv
+      - gate-murano-glare-ubuntu-nv
+      - gate-murano-noglare-ubuntu-nv
+      - gate-murano-dashboard-noglare-ubuntu-nv
+      - gate-murano-dashboard-glare-ubuntu-nv
+      - gate-murano-agent-noglare-ubuntu-nv
+      - gate-murano-agent-noglare-debian-nv
+      - gate-murano-client-glare-ubuntu-nv
+      - gate-murano-client-noglare-ubuntu-nv
       - coverage-murano-ubuntu
 
 jobs:
@@ -66,4 +76,8 @@ jobs:
   - name: ^coverage-.*$
     voting: false
   - name: ^gate-murano-deployment$
+    voting: false
+
+#NOTE(kzaitsev): keep glare jobs non-voting
+  - name: ^gate-.*-glare-.*$
     voting: false
