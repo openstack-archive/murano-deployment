@@ -147,11 +147,14 @@ function prepare_tests() {
     else
         set_config "${section_name}" 'keystone_url' "$(shield_slashes http://${OPENSTACK_HOST}:5000/v3)" "${config_file}"
     fi
+
     set_config "${section_name}" 'murano_url' "$(shield_slashes http://${FOUND_IP_ADDRESS}:8082/)" "${config_file}"
     set_config "${section_name}" 'user' "${ADMIN_USERNAME}" "${config_file}"
     set_config "${section_name}" 'password' "${ADMIN_PASSWORD}" "${config_file}"
     set_config "${section_name}" 'tenant' "${ADMIN_TENANT}" "${config_file}"
     set_config "${section_name}" 'linux_image' "${LINUX_IMAGE}" "${config_file}"
+    set_config "${section_name}" 'packages_service' "${PACKAGES_SERVICE}" "${config_file}"
+
     if [[ ${ZUUL_BRANCH} =~ liberty ]]; then
         set_config "${section_name}" 'auth_url' "$(shield_slashes http://${OPENSTACK_HOST}:5000/v2.0/)" "${config_file}"
     else

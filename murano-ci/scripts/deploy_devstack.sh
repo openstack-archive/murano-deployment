@@ -108,7 +108,7 @@ function deploy_devstack() {
 
     DEVSTACK_LOCAL_CONFIG=""
 
-    if [[ ${PACKAGE_SERVICE} = "-glare" ]]; then
+    if [[ ${PACKAGES_SERVICE} = "glare" ]]; then
         # NOTE(kzaitsev): we have to install glance to make devstack install glare code
         # g-api ensures glance is installed, g-reg ensures cache dirs would be created
         DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service g-api"
