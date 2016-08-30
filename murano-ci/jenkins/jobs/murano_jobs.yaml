@@ -26,7 +26,7 @@
           fi
 
           export DISTR_NAME='{distro}'
-          export PACKAGE_SERVICE='{pkg-service}'
+          export PACKAGES_SERVICE='{pkg-service}'
 
           if [[ $ZUUL_REF =~ "juno" || $ZUUL_REF =~ "kilo" ]]; then
               echo 'Using old CI strategy'
