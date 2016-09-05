@@ -84,6 +84,7 @@
       - collect-report
       - collect-heartbeat-artifacts
       - archive-artifacts
+      - email-on-unstable-build
 
 
 - job-template:
@@ -129,6 +130,7 @@
       - collect-report
       - collect-coverage-artifacts
       - archive-artifacts
+      - email-on-unstable-build
 
 - project:
     name: murano
