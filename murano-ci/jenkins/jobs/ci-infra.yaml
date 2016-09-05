@@ -21,7 +21,7 @@
       - pollscm: "* * * * * "
 
     builders:
-      - shell:  "jenkins-jobs update murano-ci/jobs"
+      - shell:  "jenkins-jobs update murano-ci/jenkins/jobs"
 
 - job:
     name: gate-murano-deployment
