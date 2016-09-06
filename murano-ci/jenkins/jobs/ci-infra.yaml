@@ -73,7 +73,13 @@
       - pollscm: "* * * * * "
 
     builders:
-      - shell:  "$WORKSPACE/murano-ci/tools/update_config.sh"
+      - shell: |
+          #!/bin/bash -ex
+
+          cp murano-ci/tools/update_config.sh /opt/ci-tools/
+          sudo -u zuul /opt/ci-tools/update_config.sh
+          sudo /etc/init.d/zuul reload
+          cp murano-ci/tools/update_pool.sh /opt/ci-tools/
 
 - job:
     name: update-pool
