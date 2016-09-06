@@ -331,3 +331,11 @@
               source: '**/*subunit_log.txt.gz'
               keep-hierarchy: false
               copy-after-failure: true
+
+- publisher:
+    name: email-on-unstable-build
+    publishers:
+      - email:
+          recipients: mkarpin@mirantis.com nstarodubtsev@mirantis.com
+          notify-every-unstable-build: true
+          send-to-individuals: false
