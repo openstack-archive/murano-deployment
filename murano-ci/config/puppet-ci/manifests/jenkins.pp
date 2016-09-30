@@ -159,6 +159,14 @@ jenkins::plugin { 'rebuild':
   version => '1.25',
 }
 
+jenkins::plugin { 'ruby-runtime':
+  version => '0.12',
+}
+
+jenkins::plugin { 'singleuseslave':
+  version => '1.0.0',
+}
+
 file { '/home/jenkins/.ssh/id_rsa':
   ensure  => 'file',
   owner   => 'jenkins',
