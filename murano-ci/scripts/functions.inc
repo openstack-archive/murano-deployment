@@ -118,7 +118,7 @@ function get_ip_from_iface() {
 
 function get_floating_ip() {
     if [[ -z "${FLOATING_IP_ADDRESS}" ]]; then
-        sudo apt-get -y install python-virtualenv
+        sudo apt-get update && sudo apt-get -y install python-virtualenv
         local tmp_venv=$(mktemp -d)
         virtualenv "${tmp_venv}"
         "${tmp_venv}/bin/pip" install "python-novaclient>=2.22.0"
