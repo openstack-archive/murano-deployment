@@ -40,7 +40,7 @@ function deploy_devstack() {
     sudo chown -R jenkins:jenkins "${git_dir}/openstack"
     git clone https://github.com/openstack/murano "${git_dir}/openstack/murano"
 
-    if [ "${PROJECT_NAME}" == 'murano' ]; then
+    if [ "${ZUUL_PROJECT}" == 'openstack/murano' ]; then
         pushd "${git_dir}/openstack/murano"
         git fetch ${ZUUL_URL}/${ZUUL_PROJECT} ${ZUUL_REF} && git checkout FETCH_HEAD
         popd
@@ -67,17 +67,17 @@ function deploy_devstack() {
 
     cd "${STACK_HOME}/devstack"
 
-    case "${PROJECT_NAME}" in
-        'murano')
+    case "${ZUUL_PROJECT}" in
+        'openstack/murano')
             MURANO_REPO="${ZUUL_URL}/${ZUUL_PROJECT}"
             MURANO_BRANCH="${ZUUL_REF}"
         ;;
-        'murano-dashboard')
+        'openstack/murano-dashboard')
             MURANO_DASHBOARD_REPO="${ZUUL_URL}/${ZUUL_PROJECT}"
             MURANO_DASHBOARD_BRANCH="${ZUUL_REF}"
             APPS_REPOSITORY_URL="http://${FLOATING_IP_ADDRESS}:8099"
         ;;
-        'python-muranoclient')
+        'openstack/python-muranoclient')
             MURANO_PYTHONCLIENT_REPO="${ZUUL_URL}/${ZUUL_PROJECT}"
             MURANO_PYTHONCLIENT_BRANCH="${ZUUL_REF}"
         ;;

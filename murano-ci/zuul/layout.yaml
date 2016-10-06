@@ -22,6 +22,22 @@ pipelines:
         verified: -1
     failure-message: To re-run the job please post a comment with `retrigger murano-ci`
 
+  - name: check_dashboard
+    manager: IndependentPipelineManager
+    trigger:
+      gerrit:
+        - event: comment-added
+          comment_filter: (?i)^(Patch Set [0-9]+:\n\n)?\s*(check dashboard)\s*$
+    start:
+      gerrit:
+        verified: 0
+    success:
+      gerrit:
+        verified: 1
+    failure:
+      gerrit:
+        verified: -1
+
   - name: post
     description: This pipeline runs jobs that operate after each change is merged.
     manager: IndependentPipelineManager
@@ -36,6 +52,9 @@ projects:
     check:
       - gate-murano-ubuntu
       - gate-murano-ubuntu-glare-nv
+    check_dashboard:
+      - gate-murano-dashboard-ubuntu
+      - gate-murano-dashboard-ubuntu-glare-nv
     post:
       - hook-murano-rtfd
 
