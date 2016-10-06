@@ -37,23 +37,25 @@ def single_use_node(item, job, params):
 
 def set_params(item, job, params):
     single_use_node(item, job, params)
-    # every time we are changing murano-deployment, we need to run
-    # other dependent jobs with this change to be sure they are not broken
-    if params['ZUUL_PROJECT'] == 'openstack/murano-deployment':
-        if job.name != 'gate-murano-deployment':
-            if 'murano-client' in job.name:
-                project_name = 'python-muranoclient'
-            else:
-                # NOTE(kzaitsev) Remove leading prefix (gate, heartbeat, etc.)
-                # and distro name together with everything that follows (note
-                # no '$' at the end). This should leave project's name
-                result = re.search("^\w+-(?P<proj_name>.*)-(?:ubuntu|debian)",
-                                   job.name)
-                if not result:
-                    raise ValueError("Couldn't parse job name {}".format(
-                                     job.name))
-                project_name = result.group('proj_name')
-
+    if job.name != 'gate-murano-deployment':
+        # Get project name which can be different from ZUUL_PROJECT parameter
+        if 'murano-client' in job.name:
+            project_name = 'python-muranoclient'
+        else:
+            # NOTE(kzaitsev) Remove leading prefix (gate, heartbeat, etc.)
+            # and distro name together with everything that follows (note
+            # no '$' at the end). This should leave project's name
+            result = re.search("^\w+-(?P<proj_name>.*)-(?:ubuntu|debian)",
+                               job.name)
+            if not result:
+                raise ValueError("Couldn't parse job name {}".format(
+                                 job.name))
+            project_name = result.group('proj_name')
+        # Set override_project parameter
+        params['OVERRIDE_PROJECT'] = "openstack/%s" % project_name
+        # every time we are changing murano-deployment, we need to run
+        # other dependent jobs with this change to be sure they are not broken
+        if params['ZUUL_PROJECT'] == 'openstack/murano-deployment':
             deployment_ref = params['ZUUL_CHANGES'].rpartition(':')[2]
             params['MURANO_DEPLOYMENT_REF'] = deployment_ref
             params['ZUUL_REF'] = params.get('ZUUL_BRANCH', 'master')
