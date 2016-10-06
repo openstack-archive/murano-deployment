@@ -12,6 +12,9 @@
           name: KEEP_VM_ALIVE
       - string:
           name: MURANO_DEPLOYMENT_REF
+      - string:
+          name: OVERRIDE_PROJECT
+          default: '{repository}'
 
     properties:
       - zeromq-event
@@ -58,6 +61,9 @@
           name: KEEP_VM_ALIVE
       - string:
           name: MURANO_DEPLOYMENT_REF
+      - string:
+          name: OVERRIDE_PROJECT
+          default: '{repository}'
 
     properties:
       - zeromq-event
@@ -73,7 +79,6 @@
 
           export OVERRIDE_URL=https://git.openstack.org
           export OVERRIDE_BRANCH=master
-          export OVERRIDE_PROJECT='{repository}'
           export DISTR_NAME='{distro}'
           export EXECUTE_TESTS_BY_TAG='{tests}'
           export SAVE_IMAGE='no' # 'yes' # Temporary workaround until Murano CI upgrade
@@ -104,6 +109,9 @@
           name: KEEP_VM_ALIVE
       - string:
           name: MURANO_DEPLOYMENT_REF
+      - string:
+          name: OVERRIDE_PROJECT
+          default: '{repository}'
 
     properties:
       - zeromq-event
@@ -119,7 +127,6 @@
 
           export OVERRIDE_URL=https://git.openstack.org
           export OVERRIDE_BRANCH=master
-          export OVERRIDE_PROJECT='{repository}'
           export DISTR_NAME='{distro}'
           export EXECUTE_TESTS_BY_TAG='{tests}'
           export WITH_COVERAGE='true'
