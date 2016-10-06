@@ -40,7 +40,7 @@ function deploy_devstack() {
     sudo chown -R jenkins:jenkins "${git_dir}/openstack"
     git clone https://github.com/openstack/murano "${git_dir}/openstack/murano"
 
-    if [ "${PROJECT_NAME}" == 'murano' ]; then
+    if [ "${ZUUL_PROJECT}" == 'openstack/murano' ]; then
         pushd "${git_dir}/openstack/murano"
         git fetch ${ZUUL_URL}/${ZUUL_PROJECT} ${ZUUL_REF} && git checkout FETCH_HEAD
         popd
@@ -67,17 +67,17 @@ function deploy_devstack() {
 
     cd "${STACK_HOME}/devstack"
 
-    case "${PROJECT_NAME}" in
-        'murano')
+    case "${ZUUL_PROJECT}" in
+        'openstack/murano')
             MURANO_REPO="${ZUUL_URL}/${ZUUL_PROJECT}"
             MURANO_BRANCH="${ZUUL_REF}"
         ;;
-        'murano-dashboard')
+        'openstack/murano-dashboard')
             MURANO_DASHBOARD_REPO="${ZUUL_URL}/${ZUUL_PROJECT}"
             MURANO_DASHBOARD_BRANCH="${ZUUL_REF}"
             APPS_REPOSITORY_URL="http://${FLOATING_IP_ADDRESS}:8099"
         ;;
-        'python-muranoclient')
+        'openstack/python-muranoclient')
             MURANO_PYTHONCLIENT_REPO="${ZUUL_URL}/${ZUUL_PROJECT}"
             MURANO_PYTHONCLIENT_BRANCH="${ZUUL_REF}"
         ;;
@@ -106,14 +106,31 @@ function deploy_devstack() {
     echo "MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO}"
     echo "MURANO_PYTHONCLIENT_BRANCH=${MURANO_PYTHONCLIENT_BRANCH}"
 
-    if [[ ${ZUUL_BRANCH} =~ kilo || ${ZUUL_BRANCH} =~ liberty ]]; then
-        export DEVSTACK_LOCAL_CONF="enable_service murano"
-        export DEVSTACK_LOCAL_CONF+=$'\n'"enable_service murano-api"
-        export DEVSTACK_LOCAL_CONF+=$'\n'"enable_service murano-engine"
-        export DEVSTACK_LOCAL_CONF+=$'\n'"enable_service murano-dashboard"
-    else
-        export DEVSTACK_LOCAL_CONF="enable_plugin murano git://git.openstack.org/openstack/murano"
+    DEVSTACK_LOCAL_CONFIG=""
+
+    # remove leading '-' from '-glare'
+    if [[ ${PACKAGES_SERVICE:1} = "glare" ]]; then
+        # NOTE(kzaitsev): we have to install glance to make devstack install glare code
+        # g-api ensures glance is installed, g-reg ensures cache dirs would be created
+        DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service g-api"
+        DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service g-reg"
+        DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service g-glare"
+        DEVSTACK_LOCAL_CONFIG+=$'\n'"DOWNLOAD_DEFAULT_IMAGES=False"
+        # NOTE(mkarpin): we have to point to local endpoint for glare
+        DEVSTACK_LOCAL_CONFIG+=$'\n'"GLANCE_GLARE_HOSTPORT=${FOUND_IP_ADDRESS}:9494"
+        DEVSTACK_LOCAL_CONFIG+=$'\n'"MURANO_USE_GLARE=True"
     fi
+
+    if [[ ${ZUUL_BRANCH} =~ kilo || ${ZUUL_BRANCH} =~ liberty ]]; then
+        DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service murano"
+        DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service murano-api"
+        DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service murano-engine"
+        DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_service murano-dashboard"
+    else
+        DEVSTACK_LOCAL_CONFIG+=$'\n'"enable_plugin murano git://git.openstack.org/openstack/murano"
+    fi
+
+    export DEVSTACK_LOCAL_CONFIG
 
 # Set KEYSTONE_DEPLOY to "uwsgi" as far as it will be set to "mod_wsgi" by default.
 # For more information take a look at:
@@ -150,10 +167,12 @@ ENABLED_SERVICES=
 enable_service mysql
 enable_service rabbit
 enable_service horizon
-${DEVSTACK_LOCAL_CONF}
+${DEVSTACK_LOCAL_CONFIG}
 # Disable neutron services because its unused on CI workers.
 disable_service neutron
 disable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering
+# Disable heat services because its unused on CI workers.
+disable_service heat h-api h-api-cfn h-api-cw h-eng
 EOF
 
     sudo ./tools/create-stack-user.sh

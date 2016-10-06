@@ -25,6 +25,8 @@ ZUUL_URL=${ZUUL_URL:-'https://git.openstack.org'}
 ZUUL_REF=${ZUUL_REF:-'master'}
 ZUUL_PROJECT=${ZUUL_PROJECT:-'openstack/murano'}
 
+PROJECT_NAME=${OVERRIDE_PROJECT:-$ZUUL_PROJECT##*/}
+
 if [[ -n "${OVERRIDE_BRANCH}" ]]; then
     ZUUL_BRANCH=$OVERRIDE_BRANCH
     ZUUL_REF=$OVERRIDE_BRANCH
@@ -34,9 +36,9 @@ if [[ -n "${OVERRIDE_URL}" ]]; then
     ZUUL_URL=$OVERRIDE_URL
 fi
 
-if [[ -n "${OVERRIDE_PROJECT}" ]]; then
-    ZUUL_PROJECT=$OVERRIDE_PROJECT
-fi
+#if [[ -n "${OVERRIDE_PROJECT}" ]]; then
+#   ZUUL_PROJECT=$OVERRIDE_PROJECT
+#fi
 
 EXECUTE_TESTS_BY_TAG=${EXECUTE_TESTS_BY_TAG:-''}
 
@@ -56,8 +58,6 @@ MURANO_DASHBOARD_BRANCH=${ZUUL_BRANCH}
 
 MURANO_PYTHONCLIENT_REPO=${MURANO_PYTHONCLIENT_REPO:-git://git.openstack.org/openstack/python-muranoclient.git}
 MURANO_PYTHONCLIENT_BRANCH=${ZUUL_BRANCH}
-
-PROJECT_NAME=${ZUUL_PROJECT##*/}
 
 APT_PROXY_HOST=${APT_PROXY_HOST:-''}
 
@@ -122,7 +122,7 @@ case "${PROJECT_NAME}" in
         echo "No tests currently available"
     ;;
     *)
-        echo "Project name '$ZUUL_PROJECT' isn't supported yet."
+        echo "Project name $PROJECT_NAME isn't supported yet."
         exit 1
     ;;
 esac

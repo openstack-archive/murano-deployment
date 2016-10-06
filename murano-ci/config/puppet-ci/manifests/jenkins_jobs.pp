@@ -35,3 +35,11 @@ class { '::jenkins::job_builder':
   config_dir                  => $::project_config::jenkins_job_builder_config_dir,
   require                     => $::project_config::config_dir,
 }
+
+# directory for ci infra scripts
+file { '/opt/ci-tools/':
+  ensure => 'directory',
+  owner  => 'jenkins',
+  group  => 'jenkins',
+  mode   => '0755',
+}

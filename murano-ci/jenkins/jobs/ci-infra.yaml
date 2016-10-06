@@ -21,7 +21,7 @@
       - pollscm: "* * * * * "
 
     builders:
-      - shell:  "jenkins-jobs update murano-ci/jobs"
+      - shell:  "jenkins-jobs update murano-ci/jenkins/jobs"
 
 - job:
     name: gate-murano-deployment
@@ -63,6 +63,10 @@
     disabled: false
     concurrent: false
 
+    parameters:
+      - string:
+          name: MURANO_DEPLOYMENT_REF
+
     scm:
      - git:
         url: https://git.openstack.org/openstack/murano-deployment
@@ -73,7 +77,18 @@
       - pollscm: "* * * * * "
 
     builders:
-      - shell:  "$WORKSPACE/murano-ci/tools/update_config.sh"
+      - shell: |
+          #!/bin/bash -ex
+
+          if [[ -n "$MURANO_DEPLOYMENT_REF" ]]; then
+              git fetch https://review.openstack.org/openstack/murano-deployment $MURANO_DEPLOYMENT_REF && git checkout FETCH_HEAD
+          fi
+
+          cp murano-ci/tools/update_config.sh /opt/ci-tools/
+          sudo -u zuul /opt/ci-tools/update_config.sh
+          sudo /etc/init.d/zuul reload
+
+          cp murano-ci/tools/update_pool.sh /opt/ci-tools/
 
 - job:
     name: update-pool

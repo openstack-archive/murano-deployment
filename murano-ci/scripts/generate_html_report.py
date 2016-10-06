@@ -15,8 +15,7 @@
 #
 
 from __future__ import with_statement
-from jinja2 import FileSystemLoader
-from jinja2 import Environment
+import jinja2
 import lxml.etree as et
 import uuid
 import sys
@@ -156,8 +155,8 @@ for case in root:
         else:
             REPORT[class_name]['result'] = 'success'
 
-jinja = Environment(
-    loader=FileSystemLoader(os.path.join(
+jinja = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(os.path.join(
         os.path.dirname(__file__), 'templates')
     )
 )

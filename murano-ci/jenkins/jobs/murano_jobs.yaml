@@ -1,8 +1,8 @@
 - job-template:
-    name: 'gate-{name}-{distro}'
+    name: 'gate-{name}-{distro}{pkg-service}{job-suffix}'
     project-type: freestyle
     defaults: global
-    description: '{name} {distro} gate job'
+    description: '{name} {pkg-service} {distro} gate job'
     disabled: false
     concurrent: true
     node: trusty-devstack-cz5608 || trusty-devstack-cz5680
@@ -26,6 +26,7 @@
           fi
 
           export DISTR_NAME='{distro}'
+          export PACKAGES_SERVICE='{pkg-service}'
 
           if [[ $ZUUL_REF =~ "juno" || $ZUUL_REF =~ "kilo" ]]; then
               echo 'Using old CI strategy'
@@ -48,6 +49,9 @@
     disabled: false
     concurrent: true
     node: trusty-devstack-cz5608 || trusty-devstack-cz5680
+
+    triggers:
+      - timed: "H */3 * * *"
 
     parameters:
       - bool:
@@ -80,18 +84,8 @@
       - collect-report
       - collect-heartbeat-artifacts
       - archive-artifacts
+      - email-on-unstable-build
 
-
-- job-template:
-    name: 'pulse'
-    project-type: freestyle
-    defaults: global
-    description: "Pulse job to track zuul condition"
-    disabled: false
-    concurrent: true
-    node: trusty-devstack-cz5608 || trusty-devstack-cz5680
-    properties:
-      - zeromq-event
 
 - job-template:
     name: 'coverage-{name}-{distro}'
@@ -136,42 +130,65 @@
       - collect-report
       - collect-coverage-artifacts
       - archive-artifacts
+      - email-on-unstable-build
 
 - project:
     name: murano
     distro: ubuntu
+    job-suffix:
+        - ''
+        - '-nv'
+    pkg-service:
+        - ''
+        - '-glare'
     repository: openstack/murano
     tests: 'gate'
     jobs:
         - 'hook-{name}-rtfd'
-        - 'gate-{name}-{distro}'
+        - 'gate-{name}-{distro}{pkg-service}{job-suffix}'
         - 'heartbeat-{name}-{distro}'
         - 'coverage-{name}-{distro}'
 
 - project:
     name: murano-dashboard
     distro: ubuntu
+    job-suffix:
+        - ''
+        - '-nv'
     repository: openstack/murano-dashboard
     tests: ''
+    pkg-service:
+        - ''
+        - '-glare'
     jobs:
-        - 'gate-{name}-{distro}'
+        - 'gate-{name}-{distro}{pkg-service}{job-suffix}'
         - 'heartbeat-{name}-{distro}'
 
 - project:
     name: murano-agent
+    pkg-service: ''
     distro:
         - ubuntu
         - debian
+    job-suffix:
+        - ''
+        - '-nv'
     repository: openstack/murano-agent
     tests: 'gate'
     jobs:
-        - 'gate-{name}-{distro}'
+        - 'gate-{name}-{distro}{pkg-service}{job-suffix}'
         - 'heartbeat-{name}-{distro}'
 
 - project:
     name: murano-client
     distro: ubuntu
+    job-suffix:
+        - ''
+        - '-nv'
+    pkg-service:
+        - ''
+        - '-glare'
     repository: openstack/python-muranoclient
     tests: ''
     jobs:
-        - 'gate-{name}-{distro}'
+        - 'gate-{name}-{distro}{pkg-service}{job-suffix}'

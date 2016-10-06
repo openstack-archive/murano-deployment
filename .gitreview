@@ -1,5 +1,5 @@
 [gerrit]
-host=review.openstack.org
+host=review.lina-infra.ru
 port=29418
 project=openstack/murano-deployment.git
 
