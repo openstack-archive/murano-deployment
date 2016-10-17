@@ -32,7 +32,8 @@ GIT_PATH=/opt/git
 sudo mkdir -p $GIT_PATH
 cd $GIT_PATH
 
-sudo pip install nose selenium testtools testresources unittest2 pyrabbit==1.0.1
+sudo pip install nose testtools testresources unittest2 pyrabbit==1.0.1
+sudo pip install selenium<3.0.0
 
 if [ -e /etc/os-release ]; then
     sudo wget http://sourceforge.net/projects/ubuntuzilla/files/mozilla/apt/pool/main/f/firefox-mozilla-build/firefox-mozilla-build_27.0-0ubuntu1_amd64.deb/download -O firefox27.deb
