@@ -11,9 +11,6 @@ pipelines:
           comment_filter: (?i)^(Patch Set [0-9]+:\n\n)?\s*retrigger(( (?:bug|lp)[\s#:]*(\d+))|( no bug)|( murano-ci))\s*$
         - event: comment-added
           comment_filter: recheck
-    start:
-      gerrit:
-        verified: 0
     success:
       gerrit:
         verified: 1
