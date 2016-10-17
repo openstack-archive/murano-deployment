@@ -70,6 +70,8 @@ function run_tests() {
     #     https://bugs.launchpad.net/murano/+bug/1349934 is fixed.
     sudo rm -f /tmp/parser_table.py
 
+    sudo pip install "selenium<3.0.0"
+
     pushd "${PROJECT_TESTS_DIR}"
 
     mkdir -p "${WORKSPACE}/artifacts/report"
