@@ -173,6 +173,14 @@ disable_service neutron
 disable_service q-svc q-agt q-dhcp q-l3 q-meta q-metering
 # Disable heat services because its unused on CI workers.
 disable_service heat h-api h-api-cfn h-api-cw h-eng
+
+# NOTE(mkarpin): Dashboard tests are failing on selenium 3.x
+# so we need temporarly pin requirements repo to
+# local branch which has selenium pinned to 2.53.6
+# Remove this ones tests are fixed
+REQUIREMENTS_REPO=http://172.16.41.133/p/openstack/requirements
+REQUIREMENTS_BRANCH=temp_selenium_pin
+
 EOF
 
     sudo ./tools/create-stack-user.sh
