@@ -80,10 +80,10 @@ function make_img_with_murano_agent() {
     sudo chmod 777 "${agent_dir}"
 
     sudo pip install diskimage-builder
-    git clone "${ZUUL_URL}/${ZUUL_PROJECT}" "${agent_dir}/murano-agent"
+    git clone "${ZUUL_URL}/${PROJECT_NAME_REAL}" "${agent_dir}/murano-agent"
 
     pushd "${agent_dir}/murano-agent"
-    git fetch "${ZUUL_URL}/${ZUUL_PROJECT}" "${ZUUL_REF}" && git checkout FETCH_HEAD
+    git fetch "${ZUUL_URL}/${PROJECT_NAME_REAL}" "${ZUUL_REF}" && git checkout FETCH_HEAD
     popd
 
     mkdir -p "${agent_dir}/elements"
