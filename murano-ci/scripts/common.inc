@@ -116,7 +116,7 @@ case "${PROJECT_NAME}" in
     ;;
     'murano-agent')
         PROJECT_TESTS_DIR="${STACK_HOME}/murano/murano/tests/functional"
-        export DIB_MURANO_AGENT_REPO="${ZUUL_URL}/${ZUUL_PROJECT}"
+        export DIB_MURANO_AGENT_REPO="${ZUUL_URL}/${PROJECT_NAME_REAL}"
         export DIB_MURANO_AGENT_BRANCH=${ZUUL_BRANCH}
         export DIB_MURANO_AGENT_REF=${ZUUL_REF}
     ;;
