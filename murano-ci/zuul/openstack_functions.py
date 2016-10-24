@@ -37,7 +37,7 @@ def single_use_node(item, job, params):
 
 def set_params(item, job, params):
     single_use_node(item, job, params)
-    if job.name != 'gate-murano-deployment':
+    if job.name not in ['gate-murano-deployment','hook-murano-rtfd']:
         # Get project name which can be different from ZUUL_PROJECT parameter
         if 'murano-client' in job.name:
             project_name = 'python-muranoclient'
