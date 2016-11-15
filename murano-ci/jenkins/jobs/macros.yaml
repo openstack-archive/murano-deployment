@@ -9,6 +9,11 @@
                 export SKIP_INIT=yes
                 source "${WORKSPACE}/murano-ci/scripts/common.inc"
                 #-----------------
+                if grep -iq 'failed' "${WORKSPACE}/artifacts/build_status"; then
+                  tear_down
+                fi
+                # We need ensure that no stacks are left in any case
+                ensure_no_heat_stacks_left
 
                 source "${WORKSPACE}/murano-ci/scripts/collect_results.sh"
                 source "${WORKSPACE}/murano-ci/scripts/collect_logs.sh"
