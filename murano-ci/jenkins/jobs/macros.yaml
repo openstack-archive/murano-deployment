@@ -12,6 +12,19 @@
 
                 source "${WORKSPACE}/murano-ci/scripts/collect_results.sh"
                 source "${WORKSPACE}/murano-ci/scripts/collect_logs.sh"
+
+                sudo pkill murano || true
+
+                # wait till murano processes gracefully shutdown
+                while pgrep -f murano-api || pgrep -f murano-engine ; do
+                    sleep 10
+                done
+
+                # cleanup stacks
+                ensure_no_heat_stacks_left || retval=$?
+
+                return $retval
+
           onsuccess: false
           onfailure: false
           script-only-if-succeeded: false

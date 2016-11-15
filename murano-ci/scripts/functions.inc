@@ -281,5 +281,4 @@ function tear_down() {
     if [[ "${PROJECT_NAME}" == 'murano-agent' ]]; then
         remove_image_with_murano_agent
     fi
-    ensure_no_heat_stacks_left
 }
