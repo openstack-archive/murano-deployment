@@ -246,21 +246,31 @@ function ensure_no_heat_stacks_left() {
     local log_file="${STACK_HOME}/log/murano-engine.log"
     local retval=0
 
-    pushd "${STACK_HOME}/devstack"
-
-    for id in $(sed -n 's/.*\"OS\:\:stack_id\"\: \"\(.\{36\}\)\".*/\1/p' "${log_file}" | sort | uniq); do
-        stack_info=$(heat stack-list | grep "${id}")
-        if [ -n "${stack_info}" ]; then
-            retval=1
-            echo "Stack '${id}' found!"
-            echo "${stack_info}"
-            echo "Deleting stack '${id}'"
-            heat stack-delete "${id}" > /dev/null
+    for stack_name in $(grep -oP '(?<=generatedStackName\", \").*?(?=\"]+, )' "${log_file}" | sort | uniq); do
+        # get string, containing stack id
+        stack_id_string=$(openstack stack list | grep "${stack_name}" | cut -d '|' -f 2)
+        # strip spaces
+        stack_id="${stack_id_string//[[:blank:]]/}"
+        if [ -n "${stack_id}" ]; then
+             retval=1
+             stack_info=$(openstack stack list | grep "${stack_id}")
+             set +o xtrace
+             cat << EOF
+********************************************************************************
+*
+*   Stack $stack_id found!
+*   Full stack information:
+*   $stack_info
+*   Deleting stack $stack_id
+*
+********************************************************************************
+EOF
+             set -o xtrace
+             openstack stack delete "${stack_id}" --yes > /dev/null
         fi
     done
 
     popd
-
     return $retval
 }
 
@@ -269,5 +279,4 @@ function tear_down() {
     if [[ "${PROJECT_NAME}" == 'murano-agent' ]]; then
         remove_image_with_murano_agent
     fi
-    ensure_no_heat_stacks_left
 }

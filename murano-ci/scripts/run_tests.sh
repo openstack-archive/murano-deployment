@@ -126,8 +126,6 @@ EOF
 
     popd
 
-    ensure_no_heat_stacks_left || retval=$?
-
     return $retval
 }
 
