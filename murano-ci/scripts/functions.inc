@@ -15,6 +15,10 @@ EOF
 function exit_handler() {
     mkdir -p $WORKSPACE/artifacts
     if [[ "${1}" -ne 0 ]]; then
+        echo "Something went wrong. Cleaning up."
+        tear_down
+    else
+        echo "Build looks ok. Cleaning up."
         tear_down
     fi
     echo "$0: ${BUILD_STATUS_ON_EXIT}" >> $WORKSPACE/artifacts/build_status
