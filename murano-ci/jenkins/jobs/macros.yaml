@@ -10,8 +10,25 @@
                 source "${WORKSPACE}/murano-ci/scripts/common.inc"
                 #-----------------
 
+                pushd "${STACK_HOME}/devstack"
+                set +o xtrace
+                echo "Importing openrc ..."
+                source openrc "${ADMIN_USERNAME}" "${ADMIN_TENANT}"
+                set -o xtrace
+                popd
+
                 source "${WORKSPACE}/murano-ci/scripts/collect_results.sh"
                 source "${WORKSPACE}/murano-ci/scripts/collect_logs.sh"
+
+                # Cleaning up resources
+                sudo pkill murano || true
+                # wait till murano processes gracefully shutdown
+                while pgrep -f murano-api || pgrep -f murano-engine ; do
+                    sleep 10
+                done
+                # cleanup stacks
+                ensure_no_heat_stacks_left
+
           onsuccess: false
           onfailure: false
           script-only-if-succeeded: false
