@@ -13,6 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 #
+set -o errexit
+
+trap 'trap_handler ${?} ${LINENO} ${0}' ERR
+trap 'exit_handler ${?}' EXIT
 
 CI_ROOT_DIR=$(cd $(dirname "$0") && cd .. && pwd)
 

@@ -10,6 +10,8 @@
                 source "${WORKSPACE}/murano-ci/scripts/common.inc"
                 #-----------------
 
+                ensure_no_heat_stacks_left
+
                 source "${WORKSPACE}/murano-ci/scripts/collect_results.sh"
                 source "${WORKSPACE}/murano-ci/scripts/collect_logs.sh"
           onsuccess: false

@@ -1,12 +1,4 @@
 #!/bin/bash
-# Error trapping first
-#---------------------
-set -o errexit
-
-trap 'trap_handler ${?} ${LINENO} ${0}' ERR
-trap 'exit_handler ${?}' EXIT
-#---------------------
-
 # Enable debug output
 #--------------------
 PS4='+ [$(date --rfc-3339=seconds)] '
