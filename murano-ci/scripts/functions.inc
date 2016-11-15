@@ -14,9 +14,6 @@ EOF
 
 function exit_handler() {
     mkdir -p $WORKSPACE/artifacts
-    if [[ "${1}" -ne 0 ]]; then
-        tear_down
-    fi
     echo "$0: ${BUILD_STATUS_ON_EXIT}" >> $WORKSPACE/artifacts/build_status
     echo "$0: ${BUILD_STATUS_ON_EXIT}" >> $WORKSPACE/artifacts/overall-status.txt
     cat << EOF
@@ -261,19 +258,26 @@ function ensure_no_heat_stacks_left() {
     source openrc "${ADMIN_USERNAME}" "${ADMIN_TENANT}"
     set -o xtrace
 
-    for id in $(sed -n 's/.*\"OS\:\:stack_id\"\: \"\(.\{36\}\)\".*/\1/p' "${log_file}" | sort | uniq); do
-        stack_info=$(heat stack-list | grep "${id}")
-        if [ -n "${stack_info}" ]; then
-            retval=1
-            echo "Stack '${id}' found!"
-            echo "${stack_info}"
-            echo "Deleting stack '${id}'"
-            heat stack-delete "${id}" > /dev/null
+    # for id in $(sed -n 's/.*\"OS\:\:stack_id\"\: \"\(.\{36\}\)\".*/\1/p' "${log_file}" | sort | uniq); do
+    for stack_name in $(grep -oP '(?<=generatedStackName\", \").*?(?=\"]+, )' "${log_file}" | sort | uniq); do
+        # get string, containing stack id
+        stack_id_string=$(openstack stack list | grep "${stack_name}" | cut -d '|' -f 2)
+        # strip spaces
+        stack_id="${stack_id_string//[[:blank:]]/}"
+        # get full info about stack
+        stack_info=$(openstack stack list | grep "${stack_name}")
+        echo "Returned value is $retval"
+        if [ -n "${stack_id}" ]; then
+             retval=1
+             echo "Stack ${stack_id} found!"
+             echo "${stack_info}"
+             echo "Deleting stack ${stack_id}"
+             openstack stack delete "${stack_id}" --yes > /dev/null
         fi
     done
 
     popd
-
+    echo "Returned value is $retval"
     return $retval
 }
 
@@ -281,5 +285,4 @@ function tear_down() {
     if [[ "${PROJECT_NAME}" == 'murano-agent' ]]; then
         remove_image_with_murano_agent
     fi
-    ensure_no_heat_stacks_left
 }
