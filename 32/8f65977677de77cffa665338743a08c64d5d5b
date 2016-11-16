@@ -1,0 +1,12 @@
+Verified+1: Murano CI
+Code-Review+2: Serg Melikyan <smelikyan@mirantis.com>
+Code-Review+1: venkatamahesh <Venkata.Kotha@infinite.com>
+Code-Review+1: Artem Tiumentcev <AITyumentsev.SBT@sberbank.ru>
+Code-Review+2: Kirill Zaitsev <k.zaitsev@me.com>
+Workflow+1: Kirill Zaitsev <k.zaitsev@me.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 16 Nov 2016 16:18:38 +0000
+Reviewed-on: https://review.openstack.org/397582
+Project: openstack/murano-deployment
+Branch: refs/heads/master
