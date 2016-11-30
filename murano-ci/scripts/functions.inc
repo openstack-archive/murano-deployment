@@ -217,6 +217,8 @@ function override_refference() {
 
 function remove_image_with_murano_agent() {
 
+    env
+
     pushd "${STACK_HOME}/devstack"
     source openrc "${ADMIN_USERNAME}" "${ADMIN_TENANT}"
     popd
@@ -278,6 +280,9 @@ function ensure_no_heat_stacks_left() {
 }
 
 function tear_down() {
+
+    env
+
     if [[ "${PROJECT_NAME}" == 'murano-agent' ]]; then
         remove_image_with_murano_agent
     fi
