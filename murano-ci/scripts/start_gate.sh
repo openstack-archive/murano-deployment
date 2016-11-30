@@ -21,5 +21,13 @@ source "${CI_ROOT_DIR}/scripts/common.inc"
 #-----------------
 
 source "${CI_ROOT_DIR}/scripts/deploy_devstack.sh"
+
+pushd "${STACK_HOME}/devstack"
+set +o xtrace
+echo "Importing openrc ..."
+source openrc "${ADMIN_USERNAME}" "${ADMIN_TENANT}"
+set -o xtrace
+popd
+
 source "${CI_ROOT_DIR}/scripts/prepare_tests.sh"
 source "${CI_ROOT_DIR}/scripts/run_tests.sh"

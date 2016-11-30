@@ -217,10 +217,6 @@ function override_refference() {
 
 function remove_image_with_murano_agent() {
 
-    pushd "${STACK_HOME}/devstack"
-    source openrc "${ADMIN_USERNAME}" "${ADMIN_TENANT}"
-    popd
-
     for i in $(glance image-list | get_field 2); do
         if [ "${DISTR_NAME}_${BUILD_NUMBER}" == "$i" ]; then
             glance image-delete "$i"
@@ -229,10 +225,6 @@ function remove_image_with_murano_agent() {
 }
 
 function save_image_with_murano_agent() {
-
-    pushd "${STACK_HOME}/devstack"
-    source openrc "${ADMIN_USERNAME}" "${ADMIN_TENANT}"
-    popd
 
     for i in $(glance image-list | get_field 2); do
         if [ "${DISTR_NAME}_latest" == "$i" ]; then
@@ -256,11 +248,6 @@ function ensure_no_heat_stacks_left() {
 
     pushd "${STACK_HOME}/devstack"
 
-    set +o xtrace
-    echo "Importing openrc ..."
-    source openrc "${ADMIN_USERNAME}" "${ADMIN_TENANT}"
-    set -o xtrace
-
     for id in $(sed -n 's/.*\"OS\:\:stack_id\"\: \"\(.\{36\}\)\".*/\1/p' "${log_file}" | sort | uniq); do
         stack_info=$(heat stack-list | grep "${id}")
         if [ -n "${stack_info}" ]; then
@@ -278,6 +265,7 @@ function ensure_no_heat_stacks_left() {
 }
 
 function tear_down() {
+
     if [[ "${PROJECT_NAME}" == 'murano-agent' ]]; then
         remove_image_with_murano_agent
     fi
