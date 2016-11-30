@@ -21,5 +21,8 @@ source "${CI_ROOT_DIR}/scripts/common.inc"
 #-----------------
 
 source "${CI_ROOT_DIR}/scripts/deploy_devstack.sh"
+
+source "${STACK_HOME}/devstack/openrc ${ADMIN_USERNAME} ${ADMIN_TENANT}"
+
 source "${CI_ROOT_DIR}/scripts/prepare_tests.sh"
 source "${CI_ROOT_DIR}/scripts/run_tests.sh"
