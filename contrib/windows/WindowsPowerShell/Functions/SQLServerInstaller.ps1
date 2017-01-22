@@ -36,7 +36,7 @@ function Resolve-SQLServerPrerequisites {
 function New-SQLServer {
     <#
     .SYNOPSIS
-    Installs new MS SQL Server instance. Returns $true if a reboot is required after the installation, 
+    Installs new MS SQL Server instance. Returns $true if a reboot is required after the installation,
     $false if a reboot is not required and throws an exception in case if installation fails.
 
     .DESCRIPTION
@@ -79,7 +79,7 @@ function New-SQLServerForAOAG {
     <#
     .SYNOPSIS
     Installs new MS SQL Server instance with all needed features to set up AlwaysOn Availability Group.
-    Returns $true if a reboot is required after the installation, $false if a reboot is not required 
+    Returns $true if a reboot is required after the installation, $false if a reboot is not required
     and throws an exception in case if installation fails.
 
     .DESCRIPTION
@@ -133,7 +133,7 @@ function New-SQLServerForAOAG {
     $parser = New-OptionParserInstall
     $ExitCode = $parser.ExecuteBinary($SetupExe.FullName, @{"Q" = $null; "FEATURES" = @("SQLEngine", "Conn", "SSMS", "ADV_SSMS", "DREPLAY_CTLR", "DREPLAY_CLT") + $ExtraFeatures;
         "AGTSVCACCOUNT" = $SQLUser; "AGTSVCPASSWORD" = $SQLSvcUsrPassword; "ASSVCACCOUNT" = $SQLUser; "ASSVCPASSWORD" = $SQLSvcUsrPassword; "ASSYSADMINACCOUNTS" = $SQLUSer;
-        "SQLSVCACCOUNT" = $SQLUser; "SQLSVCPASSWORD" = $SQLSvcUsrPassword; "SQLSYSADMINACCOUNTS" = $SQLUser; "ISSVCACCOUNT" = $SQLUser; "ISSVCPASSWORD" = $SQLSvcUsrPassword; 
+        "SQLSVCACCOUNT" = $SQLUser; "SQLSVCPASSWORD" = $SQLSvcUsrPassword; "SQLSYSADMINACCOUNTS" = $SQLUser; "ISSVCACCOUNT" = $SQLUser; "ISSVCPASSWORD" = $SQLSvcUsrPassword;
         "RSSVCACCOUNT" = $SQLUser; "RSSVCPASSWORD" = $SQLSvcUsrPassword} + $ExtraOptions)
 
     if ($ExitCode -eq 3010) {
@@ -185,7 +185,7 @@ function Install-SQLServerForSysPrep {
     Installs new MS SQL Server in sysprep mode.
 
     .DESCRIPTION
-    Installs new MS SQL Server in sysprep mode. Returns $true if a reboot is required after the installation, 
+    Installs new MS SQL Server in sysprep mode. Returns $true if a reboot is required after the installation,
     $false if a reboot is not required and throws an exception in case if installation fails.
 
     Setup must be completed after booting rearmed machine by using Complete-SQLServer cmdlet
@@ -195,7 +195,7 @@ function Install-SQLServerForSysPrep {
 
     .PARAMETER ExtraFeatures
     List of features to be installed in addition to default "SQLEngine". Note that prior to
-    SQL Server version 2012 Service Pack 1 Cumulative Update 2 (January 2013) only "Replication", 
+    SQL Server version 2012 Service Pack 1 Cumulative Update 2 (January 2013) only "Replication",
     "FullText" and "RS" may be installed in addition to "SQLEngine". See the following link for
     detials: http://msdn.microsoft.com/en-us/library/ms144259.aspx
 
@@ -208,7 +208,7 @@ function Install-SQLServerForSysPrep {
     Installs new MS SQL Server in sysprep mode.
 
     .DESCRIPTION
-    Installs new MS SQL Server in sysprep mode. Returns $true if a reboot is required after the installation, 
+    Installs new MS SQL Server in sysprep mode. Returns $true if a reboot is required after the installation,
     $false if a reboot is not required and throws an exception in case if installation fails.
 
     Setup must be completed after booting rearmed machine by using Complete-SQLServer cmdlet
@@ -218,7 +218,7 @@ function Install-SQLServerForSysPrep {
 
     .PARAMETER ExtraFeatures
     List of features to be installed in addition to default "SQLEngine". Note that prior to
-    SQL Server version 2012 Service Pack 1 Cumulative Update 2 (January 2013) only "Replication", 
+    SQL Server version 2012 Service Pack 1 Cumulative Update 2 (January 2013) only "Replication",
     "FullText" and "RS" may be installed in addition to "SQLEngine". See the following link for
     detials: http://msdn.microsoft.com/en-us/library/ms144259.aspx
 
@@ -256,7 +256,7 @@ function Complete-SQLServerAfterSysPrep {
 
     .DESCRIPTION
     Completes previously prepared with "Install-SQLServerForSysPrep" MS SQL Server after the system was rearmed.
-    Returns $true if a reboot is required after the installation, $false if a reboot is not required and throws 
+    Returns $true if a reboot is required after the installation, $false if a reboot is not required and throws
     an exception in case if installation fails.
 
     Setup must be completed after booting rearmed machine by using Complete-SQLServer cmdlet
@@ -303,7 +303,7 @@ function ConvertTo-SQLString {
         [parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]$S
     )
-    
+
     return "'$($S -replace "'", "''")'"
 }
 
@@ -375,7 +375,7 @@ function Invoke-SQLText {
         Write-Warning $output
         throw "SQLCMD.EXE returned with exit code $ExitCode while running $Binary $CommandLine"
     }
-   
+
     Remove-Item $tempFile
 
     return $output
@@ -524,8 +524,8 @@ function Initialize-MirroringEndpoint {
                                 AS TCP (
                                     LISTENER_PORT = $Port
                                     , LISTENER_IP = ALL
-                                ) 
-                                FOR DATABASE_MIRRORING ( 
+                                )
+                                FOR DATABASE_MIRRORING (
                                     AUTHENTICATION = CERTIFICATE ${H}_cert
                                     , ENCRYPTION = REQUIRED ALGORITHM AES
                                     , ROLE = ALL
@@ -554,7 +554,7 @@ function Initialize-MirroringEndpoint {
         $DisplayName = "MS SQL Database Mirroring Endpoint at TCP port $Port"
         New-NetFirewallRule -Name $RuleName -DisplayName $DisplayName -Description $DisplayName -Protocol TCP -LocalPort $Port -Enabled True -Profile Any -Action Allow
     }
-     
+
     return $Port
 }
 
@@ -693,9 +693,9 @@ function New-SQLDatabase {
     $NewDatabase = "
         CREATE DATABASE $(ConvertTo-SQLName $DataBaseName)
                 CONTAINMENT = NONE
-                ON  PRIMARY 
+                ON  PRIMARY
             ( NAME = N$(ConvertTo-SQLString $DataBaseName), FILENAME = N$(ConvertTo-SQLString $mdfFile) , SIZE = 4096KB , FILEGROWTH = 1024KB )
-                LOG ON 
+                LOG ON
             ( NAME = N$(ConvertTo-SQLString "${DataBaseName}_log"), FILENAME = N$(ConvertTo-SQLString $ldfFile) , SIZE = 1024KB , FILEGROWTH = 10%)
         GO
         USE $(ConvertTo-SQLName $DataBaseName)
@@ -723,7 +723,7 @@ function Initialize-SQLMirroringPrincipalStep1 {
 
     .PARAMETER DatabaseName
     Mirrored database name. This name MUST be use at mirror server either.
-    
+
     #>
 
     param(
@@ -794,7 +794,7 @@ function Initialize-SQLMirroringPrincipalStep3 {
     Completes mirror creation. This step must be globally the last one in mirror creation sequence.
 
     Note that the remote host certificate is valid from the time it is created there. So
-    this step will fail if there is noticable different in time local and remote machines.
+    this step will fail if there is a noticeable difference in time local and remote machines.
 
     .PARAMETER RemoteHostName
     Remote (principal) host name. FQDN is preferred, but NetBIOS names and IP addresses are also accepted.
@@ -907,7 +907,7 @@ function Initialize-SQLMirroringMirrorStep3 {
     Completes mirror creation. This step must be executed strictly before symmetric step on the principal.
 
     Note that the remote host certificate is valid from the time it is created there. So
-    this step will fail if there is noticable different in time local and remote machines.
+    this step will fail if there is a noticeable difference in time local and remote machines.
 
     .PARAMETER RemoteHostName
     Remote (principal) host name. FQDN is preferred, but NetBIOS names and IP addresses are also accepted.
@@ -960,7 +960,7 @@ function Initialize-AlwaysOn {
     Initializes AlwaysOn clustering on local SQL server and creates AlwaysOn endpoint listener. Returns AlwaysOn endpoint port number.
 
     .DESCRIPTION
-    Enables AlwaysOn clustering on local SQL server. Creates AlwaysOn TCP endpoint on port 5022 or greater if the one is occupied.   
+    Enables AlwaysOn clustering on local SQL server. Creates AlwaysOn TCP endpoint on port 5022 or greater if the one is occupied.
     #>
 
     if (!(Test-Path SQLSERVER:\)) {
@@ -979,10 +979,10 @@ function Initialize-AlwaysOn {
         $endpoint = New-SqlHadrEndpoint AlwaysOnEndpoint -Port $Port -Path SQLSERVER:\SQL\$MachineName\$InstanceName
     } else {
         $Port = $endpoint.Protocol.Tcp.ListenerPort
-    } 
+    }
     if ($endpoint.EndpointState -ne "Started") {
         $endpoint.Start()
-    }    
+    }
     return $Port
 }
 
@@ -1006,11 +1006,11 @@ function New-AlwaysOnAvailabilityGroup {
 
     .PARAMETER ReplicaDefs
     Array of replica definition. Each definition is a hash table with replica-specific values.
-    
+
     Mandatory replica definition values are:
 
         * [String] SERVER_INSTANCE   - Replica server instance name
-        * [String] ENDPOINT_URL      - Replica server endpoint URL. Normally it is TCP://fully.qualified.domain.name:5022 
+        * [String] ENDPOINT_URL      - Replica server endpoint URL. Normally it is TCP://fully.qualified.domain.name:5022
                                        Port number should be obtained with Initialize-AlwaysOn at the replica server
         * [String] AVAILABILITY_MODE - Replica availability mode. Can be "SYNCHRONOUS_COMMIT" or "ASYNCHRONOUS_COMMIT" only.
         * [String] FAILOVER_MODE     - Replica availability mode. Can be "MANUAL" or "AUTOMATIC" only.
@@ -1039,7 +1039,7 @@ function New-AlwaysOnAvailabilityGroup {
         [String] NAME - Listener name.
 
     Optional listener configuration values are:
-    
+
         [String] PORT - Listener port number. Integer value may be suffixed by a "+" symol (such as "5022+") which allows the routine to
                         select next free port with number greater or equal to the specified value.
         [String] DHCP - DHCP listener address configuration flag. When any value specified, DHCP is used to configure listener
@@ -1199,7 +1199,7 @@ function New-AlwaysOnAvailabilityGroup {
     $Listener = "LISTENER '$($ListenerDef["NAME"])' ( WITH $ListenerAddr )"
 
     $Name | Out-File "$WorkDir\avgroup.name"
-    
+
     for ($i = 0; $i -lt $DatabaseNames.Length; $i++) {
         $DataBaseName = $DatabaseNames[$i]
         $DataBaseName | Out-File "$WorkDir\db$i.name"
