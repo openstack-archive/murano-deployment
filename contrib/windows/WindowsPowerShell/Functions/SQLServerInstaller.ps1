@@ -794,7 +794,7 @@ function Initialize-SQLMirroringPrincipalStep3 {
     Completes mirror creation. This step must be globally the last one in mirror creation sequence.
 
     Note that the remote host certificate is valid from the time it is created there. So
-    this step will fail if there is noticable different in time local and remote machines.
+    this step will fail if there is noticeable different in time local and remote machines.
 
     .PARAMETER RemoteHostName
     Remote (principal) host name. FQDN is preferred, but NetBIOS names and IP addresses are also accepted.
@@ -907,7 +907,7 @@ function Initialize-SQLMirroringMirrorStep3 {
     Completes mirror creation. This step must be executed strictly before symmetric step on the principal.
 
     Note that the remote host certificate is valid from the time it is created there. So
-    this step will fail if there is noticable different in time local and remote machines.
+    this step will fail if there is noticeable different in time local and remote machines.
 
     .PARAMETER RemoteHostName
     Remote (principal) host name. FQDN is preferred, but NetBIOS names and IP addresses are also accepted.
