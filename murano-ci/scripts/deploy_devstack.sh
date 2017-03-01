@@ -187,7 +187,12 @@ EOF
     sudo sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
     sudo service ssh restart
 
-    sudo su -c "cd ${STACK_HOME}/devstack && ./stack.sh" stack
+    # Run devstack on unsupported distro
+    UBUNTU_RELEASE_CODENAME=$(lsb_release -c -s)
+    if [[ "${UBUNTU_RELEASE_CODENAME}" == "trusty" ]]
+        FORCE_STACK='FORCE=yes'
+    fi
+    sudo su -c "cd ${STACK_HOME}/devstack && ${FORCE_STACK} ./stack.sh" stack
 }
 
 function adjust_time_settings(){
