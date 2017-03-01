@@ -1,0 +1,10 @@
+Code-Review+2: Alexander Tivelkov <ativelkov@mirantis.com>
+Verified+1: Murano CI
+Code-Review+2: Felipe Monteiro <felipe.monteiro@att.com>
+Workflow+1: Felipe Monteiro <felipe.monteiro@att.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 01 Mar 2017 22:15:58 +0000
+Reviewed-on: https://review.openstack.org/439506
+Project: openstack/murano-deployment
+Branch: refs/heads/master
