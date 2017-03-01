@@ -187,7 +187,7 @@ EOF
     sudo sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
     sudo service ssh restart
 
-    sudo su -c "cd ${STACK_HOME}/devstack && ./stack.sh" stack
+    sudo su -c "cd ${STACK_HOME}/devstack && FORCE=yes ./stack.sh" stack
 }
 
 function adjust_time_settings(){
