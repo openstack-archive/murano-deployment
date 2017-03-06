@@ -270,7 +270,6 @@ EOF
         fi
     done
 
-    popd
     return $retval
 }
 
