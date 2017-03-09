@@ -91,7 +91,7 @@ function configure_api()
 
     return $retval
 }
-#Staring up:
+#Starting up:
 if [ ! $# -ge 6 ]; then
     echo "Usage: $(basename $0) rabbitmq_host rabbitmq_port rabbitmq_usessl rabbitmq_userid rabbitmq_vhost auth_host"
     exit 1
