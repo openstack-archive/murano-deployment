@@ -144,10 +144,8 @@
     distro: ubuntu
     job-suffix:
         - ''
-        - '-nv'
     pkg-service:
         - ''
-        - '-glare'
     repository: openstack/murano
     tests: 'gate'
     jobs:
@@ -161,12 +159,10 @@
     distro: ubuntu
     job-suffix:
         - ''
-        - '-nv'
     repository: openstack/murano-dashboard
     tests: ''
     pkg-service:
         - ''
-        - '-glare'
     jobs:
         - 'gate-{name}-{distro}{pkg-service}{job-suffix}'
         - 'heartbeat-{name}-{distro}'
@@ -191,10 +187,8 @@
     distro: ubuntu
     job-suffix:
         - ''
-        - '-nv'
     pkg-service:
         - ''
-        - '-glare'
     repository: openstack/python-muranoclient
     tests: ''
     jobs:
