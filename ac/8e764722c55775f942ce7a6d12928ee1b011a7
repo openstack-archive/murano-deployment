@@ -1,0 +1,10 @@
+Verified+1: Murano CI
+Code-Review+2: Stan Lagun <slagun@mirantis.com>
+Code-Review+2: zhurong <aaronzhu1121@gmail.com>
+Workflow+1: zhurong <aaronzhu1121@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 07 Apr 2017 14:10:15 +0000
+Reviewed-on: https://review.openstack.org/454622
+Project: openstack/murano-deployment
+Branch: refs/heads/master
