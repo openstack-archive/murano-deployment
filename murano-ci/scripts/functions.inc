@@ -121,23 +121,28 @@ function get_floating_ip() {
         sudo apt-get update && sudo apt-get -y install python-virtualenv
         local tmp_venv=$(mktemp -d)
         virtualenv "${tmp_venv}"
-        "${tmp_venv}/bin/pip" install "python-novaclient>=2.22.0"
+        "${tmp_venv}/bin/pip" install python-openstackclient
 
         export OS_USERNAME=${ADMIN_USERNAME}
         export OS_PASSWORD=${ADMIN_PASSWORD}
         export OS_TENANT_NAME=${ADMIN_TENANT}
+        export OS_PROJECT_NAME=${ADMIN_TENANT}
         if [[ ${ZUUL_BRANCH} =~ liberty ]]; then
             export OS_AUTH_URL="http://${OPENSTACK_HOST}:5000/v2.0"
         else
             export OS_AUTH_URL="http://${OPENSTACK_HOST}:5000/v3"
+            export OS_IDENTITY_API_VERSION=3
         fi
+        export OS_DEFAULT_DOMAIN='default'
+        export OS_USER_DOMAIN_NAME='Default'
+        export OS_PROJECT_DOMAIN_NAME='Default'
 
-        FLOATING_IP_ADDRESS=$("${tmp_venv}/bin/nova" floating-ip-list | grep " ${FOUND_IP_ADDRESS} " | cut -d ' ' -f 4)
+        FLOATING_IP_ADDRESS=$("${tmp_venv}/bin/openstack" floating ip list | grep " ${FOUND_IP_ADDRESS} " | cut -d ' ' -f 4)
 
         if [ -z "${FLOATING_IP_ADDRESS}" ]; then
             echo "Unable to find floating IP"
             echo "Nova Client output:"
-            "${tmp_venv}/bin/nova" floating-ip-list
+            "${tmp_venv}/bin/openstack" floating ip list
             exit 1
         fi
 
