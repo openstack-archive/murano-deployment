@@ -1,0 +1,10 @@
+Verified+1: Murano CI
+Code-Review+2: zhurong <aaronzhu1121@gmail.com>
+Code-Review+2: Felipe Monteiro <felipe.monteiro@att.com>
+Workflow+1: Felipe Monteiro <felipe.monteiro@att.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Tue, 11 Apr 2017 16:57:36 +0000
+Reviewed-on: https://review.openstack.org/455302
+Project: openstack/murano-deployment
+Branch: refs/heads/master
