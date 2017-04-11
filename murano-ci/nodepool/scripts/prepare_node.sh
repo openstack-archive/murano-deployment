@@ -41,6 +41,13 @@ wget https://git.openstack.org/cgit/openstack-infra/system-config/plain/install_
 
 sudo bash -xe install_puppet.sh
 sudo git clone --depth=1 git://git.openstack.org/openstack-infra/system-config.git /root/config
+
+# Upstream openstack-infra dropped support for jenkins, so we need to point to commit which still
+# contains jenkins puppet manifests
+pushd /root/config
+ git reset --hard 97787e3b3bf156d5b9949ca615983ccb79a6a78a
+popd
+
 sudo /bin/bash /root/config/install_modules.sh
 
 #if [ -z "$NODEPOOL_SSH_KEY" ] ; then
