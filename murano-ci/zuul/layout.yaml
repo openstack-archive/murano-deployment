@@ -44,24 +44,24 @@ pipelines:
 projects:
   - name: openstack/murano
     check:
-      - gate-murano-ubuntu
+      - gate-murano-ubuntu-nv
     check_dashboard:
-      - gate-murano-dashboard-ubuntu
+      - gate-murano-dashboard-ubuntu-nv
     post:
       - hook-murano-rtfd
 
   - name: openstack/murano-dashboard
     check:
-      - gate-murano-dashboard-ubuntu
+      - gate-murano-dashboard-ubuntu-nv
 
   - name: openstack/murano-agent
     check:
-      - gate-murano-agent-ubuntu
-      - gate-murano-agent-debian
+      - gate-murano-agent-ubuntu-nv
+      - gate-murano-agent-debian-nv
 
   - name: openstack/python-muranoclient
     check:
-      - gate-murano-client-ubuntu
+      - gate-murano-client-ubuntu-nv
 
   - name: openstack/murano-deployment
     check:
