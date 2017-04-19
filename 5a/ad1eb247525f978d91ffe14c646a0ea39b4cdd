@@ -1,0 +1,11 @@
+Code-Review+2: Felipe Monteiro <felipe.monteiro@att.com>
+Verified+1: Murano CI
+Code-Review+1: Mykyta Karpin <mkarpin@mirantis.com>
+Code-Review+2: Victor Ryzhenkin (freerunner) <vryzhenkin@mirantis.com>
+Workflow+1: Victor Ryzhenkin (freerunner) <vryzhenkin@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 19 Apr 2017 14:32:12 +0000
+Reviewed-on: https://review.openstack.org/457830
+Project: openstack/murano-deployment
+Branch: refs/heads/master
