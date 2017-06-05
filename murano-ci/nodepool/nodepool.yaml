@@ -42,6 +42,7 @@ providers:
         min-ram: 2048
         private-key: '/home/nodepool/.ssh/id_rsa'
         setup: prepare_node_murano_devstack.sh
+
   - name: cilab-2
     username: 'ci-user'
     password: 'swordfish'
@@ -55,8 +56,8 @@ providers:
       - net-id: 'CILAB-2_PRIVATE_NET_ID'
 
     images:
-      - name: trusty-devstack-cz5680
-        base-image: 'trusty-server-cloudimg-amd64-disk1'
+      - name: xenial-devstack-cz5680
+        base-image: 'xenial-server-cloudimg-amd64-disk1'
         min-ram: 2048
         private-key: '/home/nodepool/.ssh/id_rsa'
         setup: prepare_node_murano_devstack.sh
