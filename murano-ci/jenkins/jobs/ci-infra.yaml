@@ -33,7 +33,7 @@
     disabled: false
     concurrent: false
     #In Jenkins v1.642.1 jobs triggered by zuul cannot be run on master
-    node: trusty-devstack-cz5608 || trusty-devstack-cz5680
+    node: trusty-devstack-cz5608 || xenial-devstack-cz5680
 
     builders:
       - shell: |

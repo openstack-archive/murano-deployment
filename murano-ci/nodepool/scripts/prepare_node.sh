@@ -36,6 +36,10 @@ if [ -f /usr/bin/yum ]; then
     sudo yum -y install wget
 fi
 
+# Xenial by default have only python3 command
+sudo apt-get update
+sudo apt-get install python -y
+
 #wget https://raw.github.com/pypa/pip/master/contrib/get-pip.py
 wget https://git.openstack.org/cgit/openstack-infra/system-config/plain/install_puppet.sh
 

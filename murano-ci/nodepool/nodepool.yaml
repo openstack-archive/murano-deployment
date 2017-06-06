@@ -16,8 +16,8 @@ labels:
     min-ready: 6
     providers:
       - name: cilab-1
-  - name: trusty-devstack-cz5680
-    image: trusty-devstack-cz5680
+  - name: xenial-devstack-cz5680
+    image: xenial-devstack-cz5680
     min-ready: 6
     providers:
       - name: cilab-2
