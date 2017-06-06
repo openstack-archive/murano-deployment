@@ -1,6 +1,6 @@
 - job-template:
     name: 'hook-{name}-rtfd'
-    node: trusty-devstack-cz5608 || trusty-devstack-cz5680
+    node: trusty-devstack-cz5608 || xenial-devstack-cz5680
 
     builders:
       - shell: 'curl -X POST https://readthedocs.org/build/{name} >/dev/null'
