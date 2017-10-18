@@ -19,7 +19,7 @@
 function create_artifacts_dir() {
     dst="${WORKSPACE}/artifacts"
     mkdir -p "${dst}"
-    sudo chown -R jenkins:jenkins "${dst}"
+    sudo chown -R $USER:stack "${dst}"
 
 }
 

@@ -19,7 +19,7 @@
 function git_clone_devstack() {
     local DEVSTACK_BRANCH=${DEVSTACK_BRANCH:=master}
     sudo mkdir -p "${STACK_HOME}"
-    sudo chown -R jenkins:jenkins "${STACK_HOME}"
+    sudo chown -R $USER:stack "${STACK_HOME}"
     git clone https://github.com/openstack-dev/devstack "${STACK_HOME}/devstack"
 
     pushd "${STACK_HOME}/devstack"
