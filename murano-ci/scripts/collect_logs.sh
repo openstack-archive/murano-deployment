@@ -48,4 +48,4 @@ fi
 # return error catching back
 set -o errexit
 
-sudo chown -R jenkins:jenkins "${dst}"
+sudo chown -R $USER:stack "${dst}"
