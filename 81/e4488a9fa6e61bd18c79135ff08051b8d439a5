@@ -1,0 +1,9 @@
+Code-Review+2: Felipe Monteiro <felipe.monteiro@att.com>
+Code-Review+2: zhurong <aaronzhu1121@gmail.com>
+Workflow+1: zhurong <aaronzhu1121@gmail.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Mon, 08 Jan 2018 05:12:46 +0000
+Reviewed-on: https://review.openstack.org/529977
+Project: openstack/murano-deployment
+Branch: refs/heads/master
